@@ -10,7 +10,7 @@ export function propertyLabel(p: { address: string; unit?: string | null; unit_l
 }
 
 export function formatDate(d: string | Date) {
-  return new Date(d).toLocaleDateString('de-DE')
+  return new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 export function percent(n: number, digits = 0) {
