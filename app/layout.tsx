@@ -36,6 +36,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <Link href="/steuer" className="hover:text-blue-700 transition-colors">Steuerübersicht</Link>
                 <Link href="/finanzen" className="hover:text-blue-700 transition-colors">Finanzen</Link>
                 <Link href="/reminders" className="hover:text-blue-700 transition-colors">Reminders</Link>
+                <Link href="/charity" className="hover:text-blue-700 transition-colors">Charity</Link>
                 <Link href="/receipts/new" className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">+ Beleg</Link>
                 <Link href="/properties/new" className="hover:text-blue-700 transition-colors">+ Immobilie</Link>
                 <span className="text-gray-300">|</span>
