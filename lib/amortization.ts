@@ -1,4 +1,4 @@
-import { addMonths, addYears, differenceInCalendarDays, isAfter } from 'date-fns'
+import { addMonths, addYears, differenceInCalendarDays, differenceInCalendarMonths, isAfter } from 'date-fns'
 import type {
   Loan,
   LoanSpecialPayment,
@@ -48,7 +48,7 @@ function basisFor(convention: DayCountConvention): number {
   return convention === '30/360' ? 360 : 365
 }
 
-function iso(d: Date): string {
+export function iso(d: Date): string {
   return d.toISOString().slice(0, 10)
 }
 
@@ -286,5 +286,54 @@ export function aggregatePortfolioFinancials(
     monthly_operating_cost_runrate: monthlyOperatingCostRunrate,
     monthly_net_cashflow: monthlyNetCashflow,
     loans: loanStatuses,
+  }
+}
+
+export interface SpecialPaymentSimulation {
+  hypothetical_amount: number
+  baseline_payoff_date: string | null
+  baseline_total_interest: number
+  new_payoff_date: string | null
+  new_total_interest: number
+  months_saved: number
+  interest_saved_total: number
+  new_remaining_balance: number
+}
+
+/**
+ * Rechnet rein hypothetisch durch, was eine zusätzliche Sondertilgung heute
+ * bewirken würde – ohne sie zu speichern. Die Annuität bleibt dabei (wie bei
+ * generateAmortizationSchedule generell) unverändert; die Sondertilgung
+ * verkürzt stattdessen die Restlaufzeit.
+ */
+export function simulateSpecialPayment(
+  loan: Loan,
+  existingSpecialPayments: LoanSpecialPayment[],
+  hypotheticalAmount: number,
+  asOfDate: Date = new Date()
+): SpecialPaymentSimulation {
+  const baseline = generateAmortizationSchedule(loan, existingSpecialPayments)
+  const withPayment = generateAmortizationSchedule(loan, [
+    ...existingSpecialPayments,
+    { id: 'sim', loan_id: loan.id, payment_date: iso(asOfDate), amount: hypotheticalAmount, note: null, created_at: '' },
+  ])
+
+  const baselineTotalInterest = baseline.entries.reduce((s, e) => s + e.interest_accrued, 0)
+  const newTotalInterest = withPayment.entries.reduce((s, e) => s + e.interest_accrued, 0)
+
+  const monthsSaved =
+    baseline.payoff_date && withPayment.payoff_date
+      ? differenceInCalendarMonths(new Date(baseline.payoff_date), new Date(withPayment.payoff_date))
+      : 0
+
+  return {
+    hypothetical_amount: hypotheticalAmount,
+    baseline_payoff_date: baseline.payoff_date,
+    baseline_total_interest: baselineTotalInterest,
+    new_payoff_date: withPayment.payoff_date,
+    new_total_interest: newTotalInterest,
+    months_saved: Math.max(0, monthsSaved),
+    interest_saved_total: Math.max(0, baselineTotalInterest - newTotalInterest),
+    new_remaining_balance: balanceAtDate(withPayment.entries, loan.principal, asOfDate),
   }
 }

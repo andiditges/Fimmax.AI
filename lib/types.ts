@@ -148,6 +148,35 @@ export interface NewsItem {
   pub_date: string | null
 }
 
+export type AssetCategory =
+  | 'wertpapiere'
+  | 'tagesgeld_festgeld'
+  | 'bausparvertrag'
+  | 'vl_vertrag'
+  | 'rentenversicherung'
+  | 'sonstiges'
+
+export const ASSET_CATEGORY_LABELS: Record<AssetCategory, string> = {
+  wertpapiere: 'Wertpapiere (Aktien/ETFs/Fonds)',
+  tagesgeld_festgeld: 'Tagesgeld/Festgeld',
+  bausparvertrag: 'Bausparvertrag',
+  vl_vertrag: 'VL-Vertrag',
+  rentenversicherung: 'Rentenversicherung/Altersvorsorge',
+  sonstiges: 'Sonstiges',
+}
+
+export interface Asset {
+  id: string
+  category: AssetCategory
+  name: string
+  institution: string | null
+  current_value: number
+  monthly_contribution: number
+  valuation_date: string
+  note: string | null
+  created_at: string
+}
+
 export type PaymentFrequency = 'monatlich' | 'vierteljährlich' | 'jährlich'
 export type DayCountConvention = 'act/365' | '30/360'
 
