@@ -21,7 +21,7 @@ export function Nav({ userEmail }: { userEmail: string | null }) {
   return (
     <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-4 py-2 min-h-14 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-shrink-0">
           <Link href="/" onClick={() => setOpen(false)}>
             <Logo />
           </Link>
@@ -33,9 +33,9 @@ export function Nav({ userEmail }: { userEmail: string | null }) {
         {userEmail && (
           <>
             {/* Desktop-Navigation */}
-            <div className="hidden md:flex items-center gap-5 text-sm text-gray-600">
+            <div className="hidden md:flex items-center gap-4 text-sm text-gray-600 min-w-0 flex-wrap justify-end">
               {LINKS.map(l => (
-                <Link key={l.href} href={l.href} className="hover:text-blue-700 transition-colors">{l.label}</Link>
+                <Link key={l.href} href={l.href} className="hover:text-blue-700 transition-colors whitespace-nowrap">{l.label}</Link>
               ))}
               <Link href="/receipts/new" className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">+ Beleg</Link>
               <Link href="/properties/new" className="hover:text-blue-700 transition-colors">+ Immobilie</Link>
