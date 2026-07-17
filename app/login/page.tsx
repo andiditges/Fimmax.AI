@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
+import { BrickLoader } from '@/components/brick-loader'
 
 export default function Login() {
   const router = useRouter()
@@ -39,12 +40,12 @@ export default function Login() {
   return (
     <div className="max-w-sm mx-auto mt-12">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Immobilien, aber richtig.</h1>
+        <h1 className="brick-text text-3xl font-bold tracking-tight">Immobilien, aber richtig.</h1>
         <p className="text-gray-500 mt-2">
-          Belege, Kredite, Steuern, News und Reminders – alles an einem Ort für private Vermieter.
+          Belege, Kredite, Steuern, News und Reminders – alles an einem Ort für Vermieter, egal ob privat, geschäftlich oder irgendwas dazwischen.
         </p>
       </div>
-      <h2 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+      <h2 className="brick-text text-lg font-semibold mb-4 text-center">
         {mode === 'signin' ? 'Anmelden' : 'Konto anlegen'}
       </h2>
       <Card>
@@ -77,9 +78,9 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 min-h-[48px]"
           >
-            {loading ? 'Einen Moment...' : mode === 'signin' ? 'Anmelden' : 'Konto anlegen'}
+            {loading ? <BrickLoader /> : mode === 'signin' ? 'Anmelden' : 'Konto anlegen'}
           </button>
         </form>
 
