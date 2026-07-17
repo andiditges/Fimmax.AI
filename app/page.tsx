@@ -1,65 +1,149 @@
-import Image from "next/image";
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/supabase/get-user'
+import { Card, CardTitle } from '@/components/ui/card'
+import { NewsFeed } from '@/components/news-feed'
+import { RemindersWidget } from '@/components/reminders/reminders-widget'
+import { PropertyList } from '@/components/properties/property-list'
+import { calcAnnualAfa } from '@/lib/afa'
+import { aggregatePortfolioFinancials } from '@/lib/amortization'
+import { getLandlordNews } from '@/lib/news'
+import { euro } from '@/lib/format'
+import { Property, Receipt, Loan, LoanSpecialPayment, Tenant, Reminder } from '@/lib/types'
 
-export default function Home() {
+export default async function Dashboard() {
+  await requireUser()
+  const supabase = await createClient()
+  const currentYear = new Date().getFullYear()
+
+  const [{ data: properties }, { data: receipts }, { data: income }, { data: loans }, { data: tenants }, { data: reminders }, news] = await Promise.all([
+    supabase.from('properties').select('*').order('created_at'),
+    supabase.from('receipts').select('*'),
+    supabase.from('income_records').select('*'),
+    supabase.from('loans').select('*'),
+    supabase.from('tenants').select('*'),
+    supabase.from('reminders').select('*').neq('status', 'erledigt'),
+    getLandlordNews(),
+  ])
+
+  const props = (properties ?? []) as Property[]
+  const recs = (receipts ?? []) as Receipt[]
+  const inc = (income ?? []) as { property_id: string; amount: number; date: string }[]
+  const loanList = (loans ?? []) as Loan[]
+  const tenantList = (tenants ?? []) as Tenant[]
+  const reminderList = (reminders ?? []) as Reminder[]
+
+  const { data: specialPayments } = loanList.length
+    ? await supabase.from('loan_special_payments').select('*').in('loan_id', loanList.map(l => l.id))
+    : { data: [] as LoanSpecialPayment[] }
+
+  const specialPaymentsByLoan = loanList.reduce((acc, l) => {
+    acc[l.id] = (specialPayments ?? []).filter(sp => sp.loan_id === l.id)
+    return acc
+  }, {} as Record<string, LoanSpecialPayment[]>)
+
+  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, recs)
+
+  const totalAfa = props.reduce((s, p) => s + calcAnnualAfa(p), 0)
+  const totalIncome = inc
+    .filter(i => new Date(i.date).getFullYear() === currentYear)
+    .reduce((s, i) => s + i.amount, 0)
+  const totalExpenses = recs
+    .filter(r => r.tax_year === currentYear)
+    .reduce((s, r) => s + r.amount, 0)
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-gray-500 text-sm mt-1">Steuerjahr {currentYear}</p>
+      </div>
+
+      {/* KPI-Karten */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardTitle>Immobilien</CardTitle>
+          <p className="text-3xl font-bold text-gray-900">{props.length}</p>
+        </Card>
+        <Card>
+          <CardTitle>Einnahmen {currentYear}</CardTitle>
+          <p className="text-3xl font-bold text-green-600">{euro(totalIncome)}</p>
+        </Card>
+        <Card>
+          <CardTitle>Ausgaben {currentYear}</CardTitle>
+          <p className="text-3xl font-bold text-red-500">{euro(totalExpenses)}</p>
+        </Card>
+        <Card>
+          <CardTitle>AfA gesamt / Jahr</CardTitle>
+          <p className="text-3xl font-bold text-blue-600">{euro(totalAfa)}</p>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Hauptspalte */}
+        <div className="lg:col-span-2 space-y-8">
+          <RemindersWidget reminders={reminderList} properties={props} />
+
+          {/* Finanz-Cockpit */}
+          {loanList.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-800">Finanz-Cockpit</h2>
+                <Link href="/finanzen" className="text-sm text-blue-600 hover:underline">Portfolio-Übersicht →</Link>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardTitle>Gesamtschulden</CardTitle>
+                  <p className="text-2xl font-bold text-red-500">{euro(portfolio.total_debt)}</p>
+                </Card>
+                <Card>
+                  <CardTitle>Kreditrate / Monat</CardTitle>
+                  <p className="text-2xl font-bold text-gray-900">{euro(portfolio.monthly_debt_service)}</p>
+                </Card>
+                <Card>
+                  <CardTitle>Eigenkapital</CardTitle>
+                  <p className="text-2xl font-bold text-blue-600">{euro(portfolio.total_equity)}</p>
+                </Card>
+                <Card>
+                  <CardTitle>Cashflow / Monat</CardTitle>
+                  <p className={`text-2xl font-bold ${portfolio.monthly_net_cashflow >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    {euro(portfolio.monthly_net_cashflow)}
+                  </p>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* Immobilien-Liste */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-800">Meine Immobilien</h2>
+              <Link href="/properties" className="text-sm text-blue-600 hover:underline">Alle anzeigen →</Link>
+            </div>
+            <PropertyList properties={props} receipts={recs} income={inc} currentYear={currentYear} />
+          </div>
+
+          {/* Quick Action */}
+          <Card className="bg-blue-50 border-blue-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-blue-900">Beleg erfassen</p>
+                <p className="text-sm text-blue-700 mt-0.5">Foto machen oder Datei hochladen – KI kategorisiert automatisch</p>
+              </div>
+              <Link href="/receipts/new" className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap">
+                Jetzt erfassen
+              </Link>
+            </div>
+          </Card>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Seitenspalte */}
+        <div className="lg:col-span-1">
+          <div className="lg:sticky lg:top-20">
+            <NewsFeed items={news} />
+          </div>
         </div>
-      </main>
+      </div>
     </div>
-  );
+  )
 }
