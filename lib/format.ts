@@ -16,3 +16,8 @@ export function formatDate(d: string | Date) {
 export function percent(n: number, digits = 0) {
   return `${n.toFixed(digits)}%`
 }
+
+// Aktueller Wert, falls gepflegt, sonst Kaufpreis als Näherung.
+export function propertyValue(p: { purchase_price: number; current_value?: number | null }): number {
+  return p.current_value ?? p.purchase_price
+}

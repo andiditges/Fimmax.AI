@@ -17,6 +17,7 @@ export function PropertyForm({ property }: { property?: Property }) {
     unit_label: property?.unit_label ?? '',
     purchase_date: property?.purchase_date ?? '',
     purchase_price: property ? String(property.purchase_price) : '',
+    current_value: property?.current_value != null ? String(property.current_value) : '',
     land_value: property ? String(property.land_value) : '',
     building_value: property ? String(property.building_value) : '',
     build_year: property ? String(property.build_year) : '',
@@ -52,6 +53,7 @@ export function PropertyForm({ property }: { property?: Property }) {
       unit_label: form.unit_label || null,
       purchase_date: form.purchase_date,
       purchase_price: parseFloat(form.purchase_price),
+      current_value: form.current_value ? parseFloat(form.current_value) : null,
       land_value: parseFloat(form.land_value),
       building_value: parseFloat(form.building_value),
       build_year: parseInt(form.build_year),
@@ -78,7 +80,7 @@ export function PropertyForm({ property }: { property?: Property }) {
         onChange={e => setForm(f => ({ ...f, [key]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value }))}
         onBlur={key === 'build_year' ? onBuildYearBlur : key === 'purchase_price' || key === 'land_value' ? onPriceBlur : undefined}
         className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        required={key !== 'unit' && key !== 'unit_label'}
+        required={key !== 'unit' && key !== 'unit_label' && key !== 'current_value'}
       />
     </div>
   )
@@ -103,6 +105,9 @@ export function PropertyForm({ property }: { property?: Property }) {
           {field('Besitzübergang (Lasten-Nutzen-Wechsel)', 'purchase_date', 'date',
             'Steht im Kaufvertrag, meist unter "Besitzübergang" oder "Übergabe" – NICHT der Notartermin, oft aber nahe am Tag der vollständigen Kaufpreiszahlung. Dieser Tag zählt für AfA und die 15%-Grenze.')}
           {field('Kaufpreis gesamt (€)', 'purchase_price', 'number', 'Reiner Kaufpreis laut notariellem Kaufvertrag, ohne Nebenkosten')}
+
+          {field('Aktueller Wert (€)', 'current_value', 'number',
+            'Optional – dein geschätzter aktueller Marktwert, z.B. laut Gutachten oder Vergleichswerten. Fließt ins Finanz-Cockpit (Immobilienwert, Eigenkapital) ein. Leer lassen, um stattdessen den Kaufpreis zu verwenden.')}
 
           {field('davon Gebäudeanteil – AfA-Basis (€)', 'building_value', 'number',
             'Automatisch berechnet: Kaufpreis minus Grundstücksanteil. Kaufnebenkosten kommen später automatisch über hochgeladene Belege dazu. Kann bei Bedarf überschrieben werden.')}

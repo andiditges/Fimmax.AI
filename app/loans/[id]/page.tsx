@@ -42,6 +42,12 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
         <p className="text-gray-500 text-sm mt-1">
           {l.lender ? `${l.lender} · ` : ''}{euro(l.principal)} · {l.nominal_interest_rate}% Sollzins · {l.payment_frequency}
         </p>
+        {l.planned_renovation_amount && (
+          <p className="text-sm text-amber-700 mt-1">Davon {euro(l.planned_renovation_amount)} für Renovierung/Sanierung eingeplant</p>
+        )}
+        {l.interest_only_months && (
+          <p className="text-sm text-gray-500 mt-1">{l.interest_only_months} Monate tilgungsfrei ab Auszahlung</p>
+        )}
       </div>
 
       {schedule.warning === 'negative_amortization' && (

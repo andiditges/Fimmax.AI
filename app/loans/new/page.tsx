@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { suggestInitialRepaymentRate } from '@/lib/amortization'
-import { propertyLabel } from '@/lib/format'
+import { propertyLabel, euro } from '@/lib/format'
 import { PaymentFrequency, DayCountConvention } from '@/lib/types'
 
 export default function NewLoan() {
@@ -12,7 +12,7 @@ export default function NewLoan() {
   const searchParams = useSearchParams()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
-  const [properties, setProperties] = useState<{ id: string; address: string; unit: string | null; unit_label: string | null }[]>([])
+  const [properties, setProperties] = useState<{ id: string; address: string; unit: string | null; unit_label: string | null; purchase_price: number; incidental_costs: number }[]>([])
   const [form, setForm] = useState({
     property_id: searchParams.get('property') ?? '',
     name: '',
@@ -24,10 +24,13 @@ export default function NewLoan() {
     annuity_amount: '',
     payment_frequency: 'monatlich' as PaymentFrequency,
     day_count_convention: 'act/365' as DayCountConvention,
+    incidental_costs_amount: '',
+    renovation_amount: '',
+    interest_only_months: '',
   })
 
   useState(() => {
-    supabase.from('properties').select('id, address, unit, unit_label').then(({ data }) => {
+    supabase.from('properties').select('id, address, unit, unit_label, purchase_price, incidental_costs').then(({ data }) => {
       setProperties(data ?? [])
     })
   })
@@ -40,13 +43,22 @@ export default function NewLoan() {
       ? suggestInitialRepaymentRate(principal, rate, annuity, form.payment_frequency)
       : null
 
+  const selectedProperty = properties.find(p => p.id === form.property_id)
+  const overage = selectedProperty && !isNaN(principal) ? principal - selectedProperty.purchase_price : 0
+  const showOverageFields = overage > 0
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.property_id) return alert('Bitte eine Immobilie auswählen')
     setLoading(true)
+
+    const name = form.name || (form.lender ? `${form.lender} Kredit` : 'Kredit')
+    const incidentalAmount = showOverageFields && form.incidental_costs_amount ? parseFloat(form.incidental_costs_amount) : 0
+    const renovationAmount = showOverageFields && form.renovation_amount ? parseFloat(form.renovation_amount) : null
+
     const { error } = await supabase.from('loans').insert({
       property_id: form.property_id,
-      name: form.name,
+      name,
       lender: form.lender || null,
       principal: parseFloat(form.principal),
       nominal_interest_rate: parseFloat(form.nominal_interest_rate),
@@ -55,9 +67,19 @@ export default function NewLoan() {
       annuity_amount: parseFloat(form.annuity_amount),
       payment_frequency: form.payment_frequency,
       day_count_convention: form.day_count_convention,
+      planned_renovation_amount: renovationAmount,
+      interest_only_months: form.interest_only_months ? parseInt(form.interest_only_months) : null,
     })
-    if (!error) router.push(`/properties/${form.property_id}`)
-    else { alert('Fehler: ' + error.message); setLoading(false) }
+    if (error) { alert('Fehler: ' + error.message); setLoading(false); return }
+
+    if (incidentalAmount > 0 && selectedProperty) {
+      const { error: propertyError } = await supabase.from('properties')
+        .update({ incidental_costs: selectedProperty.incidental_costs + incidentalAmount })
+        .eq('id', form.property_id)
+      if (propertyError) { alert('Fehler: ' + propertyError.message); setLoading(false); return }
+    }
+
+    router.push(`/properties/${form.property_id}`)
   }
 
   return (
@@ -81,10 +103,11 @@ export default function NewLoan() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bezeichnung *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Bezeichnung</label>
+            <p className="text-xs text-gray-400 mb-1">Optional – nur nötig, um mehrere Kredite auseinanderzuhalten. Ohne Eingabe wird &bdquo;Kreditgeber + Kredit&ldquo; verwendet.</p>
             <input type="text" placeholder="z.B. Volksbank Baufinanzierung 1" value={form.name}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <div>
@@ -108,6 +131,32 @@ export default function NewLoan() {
             </div>
           </div>
 
+          {showOverageFields && (
+            <div className="space-y-3 bg-amber-50 border border-amber-100 rounded-xl p-4">
+              <p className="text-sm text-amber-800">
+                Die Darlehenssumme liegt {euro(overage)} über dem Kaufpreis dieser Immobilie. Wofür ist die Differenz?
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">davon Kaufnebenkosten (€)</label>
+                  <input type="number" step="0.01" value={form.incidental_costs_amount}
+                    onChange={e => setForm(f => ({ ...f, incidental_costs_amount: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">davon Renovierung/Sanierung (€)</label>
+                  <input type="number" step="0.01" value={form.renovation_amount}
+                    onChange={e => setForm(f => ({ ...f, renovation_amount: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              </div>
+              <p className="text-xs text-amber-700">
+                Kaufnebenkosten werden bei der Immobilie hinterlegt. Der Renovierungsbetrag wird als geplantes Budget
+                auf der Objektseite angezeigt – zählt aber erst zur 15%-Hürde, sobald du die tatsächlichen Belege erfasst.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Auszahlungsdatum *</label>
@@ -121,6 +170,14 @@ export default function NewLoan() {
                 onChange={e => setForm(f => ({ ...f, initial_fixed_period_years: e.target.value }))}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tilgungsfreie Zeit (Monate)</label>
+            <p className="text-xs text-gray-400 mb-1">Optional – z.B. bei KfW-Darlehen oder während der Bauzeit. Ab Auszahlung werden für diese Anzahl Monate nur Zinsen fällig, danach beginnt die reguläre Tilgung mit der unten eingegebenen Rate.</p>
+            <input type="number" value={form.interest_only_months}
+              onChange={e => setForm(f => ({ ...f, interest_only_months: e.target.value }))}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -15,6 +15,7 @@ import type {
   DayCountConvention,
 } from './types'
 import { sumRentForMonth } from './rent-schedule'
+import { propertyValue } from './format'
 
 const EPS = 0.01
 
@@ -86,6 +87,9 @@ export function generateAmortizationSchedule(
   let balance = loan.principal
   let cursor = new Date(loan.disbursement_date)
   const horizonDate = addYears(cursor, horizonYears)
+  const graceEndDate = loan.interest_only_months
+    ? addMonths(new Date(loan.disbursement_date), loan.interest_only_months)
+    : null
 
   const entries: AmortizationEntry[] = []
   let payoffDate: string | null = null
@@ -123,6 +127,21 @@ export function generateAmortizationSchedule(
 
     const days = dayCount(subStart, periodEnd, loan.day_count_convention)
     const interest = balance * rate * (days / basis)
+
+    if (graceEndDate && !isAfter(periodEnd, graceEndDate)) {
+      entries.push({
+        date: iso(periodEnd),
+        days_in_period: days,
+        interest_accrued: interest,
+        scheduled_principal: 0,
+        special_payment: 0,
+        total_payment: interest,
+        remaining_balance: balance,
+      })
+      cursor = periodEnd
+      continue
+    }
+
     const scheduledPrincipal = loan.annuity_amount - interest
 
     if (scheduledPrincipal <= 0) {
@@ -185,7 +204,10 @@ export function getLoanStatus(
     .filter(e => new Date(e.date) <= asOfDate)
     .reduce((sum, e) => sum + e.interest_accrued, 0)
 
-  const nextEntry = entries.find(e => e.scheduled_principal > 0 && new Date(e.date) > asOfDate)
+  // special_payment === 0 grenzt reguläre Periodenzahlungen (egal ob tilgungsfrei
+  // oder mit Tilgung) von Sondertilgungs-Einträgen ab, die selbst keine
+  // planmäßige Rate darstellen.
+  const nextEntry = entries.find(e => e.special_payment === 0 && new Date(e.date) > asOfDate)
 
   return {
     as_of_date: iso(asOfDate),
@@ -193,7 +215,7 @@ export function getLoanStatus(
     cumulative_interest_paid: cumulativeInterestPaid,
     cumulative_principal_paid: loan.principal - remainingBalance,
     next_payment_date: nextEntry ? nextEntry.date : null,
-    current_annuity_amount: loan.annuity_amount,
+    current_annuity_amount: nextEntry ? nextEntry.total_payment : loan.annuity_amount,
   }
 }
 
@@ -258,7 +280,7 @@ export function aggregatePortfolioFinancials(
   const loanStatuses = loans.map(l => getLoanStatus(l, specialPaymentsByLoan[l.id] ?? [], asOfDate))
 
   const totalDebt = loanStatuses.reduce((s, l) => s + l.remaining_balance, 0)
-  const totalPropertyValue = properties.reduce((s, p) => s + p.purchase_price, 0)
+  const totalPropertyValue = properties.reduce((s, p) => s + propertyValue(p), 0)
 
   const agreementsByTenant = rentalAgreements.reduce((acc, a) => {
     if (a.tenant_id) (acc[a.tenant_id] ??= []).push(a)
@@ -281,7 +303,7 @@ export function aggregatePortfolioFinancials(
   const monthlyOperatingCostRunrate = trailingReceipts.reduce((s, r) => s + r.amount, 0) / 12
 
   const monthlyDebtService = loans.reduce(
-    (s, l) => s + l.annuity_amount * (periodsPerYear(l.payment_frequency) / 12),
+    (s, l, i) => s + loanStatuses[i].current_annuity_amount * (periodsPerYear(l.payment_frequency) / 12),
     0
   )
 

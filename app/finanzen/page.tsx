@@ -71,7 +71,7 @@ export default async function Finanzen() {
 
       <Card className="bg-blue-50 border-blue-100">
         <CardTitle>Nettovermögen</CardTitle>
-        <p className="text-3xl font-bold text-blue-700">{euro(netWorth.net_worth)}</p>
+        <p className="text-xl md:text-3xl font-bold text-blue-700 break-words">{euro(netWorth.net_worth)}</p>
         <p className="text-sm text-gray-500 mt-1">
           Immobilien-Eigenkapital {euro(netWorth.total_property_equity)} + sonstige Anlagen {euro(netWorth.total_assets)}
           {netWorth.monthly_savings_rate > 0 && <> · {euro(netWorth.monthly_savings_rate)} Sparrate/Monat</>}
@@ -81,19 +81,19 @@ export default async function Finanzen() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardTitle>Immobilienwert</CardTitle>
-          <p className="text-2xl font-bold text-gray-900">{euro(portfolio.total_property_value)}</p>
+          <p className="text-lg md:text-2xl font-bold text-gray-900 break-words">{euro(portfolio.total_property_value)}</p>
         </Card>
         <Card>
           <CardTitle>Gesamtschulden</CardTitle>
-          <p className="text-2xl font-bold text-red-500">{euro(portfolio.total_debt)}</p>
+          <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(portfolio.total_debt)}</p>
         </Card>
         <Card>
           <CardTitle>Eigenkapital</CardTitle>
-          <p className="text-2xl font-bold text-blue-600">{euro(portfolio.total_equity)}</p>
+          <p className="text-lg md:text-2xl font-bold text-blue-600 break-words">{euro(portfolio.total_equity)}</p>
         </Card>
         <Card>
           <CardTitle>Cashflow / Monat</CardTitle>
-          <p className={`text-2xl font-bold ${portfolio.monthly_net_cashflow >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+          <p className={`text-lg md:text-2xl font-bold break-words ${portfolio.monthly_net_cashflow >= 0 ? 'text-green-600' : 'text-red-500'}`}>
             {euro(portfolio.monthly_net_cashflow)}
           </p>
         </Card>
@@ -168,7 +168,10 @@ export default async function Finanzen() {
       <SondertilgungSimulator loans={loanList} specialPaymentsByLoan={specialPaymentsByLoan} properties={props} />
 
       <div>
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">Kredite ({loanList.length})</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold text-gray-800">Kredite ({loanList.length})</h2>
+          <Link href="/loans/new" className="text-sm text-blue-600 hover:underline">+ Kredit erfassen</Link>
+        </div>
         {loanList.length === 0 ? (
           <Card className="text-center py-12 text-gray-400">
             <p className="mb-4">Noch keine Kredite hinterlegt.</p>

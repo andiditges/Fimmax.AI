@@ -203,6 +203,9 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{loan.name}</p>
                       <p className="text-xs text-gray-400 mt-0.5">{loan.nominal_interest_rate}% Sollzins · {euro(status.current_annuity_amount)} / {loan.payment_frequency}</p>
+                      {loan.planned_renovation_amount && (
+                        <p className="text-xs text-amber-700 mt-0.5">Davon {euro(loan.planned_renovation_amount)} für Renovierung/Sanierung eingeplant</p>
+                      )}
                     </div>
                     <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">{euro(status.remaining_balance)}</span>
                   </div>

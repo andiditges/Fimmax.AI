@@ -24,6 +24,7 @@ export interface Property {
   unit_label: string | null
   purchase_date: string
   purchase_price: number
+  current_value: number | null
   incidental_costs: number
   land_value: number
   building_value: number
@@ -218,6 +219,8 @@ export interface Loan {
   annuity_amount: number
   payment_frequency: PaymentFrequency
   day_count_convention: DayCountConvention
+  planned_renovation_amount: number | null
+  interest_only_months: number | null
   created_at: string
 }
 
