@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  font-size: 175%;
+}
+
 .brick-text {
   color: #a8471f;
   background-image:
