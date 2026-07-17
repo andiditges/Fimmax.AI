@@ -25,9 +25,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="de">
       <body className={`${geist.className} bg-gray-50 min-h-screen`}>
         <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
-          <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-            <Link href="/" className="font-bold text-blue-700 text-lg tracking-tight">
-              Fimmax.AI
+          <div className="max-w-6xl mx-auto px-4 py-2 min-h-14 flex items-center justify-between">
+            <Link href="/" className="leading-tight">
+              <span className="font-bold text-blue-700 text-lg tracking-tight block">Fimmax.AI</span>
+              <span className="text-[11px] text-gray-400 block -mt-0.5">KI-gestützt. Maximal effizient.</span>
             </Link>
             {user && (
               <div className="flex items-center gap-5 text-sm text-gray-600">
