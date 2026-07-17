@@ -17,11 +17,11 @@ export function RemindersWidget({ reminders, properties }: { reminders: Reminder
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">Reminders & ToDos</h2>
+        <h2 className="text-lg font-semibold text-gray-800">Erinnerungen & ToDos</h2>
         <Link href="/reminders" className="text-sm text-blue-600 hover:underline">Alle anzeigen →</Link>
       </div>
       {sorted.length === 0 ? (
-        <Card className="text-center py-8 text-gray-400">Keine offenen Reminders. 🎉</Card>
+        <Card className="text-center py-8 text-gray-400">Keine offenen Erinnerungen. 🎉</Card>
       ) : (
         <div className="space-y-2">
           {sorted.map(r => {

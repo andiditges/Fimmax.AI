@@ -37,7 +37,7 @@ export default function Datenschutz() {
         <CardTitle>Immobilien-, Finanz- und Belegdaten</CardTitle>
         <p className="text-sm text-gray-700 mt-2 leading-relaxed">
           Alle Daten, die du selbst einträgst oder hochlädst – etwa zu Immobilien, Kaufverträgen,
-          Krediten, Belegen, Reminders oder WEG-Dokumenten – verarbeiten wir ausschließlich, um dir die
+          Krediten, Belegen, Erinnerungen oder WEG-Dokumenten – verarbeiten wir ausschließlich, um dir die
           Funktionen von Fimmax.AI bereitzustellen (Art. 6 Abs. 1 lit. b DSGVO). Hochgeladene Dateien
           (z. B. Belege, Protokolle) werden verschlüsselt in einem privaten Speicherbereich abgelegt,
           auf den nur du Zugriff hast.

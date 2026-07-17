@@ -13,9 +13,9 @@ function timeAgo(pubDate: string | null): string {
 export function NewsFeed({ items }: { items: NewsItem[] }) {
   return (
     <Card>
-      <CardTitle>Markt & Immobilien-News</CardTitle>
+      <CardTitle>Markt & Immobilien-Nachrichten</CardTitle>
       {items.length === 0 ? (
-        <p className="text-sm text-gray-400 mt-2">Aktuell keine News verfügbar.</p>
+        <p className="text-sm text-gray-400 mt-2">Aktuell keine Nachrichten verfügbar.</p>
       ) : (
         <ul className="mt-2 space-y-3">
           {items.map((item, i) => (

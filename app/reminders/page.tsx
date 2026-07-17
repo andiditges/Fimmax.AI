@@ -32,18 +32,18 @@ export default async function RemindersPage() {
     <div className="space-y-8">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reminders & ToDos</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Erinnerungen & ToDos</h1>
           <p className="text-gray-500 text-sm mt-1">Mieterhöhungen, Eigentümerversammlungen, offene Aufgaben je Wohnung</p>
         </div>
         <Link href="/reminders/new" className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap">
-          + Reminder
+          + Erinnerung
         </Link>
       </div>
 
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-3">Offen ({open.length})</h2>
         {open.length === 0 ? (
-          <Card className="text-center py-12 text-gray-400">Keine offenen Reminders.</Card>
+          <Card className="text-center py-12 text-gray-400">Keine offenen Erinnerungen.</Card>
         ) : (
           <div className="space-y-2">
             {open.map(r => (

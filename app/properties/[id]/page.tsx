@@ -138,14 +138,14 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
         </Card>
       </div>
 
-      {/* To-Dos & Reminders */}
+      {/* To-Dos & Erinnerungen */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-800">To-Dos & Reminders ({openReminders.length} offen)</h2>
-          <Link href={`/reminders/new?property=${id}`} className="text-sm text-blue-600 hover:underline">+ Reminder</Link>
+          <h2 className="text-lg font-semibold text-gray-800">To-Dos & Erinnerungen ({openReminders.length} offen)</h2>
+          <Link href={`/reminders/new?property=${id}`} className="text-sm text-blue-600 hover:underline">+ Erinnerung</Link>
         </div>
         {reminderList.length === 0 ? (
-          <Card className="text-center py-8 text-gray-400">Noch keine Reminders</Card>
+          <Card className="text-center py-8 text-gray-400">Noch keine Erinnerungen</Card>
         ) : (
           <div className="space-y-2">
             {reminderList.map(r => (
