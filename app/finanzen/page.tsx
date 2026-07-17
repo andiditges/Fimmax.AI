@@ -7,16 +7,18 @@ import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simu
 import { aggregatePortfolioFinancials, aggregateDebtOverTime, generateAmortizationSchedule, getLoanStatus } from '@/lib/amortization'
 import { aggregateNetWorth } from '@/lib/net-worth'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
-import { ASSET_CATEGORY_LABELS, Asset, AssetCategory, Property, Loan, LoanSpecialPayment, Tenant, Receipt } from '@/lib/types'
+import { ASSET_CATEGORY_LABELS, Asset, AssetCategory, Property, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Receipt } from '@/lib/types'
 
 export default async function Finanzen() {
   await requireUser()
   const supabase = await createClient()
 
-  const [{ data: properties }, { data: loans }, { data: tenants }, { data: receipts }, { data: assetsData }] = await Promise.all([
+  const [{ data: properties }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: receipts }, { data: assetsData }] = await Promise.all([
     supabase.from('properties').select('*'),
     supabase.from('loans').select('*'),
     supabase.from('tenants').select('*'),
+    supabase.from('rental_agreements').select('*'),
+    supabase.from('rent_adjustments').select('*'),
     supabase.from('receipts').select('*'),
     supabase.from('assets').select('*').order('created_at'),
   ])
@@ -24,6 +26,8 @@ export default async function Finanzen() {
   const props = (properties ?? []) as Property[]
   const loanList = (loans ?? []) as Loan[]
   const tenantList = (tenants ?? []) as Tenant[]
+  const agreementList = (rentalAgreements ?? []) as RentalAgreement[]
+  const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
   const recs = (receipts ?? []) as Receipt[]
   const assets = (assetsData ?? []) as Asset[]
 
@@ -36,7 +40,7 @@ export default async function Finanzen() {
     return acc
   }, {} as Record<string, LoanSpecialPayment[]>)
 
-  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, recs)
+  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs)
   const debtOverTime = aggregateDebtOverTime(loanList, specialPaymentsByLoan)
   const netWorth = aggregateNetWorth(assets, portfolio.total_equity)
 

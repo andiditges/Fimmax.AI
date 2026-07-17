@@ -3,18 +3,23 @@ import { Card } from '@/components/ui/card'
 import { ThresholdBadge } from '@/components/threshold-badge'
 import { calcAnnualAfa } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
+import { sumRentForYear } from '@/lib/rent-schedule'
 import { euro, propertyLabel } from '@/lib/format'
-import { Property, Receipt } from '@/lib/types'
+import { Property, Receipt, Tenant, RentalAgreement, RentAdjustment } from '@/lib/types'
 
 export function PropertyList({
   properties,
   receipts,
-  income,
+  tenants,
+  rentalAgreements,
+  rentAdjustments,
   currentYear,
 }: {
   properties: Property[]
   receipts: Receipt[]
-  income: { property_id: string; amount: number; date: string }[]
+  tenants: Tenant[]
+  rentalAgreements: RentalAgreement[]
+  rentAdjustments: RentAdjustment[]
   currentYear: number
 }) {
   if (properties.length === 0) {
@@ -28,13 +33,23 @@ export function PropertyList({
     )
   }
 
+  const agreementsByTenant = rentalAgreements.reduce((acc, a) => {
+    if (a.tenant_id) (acc[a.tenant_id] ??= []).push(a)
+    return acc
+  }, {} as Record<string, RentalAgreement[]>)
+  const adjustmentsByTenant = rentAdjustments.reduce((acc, a) => {
+    (acc[a.tenant_id] ??= []).push(a)
+    return acc
+  }, {} as Record<string, RentAdjustment[]>)
+
   return (
     <div className="space-y-3">
       {properties.map(p => {
         const propRecs = receipts.filter(r => r.property_id === p.id)
         const threshold = calc15Threshold(p, propRecs)
         const yearExpenses = propRecs.filter(r => r.tax_year === currentYear).reduce((s, r) => s + r.amount, 0)
-        const yearIncome = income.filter(i => i.property_id === p.id && new Date(i.date).getFullYear() === currentYear).reduce((s, i) => s + i.amount, 0)
+        const propTenants = tenants.filter(t => t.property_id === p.id)
+        const yearIncome = sumRentForYear(propTenants, agreementsByTenant, adjustmentsByTenant, currentYear)
 
         return (
           <Link key={p.id} href={`/properties/${p.id}`}>

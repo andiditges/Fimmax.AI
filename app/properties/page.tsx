@@ -2,22 +2,26 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/supabase/get-user'
 import { PropertyList } from '@/components/properties/property-list'
-import { Property, Receipt } from '@/lib/types'
+import { Property, Receipt, Tenant, RentalAgreement, RentAdjustment } from '@/lib/types'
 
 export default async function PropertiesOverview() {
   await requireUser()
   const supabase = await createClient()
   const currentYear = new Date().getFullYear()
 
-  const [{ data: properties }, { data: receipts }, { data: income }] = await Promise.all([
+  const [{ data: properties }, { data: receipts }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }] = await Promise.all([
     supabase.from('properties').select('*').order('created_at'),
     supabase.from('receipts').select('*'),
-    supabase.from('income_records').select('*'),
+    supabase.from('tenants').select('*'),
+    supabase.from('rental_agreements').select('*'),
+    supabase.from('rent_adjustments').select('*'),
   ])
 
   const props = (properties ?? []) as Property[]
   const recs = (receipts ?? []) as Receipt[]
-  const inc = (income ?? []) as { property_id: string; amount: number; date: string }[]
+  const tenantList = (tenants ?? []) as Tenant[]
+  const agreementList = (rentalAgreements ?? []) as RentalAgreement[]
+  const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
 
   return (
     <div className="space-y-8">
@@ -31,7 +35,7 @@ export default async function PropertiesOverview() {
         </Link>
       </div>
 
-      <PropertyList properties={props} receipts={recs} income={inc} currentYear={currentYear} />
+      <PropertyList properties={props} receipts={recs} tenants={tenantList} rentalAgreements={agreementList} rentAdjustments={adjustmentList} currentYear={currentYear} />
     </div>
   )
 }

@@ -69,6 +69,31 @@ export interface IncomeRecord {
   type: 'miete' | 'nebenkosten' | 'sonstiges'
 }
 
+export interface RentalAgreement {
+  id: string
+  property_id: string
+  tenant_id: string | null
+  rent_amount: number
+  start_date: string
+  created_at: string
+}
+
+export interface RentAdjustment {
+  id: string
+  tenant_id: string
+  month: string
+  override_amount: number
+  note: string | null
+  created_at: string
+}
+
+export interface RentScheduleEntry {
+  month: string
+  amount: number
+  is_override: boolean
+  note: string | null
+}
+
 export interface ThresholdStatus {
   renovation_total: number
   threshold_15: number

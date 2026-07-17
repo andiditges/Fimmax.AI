@@ -6,8 +6,9 @@ import { ThresholdBadge } from '@/components/threshold-badge'
 import { TaxExportButton } from '@/components/tax-export-button'
 import { calc15Threshold } from '@/lib/threshold15'
 import { buildTaxExportRow } from '@/lib/tax-export'
+import { sumRentForYear } from '@/lib/rent-schedule'
 import { euro, propertyLabel } from '@/lib/format'
-import { Property, Receipt } from '@/lib/types'
+import { Property, Receipt, Tenant, RentalAgreement, RentAdjustment } from '@/lib/types'
 
 export default async function SteuerUebersicht({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
   await requireUser()
@@ -17,18 +18,32 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
   const year = yearParam ? parseInt(yearParam) : thisYear - 1
   const yearOptions = [thisYear, thisYear - 1, thisYear - 2]
 
-  const [{ data: properties }, { data: receipts }, { data: income }] = await Promise.all([
+  const [{ data: properties }, { data: receipts }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }] = await Promise.all([
     supabase.from('properties').select('*').order('created_at'),
     supabase.from('receipts').select('*'),
-    supabase.from('income_records').select('*'),
+    supabase.from('tenants').select('*'),
+    supabase.from('rental_agreements').select('*'),
+    supabase.from('rent_adjustments').select('*'),
   ])
 
   const props = (properties ?? []) as Property[]
   const recs = (receipts ?? []) as Receipt[]
-  const inc = (income ?? []) as { property_id: string; amount: number; date: string }[]
+  const tenantList = (tenants ?? []) as Tenant[]
+  const agreementList = (rentalAgreements ?? []) as RentalAgreement[]
+  const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
+
+  const agreementsByTenant = agreementList.reduce((acc, a) => {
+    if (a.tenant_id) (acc[a.tenant_id] ??= []).push(a)
+    return acc
+  }, {} as Record<string, RentalAgreement[]>)
+  const adjustmentsByTenant = adjustmentList.reduce((acc, a) => {
+    (acc[a.tenant_id] ??= []).push(a)
+    return acc
+  }, {} as Record<string, RentAdjustment[]>)
 
   const rows = props.map(p => {
-    const yearIncome = inc.filter(i => i.property_id === p.id && new Date(i.date).getFullYear() === year).reduce((s, i) => s + i.amount, 0)
+    const propTenants = tenantList.filter(t => t.property_id === p.id)
+    const yearIncome = sumRentForYear(propTenants, agreementsByTenant, adjustmentsByTenant, year)
     return {
       property: p,
       threshold: calc15Threshold(p, recs.filter(r => r.property_id === p.id)),

@@ -104,6 +104,9 @@ export function PropertyForm({ property }: { property?: Property }) {
             'Steht im Kaufvertrag, meist unter "Besitzübergang" oder "Übergabe" – NICHT der Notartermin, oft aber nahe am Tag der vollständigen Kaufpreiszahlung. Dieser Tag zählt für AfA und die 15%-Grenze.')}
           {field('Kaufpreis gesamt (€)', 'purchase_price', 'number', 'Reiner Kaufpreis laut notariellem Kaufvertrag, ohne Nebenkosten')}
 
+          {field('davon Gebäudeanteil – AfA-Basis (€)', 'building_value', 'number',
+            'Automatisch berechnet: Kaufpreis minus Grundstücksanteil. Kaufnebenkosten kommen später automatisch über hochgeladene Belege dazu. Kann bei Bedarf überschrieben werden.')}
+
           {field('davon Grundstücksanteil am Kaufpreis (€)', 'land_value', 'number',
             'Anteil am reinen Kaufpreis (ohne Nebenkosten) laut Kaufvertrag, Bodenrichtwert oder BMF-Tool')}
 
@@ -120,8 +123,6 @@ export function PropertyForm({ property }: { property?: Property }) {
             </a>
           </p>
 
-          {field('davon Gebäudeanteil – AfA-Basis (€)', 'building_value', 'number',
-            'Automatisch berechnet: Kaufpreis minus Grundstücksanteil. Kaufnebenkosten kommen später automatisch über hochgeladene Belege dazu. Kann bei Bedarf überschrieben werden.')}
           {field('Baujahr', 'build_year', 'number')}
 
           {field('Restnutzungsdauer (Jahre)', 'usage_duration', 'number',

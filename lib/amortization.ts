@@ -8,10 +8,13 @@ import type {
   PortfolioFinancialSummary,
   Property,
   Tenant,
+  RentalAgreement,
+  RentAdjustment,
   Receipt,
   PaymentFrequency,
   DayCountConvention,
 } from './types'
+import { sumRentForMonth } from './rent-schedule'
 
 const EPS = 0.01
 
@@ -247,6 +250,8 @@ export function aggregatePortfolioFinancials(
   loans: Loan[],
   specialPaymentsByLoan: Record<string, LoanSpecialPayment[]>,
   tenants: Tenant[],
+  rentalAgreements: RentalAgreement[],
+  rentAdjustments: RentAdjustment[],
   receipts: Receipt[],
   asOfDate: Date = new Date()
 ): PortfolioFinancialSummary {
@@ -255,8 +260,15 @@ export function aggregatePortfolioFinancials(
   const totalDebt = loanStatuses.reduce((s, l) => s + l.remaining_balance, 0)
   const totalPropertyValue = properties.reduce((s, p) => s + p.purchase_price, 0)
 
-  const activeTenants = tenants.filter(t => !t.move_out_date || new Date(t.move_out_date) > asOfDate)
-  const monthlyRentIncome = activeTenants.reduce((s, t) => s + t.rent_base, 0)
+  const agreementsByTenant = rentalAgreements.reduce((acc, a) => {
+    if (a.tenant_id) (acc[a.tenant_id] ??= []).push(a)
+    return acc
+  }, {} as Record<string, RentalAgreement[]>)
+  const adjustmentsByTenant = rentAdjustments.reduce((acc, a) => {
+    (acc[a.tenant_id] ??= []).push(a)
+    return acc
+  }, {} as Record<string, RentAdjustment[]>)
+  const monthlyRentIncome = sumRentForMonth(tenants, agreementsByTenant, adjustmentsByTenant, asOfDate)
 
   const twelveMonthsAgo = new Date(asOfDate)
   twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1)

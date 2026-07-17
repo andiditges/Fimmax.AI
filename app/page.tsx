@@ -7,30 +7,33 @@ import { RemindersWidget } from '@/components/reminders/reminders-widget'
 import { PropertyList } from '@/components/properties/property-list'
 import { calcAnnualAfa } from '@/lib/afa'
 import { aggregatePortfolioFinancials } from '@/lib/amortization'
+import { sumRentForYear } from '@/lib/rent-schedule'
 import { getLandlordNews } from '@/lib/news'
 import { euro } from '@/lib/format'
-import { Property, Receipt, Loan, LoanSpecialPayment, Tenant, Reminder } from '@/lib/types'
+import { Property, Receipt, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Reminder } from '@/lib/types'
 
 export default async function Dashboard() {
   await requireUser()
   const supabase = await createClient()
   const currentYear = new Date().getFullYear()
 
-  const [{ data: properties }, { data: receipts }, { data: income }, { data: loans }, { data: tenants }, { data: reminders }, news] = await Promise.all([
+  const [{ data: properties }, { data: receipts }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: reminders }, news] = await Promise.all([
     supabase.from('properties').select('*').order('created_at'),
     supabase.from('receipts').select('*'),
-    supabase.from('income_records').select('*'),
     supabase.from('loans').select('*'),
     supabase.from('tenants').select('*'),
+    supabase.from('rental_agreements').select('*'),
+    supabase.from('rent_adjustments').select('*'),
     supabase.from('reminders').select('*').neq('status', 'erledigt'),
     getLandlordNews(),
   ])
 
   const props = (properties ?? []) as Property[]
   const recs = (receipts ?? []) as Receipt[]
-  const inc = (income ?? []) as { property_id: string; amount: number; date: string }[]
   const loanList = (loans ?? []) as Loan[]
   const tenantList = (tenants ?? []) as Tenant[]
+  const agreementList = (rentalAgreements ?? []) as RentalAgreement[]
+  const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
   const reminderList = (reminders ?? []) as Reminder[]
 
   const { data: specialPayments } = loanList.length
@@ -42,12 +45,19 @@ export default async function Dashboard() {
     return acc
   }, {} as Record<string, LoanSpecialPayment[]>)
 
-  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, recs)
+  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs)
+
+  const agreementsByTenant = agreementList.reduce((acc, a) => {
+    if (a.tenant_id) (acc[a.tenant_id] ??= []).push(a)
+    return acc
+  }, {} as Record<string, RentalAgreement[]>)
+  const adjustmentsByTenant = adjustmentList.reduce((acc, a) => {
+    (acc[a.tenant_id] ??= []).push(a)
+    return acc
+  }, {} as Record<string, RentAdjustment[]>)
 
   const totalAfa = props.reduce((s, p) => s + calcAnnualAfa(p), 0)
-  const totalIncome = inc
-    .filter(i => new Date(i.date).getFullYear() === currentYear)
-    .reduce((s, i) => s + i.amount, 0)
+  const totalIncome = sumRentForYear(tenantList, agreementsByTenant, adjustmentsByTenant, currentYear)
   const totalExpenses = recs
     .filter(r => r.tax_year === currentYear)
     .reduce((s, r) => s + r.amount, 0)
@@ -120,7 +130,7 @@ export default async function Dashboard() {
               <h2 className="text-lg font-semibold text-gray-800">Meine Immobilien</h2>
               <Link href="/properties" className="text-sm text-blue-600 hover:underline">Alle anzeigen →</Link>
             </div>
-            <PropertyList properties={props} receipts={recs} income={inc} currentYear={currentYear} />
+            <PropertyList properties={props} receipts={recs} tenants={tenantList} rentalAgreements={agreementList} rentAdjustments={adjustmentList} currentYear={currentYear} />
           </div>
 
           {/* Quick Action */}

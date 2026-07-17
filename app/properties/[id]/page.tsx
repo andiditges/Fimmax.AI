@@ -10,8 +10,9 @@ import { calcAnnualAfa } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
 import { getLoanStatus } from '@/lib/amortization'
 import { buildTaxExportRow } from '@/lib/tax-export'
+import { generateRentSchedule, currentRentAmount } from '@/lib/rent-schedule'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
-import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, Receipt, Reminder, Loan, LoanSpecialPayment } from '@/lib/types'
+import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, Receipt, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment } from '@/lib/types'
 
 const HOA_STATUS_COLORS: Record<HoaResolutionStatus, string> = {
   offen: 'bg-gray-100 text-gray-700',
@@ -25,10 +26,10 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
   const supabase = await createClient()
   const currentYear = new Date().getFullYear()
 
-  const [{ data: property }, { data: receipts }, { data: income }, { data: loans }, { data: reminders }, { data: hoaDocuments }, { data: hoaResolutions }] = await Promise.all([
+  const [{ data: property }, { data: receipts }, { data: tenants }, { data: loans }, { data: reminders }, { data: hoaDocuments }, { data: hoaResolutions }] = await Promise.all([
     supabase.from('properties').select('*').eq('id', id).single(),
     supabase.from('receipts').select('*').eq('property_id', id).order('receipt_date', { ascending: false }),
-    supabase.from('income_records').select('*').eq('property_id', id),
+    supabase.from('tenants').select('*').eq('property_id', id),
     supabase.from('loans').select('*').eq('property_id', id),
     supabase.from('reminders').select('*').eq('property_id', id).order('status').order('due_date', { ascending: true, nullsFirst: false }),
     supabase.from('hoa_documents').select('*').eq('property_id', id).order('year', { ascending: false }),
@@ -39,12 +40,29 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
 
   const p = property as Property
   const recs = (receipts ?? []) as Receipt[]
-  const inc = (income ?? []) as { amount: number; date: string }[]
+  const tenantList = (tenants ?? []) as Tenant[]
   const propertyLoans = (loans ?? []) as Loan[]
   const reminderList = (reminders ?? []) as Reminder[]
   const hoaDocs = (hoaDocuments ?? []) as HoaDocument[]
   const hoaResolutionList = (hoaResolutions ?? []) as HoaResolution[]
   const reminderById = Object.fromEntries(reminderList.map(r => [r.id, r]))
+
+  const { data: rentalAgreements } = tenantList.length
+    ? await supabase.from('rental_agreements').select('*').in('tenant_id', tenantList.map(t => t.id))
+    : { data: [] as RentalAgreement[] }
+  const { data: rentAdjustments } = tenantList.length
+    ? await supabase.from('rent_adjustments').select('*').in('tenant_id', tenantList.map(t => t.id))
+    : { data: [] as RentAdjustment[] }
+  const agreementList = (rentalAgreements ?? []) as RentalAgreement[]
+  const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
+  const agreementsByTenant = agreementList.reduce((acc, a) => {
+    if (a.tenant_id) (acc[a.tenant_id] ??= []).push(a)
+    return acc
+  }, {} as Record<string, RentalAgreement[]>)
+  const adjustmentsByTenant = adjustmentList.reduce((acc, a) => {
+    (acc[a.tenant_id] ??= []).push(a)
+    return acc
+  }, {} as Record<string, RentAdjustment[]>)
 
   const { data: allSpecialPayments } = propertyLoans.length
     ? await supabase.from('loan_special_payments').select('*').in('loan_id', propertyLoans.map(l => l.id))
@@ -60,7 +78,16 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
 
   const yearRecs = recs.filter(r => r.tax_year === currentYear)
   const yearExpenses = yearRecs.reduce((s, r) => s + r.amount, 0)
-  const yearIncome = inc.filter(i => new Date(i.date).getFullYear() === currentYear).reduce((s, i) => s + i.amount, 0)
+  const yearIncome = tenantList.reduce((sum, t) => {
+    const schedule = generateRentSchedule(
+      t,
+      agreementsByTenant[t.id] ?? [],
+      adjustmentsByTenant[t.id] ?? [],
+      new Date(currentYear, 0, 1),
+      new Date(currentYear, 11, 1)
+    )
+    return sum + schedule.reduce((s, e) => s + e.amount, 0)
+  }, 0)
 
   const byCategory = CATEGORY_LABELS
   const categoryTotals = Object.keys(byCategory).map(cat => ({
@@ -182,6 +209,41 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
                 </Card>
               </Link>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Mieter & Miete */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold text-gray-800">Mieter & Miete ({tenantList.length})</h2>
+          <Link href={`/tenants/new?property=${id}`} className="text-sm text-blue-600 hover:underline">+ Mieter erfassen</Link>
+        </div>
+        {tenantList.length === 0 ? (
+          <Card className="text-center py-8 text-gray-400">Noch keine Mieter hinterlegt</Card>
+        ) : (
+          <div className="space-y-2">
+            {tenantList.map(t => {
+              const agreements = agreementsByTenant[t.id] ?? []
+              const rent = currentRentAmount(agreements)
+              const activeAgreement = [...agreements].sort((a, b) => a.start_date.localeCompare(b.start_date)).pop()
+              return (
+                <Link key={t.id} href={`/tenants/${t.id}`}>
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{t.name}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {activeAgreement ? `seit ${formatDate(activeAgreement.start_date)}` : `Einzug ${formatDate(t.move_in_date)}`}
+                          {t.move_out_date ? ` · Auszug ${formatDate(t.move_out_date)}` : ''}
+                        </p>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">{rent !== null ? euro(rent) : '–'}</span>
+                    </div>
+                  </Card>
+                </Link>
+              )
+            })}
           </div>
         )}
       </div>
