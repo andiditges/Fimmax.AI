@@ -30,7 +30,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link href="/" className="leading-tight">
               <span className="font-bold text-blue-700 text-lg tracking-tight block">
                 Fi<span className="relative inline-block">
-                  <span className="absolute left-0 right-0 -top-[3px] h-[1.5px] bg-[#8f3a1a]" />
+                  <svg className="absolute left-0 -top-[5px] w-full h-[7px]" viewBox="0 0 24 8" preserveAspectRatio="none" aria-hidden="true">
+                    <path d="M0,7 L12,0 L24,7" fill="none" stroke="#44403c" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                  </svg>
                   <span className="brick-text">mm</span>
                 </span>ax.AI
               </span>
