@@ -38,9 +38,15 @@ export default function Login() {
 
   return (
     <div className="max-w-sm mx-auto mt-12">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Immobilien, aber richtig.</h1>
+        <p className="text-gray-500 mt-2">
+          Belege, Kredite, Steuern und Reminders – alles an einem Ort für private Vermieter.
+        </p>
+      </div>
+      <h2 className="text-lg font-semibold text-gray-800 mb-4 text-center">
         {mode === 'signin' ? 'Anmelden' : 'Konto anlegen'}
-      </h1>
+      </h2>
       <Card>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
