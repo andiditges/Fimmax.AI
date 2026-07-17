@@ -44,15 +44,18 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
   const rows = props.map(p => {
     const propTenants = tenantList.filter(t => t.property_id === p.id)
     const yearIncome = sumRentForYear(propTenants, agreementsByTenant, adjustmentsByTenant, year)
+    const yearExpenses = recs.filter(r => r.property_id === p.id && r.tax_year === year).reduce((s, r) => s + r.amount, 0)
     return {
       property: p,
       threshold: calc15Threshold(p, recs.filter(r => r.property_id === p.id)),
       taxRow: buildTaxExportRow(p, year, recs, yearIncome),
+      yearExpenses,
       receiptCount: recs.filter(r => r.property_id === p.id && r.tax_year === year).length,
     }
   })
 
   const totalEinnahmen = rows.reduce((s, r) => s + r.taxRow.einnahmen, 0)
+  const totalAusgaben = rows.reduce((s, r) => s + r.yearExpenses, 0)
   const totalWerbungskosten = rows.reduce((s, r) => s + r.taxRow.werbungskosten_gesamt, 0)
   const totalErgebnis = rows.reduce((s, r) => s + r.taxRow.ergebnis, 0)
   const relevantThresholds = rows.filter(r => r.threshold.within_3_years && r.threshold.alert_level !== 'safe')
@@ -78,10 +81,14 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
       </div>
 
       {/* Portfolio-KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardTitle>Einnahmen {year}</CardTitle>
           <p className="text-2xl font-bold text-green-600">{euro(totalEinnahmen)}</p>
+        </Card>
+        <Card>
+          <CardTitle>Ausgaben {year}</CardTitle>
+          <p className="text-2xl font-bold text-red-500">{euro(totalAusgaben)}</p>
         </Card>
         <Card>
           <CardTitle>Werbungskosten {year} (inkl. AfA)</CardTitle>
@@ -89,7 +96,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
         </Card>
         <Card>
           <CardTitle>Ergebnis {year} (Anlage V)</CardTitle>
-          <p className={`text-2xl font-bold ${totalErgebnis >= 0 ? 'text-green-600' : 'text-red-500'}`}>{euro(totalErgebnis)}</p>
+          <p className="text-2xl font-bold text-green-600">{euro(totalErgebnis)}</p>
         </Card>
         <Card>
           <CardTitle>Steuer-Export</CardTitle>
@@ -139,11 +146,12 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
                   </div>
                   <ThresholdBadge status={r.threshold} />
                 </div>
-                <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <div className="mt-3 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
                   <span className="text-gray-500">Einnahmen: <strong className="text-green-600">{euro(r.taxRow.einnahmen)}</strong></span>
+                  <span className="text-gray-500">Ausgaben: <strong className="text-red-500">{euro(r.yearExpenses)}</strong></span>
                   <span className="text-gray-500">Werbungskosten: <strong className="text-red-500">{euro(r.taxRow.werbungskosten_gesamt)}</strong></span>
                   <span className="text-gray-500">AfA: <strong className="text-blue-600">{euro(r.taxRow.afa)}</strong></span>
-                  <span className="text-gray-500">Ergebnis: <strong className={r.taxRow.ergebnis >= 0 ? 'text-green-600' : 'text-red-500'}>{euro(r.taxRow.ergebnis)}</strong></span>
+                  <span className="text-gray-500">Ergebnis: <strong className="text-green-600">{euro(r.taxRow.ergebnis)}</strong></span>
                 </div>
                 <div className="mt-3">
                   <TaxExportButton rows={[r.taxRow]} filename={`steuer-export-${r.property.address.replace(/\s+/g, '-')}-${year}.csv`} label="CSV-Export" />
