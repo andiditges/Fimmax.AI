@@ -3,6 +3,7 @@ import { Geist } from 'next/font/google'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { LogoutButton } from '@/components/logout-button'
+import { Footer } from '@/components/footer'
 import './globals.css'
 
 const geist = Geist({ subsets: ['latin'] })
@@ -23,7 +24,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="de">
-      <body className={`${geist.className} bg-gray-50 min-h-screen`}>
+      <body className={`${geist.className} bg-gray-50 min-h-screen flex flex-col`}>
         <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-4 py-2 min-h-14 flex items-center justify-between">
             <Link href="/" className="leading-tight">
@@ -47,9 +48,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             )}
           </div>
         </nav>
-        <main className="max-w-6xl mx-auto px-4 py-8">
+        <main className="max-w-6xl mx-auto px-4 py-8 flex-1 w-full">
           {children}
         </main>
+        <Footer />
       </body>
     </html>
   )
