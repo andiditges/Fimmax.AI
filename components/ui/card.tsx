@@ -8,6 +8,6 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
   )
 }
 
-export function CardTitle({ children }: { children: ReactNode }) {
-  return <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">{children}</h2>
+export function CardTitle({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <h2 className={`text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1 ${className}`}>{children}</h2>
 }

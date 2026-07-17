@@ -80,19 +80,19 @@ export default async function Finanzen() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
-          <CardTitle>Immobilienwert</CardTitle>
+          <CardTitle className="min-h-10">Immobilienwert</CardTitle>
           <p className="text-lg md:text-2xl font-bold text-gray-900 break-words">{euro(portfolio.total_property_value)}</p>
         </Card>
         <Card>
-          <CardTitle>Gesamtschulden</CardTitle>
+          <CardTitle className="min-h-10">Gesamtschulden</CardTitle>
           <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(portfolio.total_debt)}</p>
         </Card>
         <Card>
-          <CardTitle>Eigenkapital</CardTitle>
+          <CardTitle className="min-h-10">Eigenkapital</CardTitle>
           <p className="text-lg md:text-2xl font-bold text-blue-600 break-words">{euro(portfolio.total_equity)}</p>
         </Card>
         <Card>
-          <CardTitle>Cashflow / Monat</CardTitle>
+          <CardTitle className="min-h-10">Cashflow / Monat</CardTitle>
           <p className={`text-lg md:text-2xl font-bold break-words ${portfolio.monthly_net_cashflow >= 0 ? 'text-green-600' : 'text-red-500'}`}>
             {euro(portfolio.monthly_net_cashflow)}
           </p>
