@@ -41,7 +41,7 @@ export default function Login() {
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Immobilien, aber richtig.</h1>
         <p className="text-gray-500 mt-2">
-          Belege, Kredite, Steuern und Reminders – alles an einem Ort für private Vermieter.
+          Belege, Kredite, Steuern, News und Reminders – alles an einem Ort für private Vermieter.
         </p>
       </div>
       <h2 className="text-lg font-semibold text-gray-800 mb-4 text-center">
