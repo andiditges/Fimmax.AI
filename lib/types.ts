@@ -51,6 +51,7 @@ export interface Property {
   usage_duration: number
   is_self_managed: boolean
   bundesland: Bundesland | null
+  movable_items_value: number | null
   grunderwerbsteuer: number | null
   created_at: string
 }

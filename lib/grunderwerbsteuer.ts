@@ -29,6 +29,14 @@ export const BUNDESLAND_LIST: Bundesland[] = [
   'Rheinland-Pfalz', 'Saarland', 'Sachsen', 'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen',
 ]
 
-export function calcGrunderwerbsteuer(purchasePrice: number, bundesland: Bundesland): number {
-  return Math.round(purchasePrice * (GRUNDERWERBSTEUER_RATES[bundesland] / 100) * 100) / 100
+export function calcGrunderwerbsteuer(taxableBase: number, bundesland: Bundesland): number {
+  return Math.round(Math.max(0, taxableBase) * (GRUNDERWERBSTEUER_RATES[bundesland] / 100) * 100) / 100
+}
+
+// Photon/OSM liefert bei deutschen Adressen i.d.R. den offiziellen
+// Bundesland-Namen im properties.state-Feld – 1:1-Abgleich gegen unsere
+// Liste, ohne Match wird nichts automatisch gesetzt (Nutzer wählt manuell).
+export function matchBundesland(raw: string): Bundesland | null {
+  const trimmed = raw.trim()
+  return BUNDESLAND_LIST.find(b => b === trimmed) ?? null
 }

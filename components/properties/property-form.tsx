@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { suggestUsageDuration } from '@/lib/afa'
-import { BUNDESLAND_LIST, calcGrunderwerbsteuer } from '@/lib/grunderwerbsteuer'
+import { BUNDESLAND_LIST, calcGrunderwerbsteuer, matchBundesland } from '@/lib/grunderwerbsteuer'
 import { Card } from '@/components/ui/card'
 import { AddressAutocomplete } from '@/components/address-autocomplete'
 import { Bundesland, Property } from '@/lib/types'
@@ -19,6 +19,7 @@ export function PropertyForm({ property }: { property?: Property }) {
     purchase_date: property?.purchase_date ?? '',
     purchase_price: property ? String(property.purchase_price) : '',
     bundesland: property?.bundesland ?? ('' as Bundesland | ''),
+    movable_items: property?.movable_items_value != null ? String(property.movable_items_value) : '',
     grunderwerbsteuer: property?.grunderwerbsteuer != null ? String(property.grunderwerbsteuer) : '',
     current_value: property?.current_value != null ? String(property.current_value) : '',
     land_value: property ? String(property.land_value) : '',
@@ -63,28 +64,48 @@ export function PropertyForm({ property }: { property?: Property }) {
     }
   }
 
+  // Bewegliche Gegenstände (Einbauküche, Markise etc.) mindern laut
+  // Kaufvertrag oft die Bemessungsgrundlage für die Grunderwerbsteuer.
+  function grunderwerbsteuerBase(price: number, movable: number) {
+    return Math.max(0, price - (isNaN(movable) ? 0 : movable))
+  }
+
   function onPriceBlur() {
     const price = parseFloat(form.purchase_price)
     const land = parseFloat(form.land_value)
     const building = parseFloat(form.building_value)
+    const movable = parseFloat(form.movable_items)
     if (isNaN(price)) return
 
     setForm(f => {
       const next = { ...f }
       if (!isNaN(land)) next.building_value = String(round2(price - land))
       else if (!isNaN(building)) next.land_value = String(round2(price - building))
-      if (f.bundesland) next.grunderwerbsteuer = String(calcGrunderwerbsteuer(price, f.bundesland))
+      if (f.bundesland) next.grunderwerbsteuer = String(calcGrunderwerbsteuer(grunderwerbsteuerBase(price, movable), f.bundesland))
       return next
     })
   }
 
-  // Grunderwerbsteuer füllt sich automatisch aus Kaufpreis x Satz des
-  // gewählten Bundeslands – bleibt danach aber ein normales, überschreibbares
-  // Feld (z.B. bei Befreiungen oder Sonderfällen).
+  function onMovableBlur() {
+    const price = parseFloat(form.purchase_price)
+    const movable = parseFloat(form.movable_items)
+    if (isNaN(price) || !form.bundesland) return
+    setForm(f => ({
+      ...f,
+      grunderwerbsteuer: String(calcGrunderwerbsteuer(grunderwerbsteuerBase(price, movable), f.bundesland as Bundesland)),
+    }))
+  }
+
+  // Grunderwerbsteuer füllt sich automatisch aus (Kaufpreis - bewegliche
+  // Gegenstände) x Satz des gewählten Bundeslands – bleibt danach aber ein
+  // normales, überschreibbares Feld (z.B. bei Befreiungen oder Sonderfällen).
   function onBundeslandChange(bundesland: Bundesland | '') {
     setForm(f => {
       const price = parseFloat(f.purchase_price)
-      const grunderwerbsteuer = bundesland && !isNaN(price) ? String(calcGrunderwerbsteuer(price, bundesland)) : f.grunderwerbsteuer
+      const movable = parseFloat(f.movable_items)
+      const grunderwerbsteuer = bundesland && !isNaN(price)
+        ? String(calcGrunderwerbsteuer(grunderwerbsteuerBase(price, movable), bundesland))
+        : f.grunderwerbsteuer
       return { ...f, bundesland, grunderwerbsteuer }
     })
   }
@@ -106,6 +127,7 @@ export function PropertyForm({ property }: { property?: Property }) {
       usage_duration: parseInt(form.usage_duration),
       is_self_managed: form.is_self_managed,
       bundesland: form.bundesland || null,
+      movable_items_value: form.movable_items ? parseFloat(form.movable_items) : null,
       grunderwerbsteuer: form.grunderwerbsteuer ? parseFloat(form.grunderwerbsteuer) : null,
     }
 
@@ -130,10 +152,11 @@ export function PropertyForm({ property }: { property?: Property }) {
             : key === 'purchase_price' ? onPriceBlur
             : key === 'land_value' ? onLandBlur
             : key === 'building_value' ? onBuildingBlur
+            : key === 'movable_items' ? onMovableBlur
             : undefined
         }
         className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        required={key !== 'unit' && key !== 'unit_label' && key !== 'current_value'}
+        required={key !== 'unit' && key !== 'unit_label' && key !== 'current_value' && key !== 'movable_items'}
       />
     </div>
   )
@@ -148,19 +171,16 @@ export function PropertyForm({ property }: { property?: Property }) {
             <AddressAutocomplete
               value={form.address}
               onChange={address => setForm(f => ({ ...f, address }))}
+              onStateDetected={state => {
+                const matched = matchBundesland(state)
+                if (matched) onBundeslandChange(matched)
+              }}
             />
           </div>
 
-          {field('WE / Einheit', 'unit', 'text', 'Optional – offizielle Bezeichnung laut Teilungserklärung/WEG, z.B. "WE 3", falls du mehrere Einheiten unter derselben Adresse hast')}
-
-          {field('Wohnungsbezeichnung', 'unit_label', 'text', 'Optional – deine eigene, alltägliche Bezeichnung, z.B. "Wohnung 1" (kann von der offiziellen WE-Nummer abweichen). Wird überall dort angezeigt, wo die Immobilie aufgelistet wird.')}
-
-          {field('Besitzübergang (Lasten-Nutzen-Wechsel)', 'purchase_date', 'date',
-            'Steht im Kaufvertrag, meist unter "Besitzübergang" oder "Übergabe" – NICHT der Notartermin, oft aber nahe am Tag der vollständigen Kaufpreiszahlung. Dieser Tag zählt für AfA und die 15%-Grenze.')}
-          {field('Kaufpreis gesamt (€)', 'purchase_price', 'number', 'Reiner Kaufpreis laut notariellem Kaufvertrag, ohne Nebenkosten')}
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Bundesland (Kauf)</label>
+            <p className="text-xs text-gray-400 mb-1">Wird beim Auswählen eines Adressvorschlags automatisch erkannt, kann aber jederzeit korrigiert werden.</p>
             <select
               value={form.bundesland}
               onChange={e => onBundeslandChange(e.target.value as Bundesland | '')}
@@ -171,10 +191,21 @@ export function PropertyForm({ property }: { property?: Property }) {
             </select>
           </div>
 
+          {field('WE / Einheit', 'unit', 'text', 'Optional – offizielle Bezeichnung laut Teilungserklärung/WEG, z.B. "WE 3", falls du mehrere Einheiten unter derselben Adresse hast')}
+
+          {field('Wohnungsbezeichnung', 'unit_label', 'text', 'Optional – deine eigene, alltägliche Bezeichnung, z.B. "Wohnung 1" (kann von der offiziellen WE-Nummer abweichen). Wird überall dort angezeigt, wo die Immobilie aufgelistet wird.')}
+
+          {field('Besitzübergang (Lasten-Nutzen-Wechsel)', 'purchase_date', 'date',
+            'Steht im Kaufvertrag, meist unter "Besitzübergang" oder "Übergabe" – NICHT der Notartermin, oft aber nahe am Tag der vollständigen Kaufpreiszahlung. Dieser Tag zählt für AfA und die 15%-Grenze.')}
+          {field('Kaufpreis gesamt (€)', 'purchase_price', 'number', 'Reiner Kaufpreis laut notariellem Kaufvertrag, ohne Nebenkosten')}
+
+          {field('davon entfallend auf Einrichtungsgegenstände (€)', 'movable_items', 'number',
+            'Optional – bewegliche Gegenstände wie Einbauküche oder Markise, falls im Kaufvertrag separat ausgewiesen. Mindern die Bemessungsgrundlage für die Grunderwerbsteuer.')}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Grunderwerbsteuer (€)</label>
             <p className="text-xs text-gray-400 mb-1">
-              Automatisch berechnet aus Kaufpreis × Satz des gewählten Bundeslands (Stand 2026). Kann bei Bedarf angepasst werden, z.B. bei Befreiungen.
+              Automatisch berechnet aus (Kaufpreis − Einrichtungsgegenstände) × Satz des gewählten Bundeslands (Stand 2026). Kann bei Bedarf angepasst werden, z.B. bei Befreiungen.
             </p>
             <input
               type="number"
