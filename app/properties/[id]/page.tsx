@@ -6,6 +6,7 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { ThresholdBadge, ThresholdBar } from '@/components/threshold-badge'
 import { ReminderRow } from '@/components/reminders/reminder-row'
 import { TaxExportButton } from '@/components/tax-export-button'
+import { Roofed } from '@/components/roofed'
 import { calcAnnualAfa } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
 import { getLoanStatus } from '@/lib/amortization'
@@ -103,7 +104,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <Link href="/properties" className="text-sm text-gray-400 hover:text-gray-600 mb-1 block">← Immobilien</Link>
+          <Link href="/properties" className="text-sm text-gray-400 hover:text-gray-600 mb-1 block">← <Roofed>Immobilien</Roofed></Link>
           <h1 className="text-2xl font-bold text-gray-900">{propertyLabel(p)}</h1>
           <p className="text-gray-500 text-sm mt-1">
             Baujahr {p.build_year} · AfA {p.afa_rate}% · {p.is_self_managed ? 'Selbst verwaltet' : 'Fremd verwaltet'}
@@ -246,7 +247,9 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
                   <Card className="hover:shadow-md transition-shadow cursor-pointer py-3">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{t.name}</p>
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {t.name}{t.unit && t.unit !== 'Wohnung' ? ` · ${t.unit}` : ''}
+                        </p>
                         <p className="text-xs text-gray-400 mt-0.5">
                           {activeAgreement ? `seit ${formatDate(activeAgreement.start_date)}` : `Einzug ${formatDate(t.move_in_date)}`}
                           {t.move_out_date ? ` · Auszug ${formatDate(t.move_out_date)}` : ''}

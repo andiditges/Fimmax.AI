@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
+import { Roofed } from '@/components/roofed'
 import { propertyLabel } from '@/lib/format'
 import { REMINDER_CATEGORY_LABELS, Reminder, ReminderCategory } from '@/lib/types'
 
@@ -61,7 +62,7 @@ export default function NewReminder() {
       <Card>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Immobilie *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><Roofed>Immobilie</Roofed> *</label>
             <select
               value={form.property_id}
               onChange={e => onPropertyChange(e.target.value)}

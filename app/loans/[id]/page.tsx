@@ -7,6 +7,7 @@ import { SpecialPaymentForm } from '@/components/loans/special-payment-form'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { generateAmortizationSchedule, getLoanStatus } from '@/lib/amortization'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
+import { Roofed } from '@/components/roofed'
 import { Loan, LoanSpecialPayment, Property } from '@/lib/types'
 
 export default async function LoanDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -36,7 +37,7 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
     <div className="space-y-6">
       <div>
         <Link href={`/properties/${l.property_id}`} className="text-sm text-gray-400 hover:text-gray-600 mb-1 block">
-          ← {p ? propertyLabel(p) : 'Immobilie'}
+          ← {p ? propertyLabel(p) : <Roofed>Immobilie</Roofed>}
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">{l.name}</h1>
         <p className="text-gray-500 text-sm mt-1">

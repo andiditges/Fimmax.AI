@@ -4,6 +4,7 @@ import { requireUser } from '@/lib/supabase/get-user'
 import { Card, CardTitle } from '@/components/ui/card'
 import { ThresholdBadge } from '@/components/threshold-badge'
 import { TaxExportButton } from '@/components/tax-export-button'
+import { Roofed } from '@/components/roofed'
 import { calc15Threshold } from '@/lib/threshold15'
 import { buildTaxExportRow } from '@/lib/tax-export'
 import { sumRentForYear } from '@/lib/rent-schedule'
@@ -132,7 +133,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-3">Nach Objekt ({rows.length})</h2>
         {rows.length === 0 ? (
-          <Card className="text-center py-12 text-gray-400">Noch keine Immobilien hinterlegt.</Card>
+          <Card className="text-center py-12 text-gray-400">Noch keine <Roofed>Immobilien</Roofed> hinterlegt.</Card>
         ) : (
           <div className="space-y-2">
             {rows.map(r => (

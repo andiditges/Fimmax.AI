@@ -3,8 +3,11 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
+import { Roofed } from '@/components/roofed'
 import { propertyLabel } from '@/lib/format'
 import { Tenant } from '@/lib/types'
+
+const UNIT_TYPES = ['Wohnung', 'Garage/Stellplatz', 'Sonstiges'] as const
 
 export function TenantForm({ tenant }: { tenant?: Tenant }) {
   const router = useRouter()
@@ -15,6 +18,7 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
   const [form, setForm] = useState({
     property_id: tenant?.property_id ?? searchParams.get('property') ?? '',
     name: tenant?.name ?? '',
+    unit: tenant?.unit ?? 'Wohnung',
     move_in_date: tenant?.move_in_date ?? '',
     move_out_date: tenant?.move_out_date ?? '',
     rent_amount: '',
@@ -35,6 +39,7 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
     if (tenant) {
       const { error } = await supabase.from('tenants').update({
         name: form.name,
+        unit: form.unit || null,
         move_in_date: form.move_in_date,
         move_out_date: form.move_out_date || null,
       }).eq('id', tenant.id)
@@ -47,6 +52,7 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
     const { data: newTenant, error } = await supabase.from('tenants').insert({
       property_id: form.property_id,
       name: form.name,
+      unit: form.unit || null,
       move_in_date: form.move_in_date,
       move_out_date: form.move_out_date || null,
       rent_base: rentAmount,
@@ -86,7 +92,9 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
       }
     }
 
-    router.push(`/properties/${form.property_id}`)
+    // Zur eigenen Mieterseite statt zurück zum Objekt, damit die
+    // Miethistorie (spätere Mieterhöhungen etc.) direkt sichtbar/erreichbar ist.
+    router.push(`/tenants/${newTenant.id}`)
   }
 
   return (
@@ -95,7 +103,7 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
       <Card>
         <form onSubmit={onSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Immobilie *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><Roofed>Immobilie</Roofed> *</label>
             <select
               value={form.property_id}
               onChange={e => setForm(f => ({ ...f, property_id: e.target.value }))}
@@ -107,6 +115,18 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
               {properties.map(p => (
                 <option key={p.id} value={p.id}>{propertyLabel(p)}</option>
               ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Was wird vermietet?</label>
+            <p className="text-xs text-gray-400 mb-1">Falls z.B. eine Garage separat von der Wohnung vermietet wird (auch an einen anderen Mieter)</p>
+            <select
+              value={form.unit}
+              onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {UNIT_TYPES.map(u => <option key={u} value={u}>{u}</option>)}
             </select>
           </div>
 
