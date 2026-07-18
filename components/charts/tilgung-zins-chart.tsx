@@ -30,17 +30,28 @@ interface HoverState {
   payoff: boolean
 }
 
-// Mundkurve wächst mit dem Fortschritt (1 - Restschuld/Darlehenssumme); bei
-// vollständiger Tilgung kommt zusätzlich eine Krone über den Kopf.
+// Lächeln wächst mit dem Fortschritt (1 - Restschuld/Darlehenssumme): breiter werdender
+// Mund, der ab Halbstrecke zusätzlich aufgeht und Zähne zeigt; bei vollständiger
+// Tilgung kommt eine Krone über den Kopf. Smoothstep statt linear, damit v.a. der
+// Übergang von geschlossenem zu offenem Mund nicht abrupt wirkt.
 function SmileyOverlay({ hover }: { hover: HoverState }) {
-  const mouthDip = 4 + hover.progress * 13
+  const t = hover.progress
+  const ease = t * t * (3 - 2 * t)
+
+  const mouthWidth = 6.5 + ease * 3.5
+  const cornerY = 2
+  const upperY = cornerY + 2 + ease * 6
+  const openGap = Math.max(0, ease - 0.5) * 2 * 5
+  const lowerY = upperY + openGap
+  const teethOpacity = Math.min(1, Math.max(0, (ease - 0.55) / 0.45))
+  const mouthPath = `M ${-mouthWidth},${cornerY} Q 0,${upperY} ${mouthWidth},${cornerY} Q 0,${lowerY} ${-mouthWidth},${cornerY} Z`
 
   return (
     <div
       className="pointer-events-none absolute z-10 transition-[left,top] duration-75 ease-out"
-      style={{ left: hover.x, top: hover.y - 44, transform: 'translate(-50%, -100%)' }}
+      style={{ left: hover.x, top: hover.y - 44, transform: 'translate(-40%, -100%)' }}
     >
-      <svg width="48" height="56" viewBox="-24 -28 48 56">
+      <svg width="60" height="56" viewBox="-24 -28 60 56">
         {hover.payoff && (
           <path
             d="M -13,-21 L -7,-11 L 0,-24 L 7,-11 L 13,-21 L 11,-13 L -11,-13 Z"
@@ -50,10 +61,22 @@ function SmileyOverlay({ hover }: { hover: HoverState }) {
         <circle cx="0" cy="0" r="15" fill="#fde047" stroke="#ca8a04" strokeWidth="1.5" />
         <circle cx="-5.5" cy="-3.5" r="1.8" fill="#78350f" />
         <circle cx="5.5" cy="-3.5" r="1.8" fill="#78350f" />
-        <path
-          d={`M -7,3 Q 0,${3 + mouthDip} 7,3`}
-          stroke="#78350f" strokeWidth="1.8" fill="none" strokeLinecap="round"
-        />
+
+        <clipPath id="mouthClip">
+          <path d={mouthPath} />
+        </clipPath>
+        <path d={mouthPath} fill="#78350f" stroke="#78350f" strokeWidth={1.8} strokeLinejoin="round" />
+        {teethOpacity > 0 && (
+          <rect
+            x={-mouthWidth * 0.7} y={cornerY + 1.5} width={mouthWidth * 1.4} height={4}
+            rx={1.6} fill="#fffbeb" opacity={teethOpacity} clipPath="url(#mouthClip)"
+          />
+        )}
+
+        <g transform="translate(22,7)">
+          <rect x="-6" y="-4" width="12" height="12" rx="4" fill="#fde047" stroke="#ca8a04" strokeWidth="1.2" />
+          <rect x="-2.5" y="-13" width="5" height="10" rx="2.5" fill="#fde047" stroke="#ca8a04" strokeWidth="1.2" />
+        </g>
       </svg>
     </div>
   )
