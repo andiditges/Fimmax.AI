@@ -36,11 +36,39 @@ export function PropertyForm({ property }: { property?: Property }) {
   // noch nicht hier ins Formular – die werden später automatisch aus hochgeladenen
   // Belegen ermittelt und der Immobilie zugeordnet. Bis dahin bleibt die
   // incidental_costs-Spalte in der DB auf ihrem Default (0).
+
+  // Grundstücks- und Gebäudeanteil ergänzen sich immer zum Kaufpreis: welches
+  // der beiden Felder zuletzt verlassen wird, füllt das jeweils andere mit der
+  // Differenz – unabhängig davon, ob dort schon ein Wert stand.
+  function round2(n: number) {
+    return Math.round(n * 100) / 100
+  }
+
+  function onLandBlur() {
+    const price = parseFloat(form.purchase_price)
+    const land = parseFloat(form.land_value)
+    if (!isNaN(price) && !isNaN(land)) {
+      setForm(f => ({ ...f, building_value: String(round2(price - land)) }))
+    }
+  }
+
+  function onBuildingBlur() {
+    const price = parseFloat(form.purchase_price)
+    const building = parseFloat(form.building_value)
+    if (!isNaN(price) && !isNaN(building)) {
+      setForm(f => ({ ...f, land_value: String(round2(price - building)) }))
+    }
+  }
+
   function onPriceBlur() {
     const price = parseFloat(form.purchase_price)
     const land = parseFloat(form.land_value)
-    if (!isNaN(price) && !isNaN(land) && form.building_value === '') {
-      setForm(f => ({ ...f, building_value: String(price - land) }))
+    const building = parseFloat(form.building_value)
+    if (isNaN(price)) return
+    if (!isNaN(land)) {
+      setForm(f => ({ ...f, building_value: String(round2(price - land)) }))
+    } else if (!isNaN(building)) {
+      setForm(f => ({ ...f, land_value: String(round2(price - building)) }))
     }
   }
 
@@ -78,7 +106,13 @@ export function PropertyForm({ property }: { property?: Property }) {
         type={type}
         value={String(form[key])}
         onChange={e => setForm(f => ({ ...f, [key]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value }))}
-        onBlur={key === 'build_year' ? onBuildYearBlur : key === 'purchase_price' || key === 'land_value' ? onPriceBlur : undefined}
+        onBlur={
+          key === 'build_year' ? onBuildYearBlur
+            : key === 'purchase_price' ? onPriceBlur
+            : key === 'land_value' ? onLandBlur
+            : key === 'building_value' ? onBuildingBlur
+            : undefined
+        }
         className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         required={key !== 'unit' && key !== 'unit_label' && key !== 'current_value'}
       />
