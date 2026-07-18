@@ -101,9 +101,39 @@ export function sumRentForMonth(
   }, 0)
 }
 
-export function currentRentAmount(agreements: RentalAgreement[], asOfDate: Date = new Date()): number | null {
+export interface StaffelStep {
+  start_date: string
+  rent_amount: number
+}
+
+// Erhöht die Miete jedes Jahr um den vereinbarten Prozentsatz gegenüber der
+// zuletzt geltenden (nicht der anfänglichen) Miete, Schritt für Schritt auf
+// den Cent gerundet - so wie es in Staffelmiet-Verträgen üblich tabelliert
+// wird (z.B. 730,00 € -> 748,25 € -> 766,96 € bei 2,5%/Jahr).
+export function generateStaffelSchedule(
+  baseAmount: number,
+  annualIncreasePercent: number,
+  years: number,
+  startDate: string
+): StaffelStep[] {
+  const steps: StaffelStep[] = []
+  let amount = baseAmount
+  const start = new Date(startDate)
+  for (let year = 0; year < years; year++) {
+    if (year > 0) amount = Math.round(amount * (1 + annualIncreasePercent / 100) * 100) / 100
+    const stepDate = new Date(start.getFullYear() + year, start.getMonth(), start.getDate())
+    steps.push({ start_date: iso(stepDate), rent_amount: amount })
+  }
+  return steps
+}
+
+export function currentAgreement(agreements: RentalAgreement[], asOfDate: Date = new Date()): RentalAgreement | null {
   const applicable = [...agreements]
     .filter(a => a.start_date <= iso(asOfDate))
     .sort((a, b) => a.start_date.localeCompare(b.start_date))
-  return applicable.length > 0 ? applicable[applicable.length - 1].rent_amount : null
+  return applicable.length > 0 ? applicable[applicable.length - 1] : null
+}
+
+export function currentRentAmount(agreements: RentalAgreement[], asOfDate: Date = new Date()): number | null {
+  return currentAgreement(agreements, asOfDate)?.rent_amount ?? null
 }

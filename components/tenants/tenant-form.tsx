@@ -4,9 +4,11 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { propertyLabel } from '@/lib/format'
+import { generateStaffelSchedule } from '@/lib/rent-schedule'
 import { Tenant } from '@/lib/types'
 
 const UNIT_TYPES = ['Wohnung', 'Garage/Stellplatz', 'Sonstiges'] as const
+type RentType = 'fest' | 'staffel' | 'index'
 
 export function TenantForm({ tenant }: { tenant?: Tenant }) {
   const router = useRouter()
@@ -22,6 +24,10 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
     move_out_date: tenant?.move_out_date ?? '',
     rent_amount: '',
     first_month_amount: '',
+    rent_type: 'fest' as RentType,
+    staffel_percent: '',
+    staffel_years: '',
+    index_base_value: '',
   })
 
   useState(() => {
@@ -64,12 +70,40 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
       return
     }
 
-    const { error: agreementError } = await supabase.from('rental_agreements').insert({
-      property_id: form.property_id,
-      tenant_id: newTenant.id,
-      rent_amount: rentAmount,
-      start_date: form.move_in_date,
-    })
+    let agreementRows: Record<string, unknown>[]
+    if (form.rent_type === 'staffel') {
+      const steps = generateStaffelSchedule(
+        rentAmount,
+        parseFloat(form.staffel_percent) || 0,
+        parseInt(form.staffel_years) || 1,
+        form.move_in_date
+      )
+      agreementRows = steps.map(s => ({
+        property_id: form.property_id,
+        tenant_id: newTenant.id,
+        rent_amount: s.rent_amount,
+        start_date: s.start_date,
+      }))
+    } else if (form.rent_type === 'index') {
+      agreementRows = [{
+        property_id: form.property_id,
+        tenant_id: newTenant.id,
+        rent_amount: rentAmount,
+        start_date: form.move_in_date,
+        is_index_rent: true,
+        index_base_value: parseFloat(form.index_base_value) || null,
+        index_base_date: form.move_in_date,
+      }]
+    } else {
+      agreementRows = [{
+        property_id: form.property_id,
+        tenant_id: newTenant.id,
+        rent_amount: rentAmount,
+        start_date: form.move_in_date,
+      }]
+    }
+
+    const { error: agreementError } = await supabase.from('rental_agreements').insert(agreementRows)
     if (agreementError) {
       alert('Fehler: ' + agreementError.message)
       setLoading(false)
@@ -163,6 +197,46 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
                 <input type="number" step="0.01" value={form.first_month_amount} onChange={e => setForm(f => ({ ...f, first_month_amount: e.target.value }))}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mietart</label>
+                <select
+                  value={form.rent_type}
+                  onChange={e => setForm(f => ({ ...f, rent_type: e.target.value as RentType }))}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="fest">Feste Miete</option>
+                  <option value="staffel">Staffelmiete</option>
+                  <option value="index">Indexmiete</option>
+                </select>
+              </div>
+
+              {form.rent_type === 'staffel' && (
+                <div className="grid grid-cols-2 gap-4 bg-gray-50 border border-gray-100 rounded-xl p-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Jährliche Erhöhung (%) *</label>
+                    <input type="number" step="0.01" value={form.staffel_percent} onChange={e => setForm(f => ({ ...f, staffel_percent: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Anzahl Jahre der Staffel *</label>
+                    <input type="number" value={form.staffel_years} onChange={e => setForm(f => ({ ...f, staffel_years: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                  </div>
+                  <p className="col-span-2 text-xs text-gray-500">
+                    Legt automatisch alle Staffelstufen ab Einzugsdatum an (Miete oben = Jahr 1), jeweils +{form.staffel_percent || 'X'}% gegenüber dem Vorjahr.
+                  </p>
+                </div>
+              )}
+
+              {form.rent_type === 'index' && (
+                <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Basis-Indexstand (VPI, Basis 2020=100) *</label>
+                  <p className="text-xs text-gray-400 mb-1">Verbraucherpreisindex zum Einzugsdatum laut Destatis – findest du unter /indexmiete</p>
+                  <input type="number" step="0.001" value={form.index_base_value} onChange={e => setForm(f => ({ ...f, index_base_value: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                </div>
+              )}
             </>
           )}
 

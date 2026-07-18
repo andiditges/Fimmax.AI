@@ -97,6 +97,16 @@ export interface RentalAgreement {
   tenant_id: string | null
   rent_amount: number
   start_date: string
+  is_index_rent: boolean
+  index_base_value: number | null
+  index_base_date: string | null
+  created_at: string
+}
+
+export interface VpiReading {
+  id: string
+  month: string
+  value: number
   created_at: string
 }
 

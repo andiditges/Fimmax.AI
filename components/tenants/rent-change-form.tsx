@@ -2,6 +2,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { generateStaffelSchedule } from '@/lib/rent-schedule'
+
+type RentType = 'fest' | 'staffel' | 'index'
 
 export function RentChangeForm({ tenantId, propertyId }: { tenantId: string; propertyId: string }) {
   const router = useRouter()
@@ -10,19 +13,42 @@ export function RentChangeForm({ tenantId, propertyId }: { tenantId: string; pro
   const [saving, setSaving] = useState(false)
   const [startDate, setStartDate] = useState('')
   const [amount, setAmount] = useState('')
+  const [rentType, setRentType] = useState<RentType>('fest')
+  const [staffelPercent, setStaffelPercent] = useState('')
+  const [staffelYears, setStaffelYears] = useState('')
+  const [indexBaseValue, setIndexBaseValue] = useState('')
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const { error } = await supabase.from('rental_agreements').insert({
-      property_id: propertyId,
-      tenant_id: tenantId,
-      rent_amount: parseFloat(amount),
-      start_date: startDate,
-    })
+
+    let rows: Record<string, unknown>[]
+    const rentAmount = parseFloat(amount)
+    if (rentType === 'staffel') {
+      const steps = generateStaffelSchedule(rentAmount, parseFloat(staffelPercent) || 0, parseInt(staffelYears) || 1, startDate)
+      rows = steps.map(s => ({ property_id: propertyId, tenant_id: tenantId, rent_amount: s.rent_amount, start_date: s.start_date }))
+    } else if (rentType === 'index') {
+      rows = [{
+        property_id: propertyId,
+        tenant_id: tenantId,
+        rent_amount: rentAmount,
+        start_date: startDate,
+        is_index_rent: true,
+        index_base_value: parseFloat(indexBaseValue) || null,
+        index_base_date: startDate,
+      }]
+    } else {
+      rows = [{ property_id: propertyId, tenant_id: tenantId, rent_amount: rentAmount, start_date: startDate }]
+    }
+
+    const { error } = await supabase.from('rental_agreements').insert(rows)
     if (!error) {
       setStartDate('')
       setAmount('')
+      setRentType('fest')
+      setStaffelPercent('')
+      setStaffelYears('')
+      setIndexBaseValue('')
       setOpen(false)
       router.refresh()
     } else {
@@ -53,6 +79,43 @@ export function RentChangeForm({ tenantId, propertyId }: { tenantId: string; pro
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
         </div>
       </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-1">Mietart</label>
+        <select
+          value={rentType}
+          onChange={e => setRentType(e.target.value as RentType)}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="fest">Feste Miete</option>
+          <option value="staffel">Staffelmiete</option>
+          <option value="index">Indexmiete</option>
+        </select>
+      </div>
+
+      {rentType === 'staffel' && (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Jährliche Erhöhung (%) *</label>
+            <input type="number" step="0.01" value={staffelPercent} onChange={e => setStaffelPercent(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Anzahl Jahre *</label>
+            <input type="number" value={staffelYears} onChange={e => setStaffelYears(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+          </div>
+        </div>
+      )}
+
+      {rentType === 'index' && (
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Basis-Indexstand (VPI, Basis 2020=100) *</label>
+          <input type="number" step="0.001" value={indexBaseValue} onChange={e => setIndexBaseValue(e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+        </div>
+      )}
+
       <div className="flex gap-2">
         <button type="submit" disabled={saving}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
