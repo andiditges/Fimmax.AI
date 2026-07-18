@@ -17,6 +17,24 @@ export const CATEGORY_LABELS: Record<ReceiptCategory, string> = {
   sonstiges: 'Sonstiges',
 }
 
+export type Bundesland =
+  | 'Baden-Württemberg'
+  | 'Bayern'
+  | 'Berlin'
+  | 'Brandenburg'
+  | 'Bremen'
+  | 'Hamburg'
+  | 'Hessen'
+  | 'Mecklenburg-Vorpommern'
+  | 'Niedersachsen'
+  | 'Nordrhein-Westfalen'
+  | 'Rheinland-Pfalz'
+  | 'Saarland'
+  | 'Sachsen'
+  | 'Sachsen-Anhalt'
+  | 'Schleswig-Holstein'
+  | 'Thüringen'
+
 export interface Property {
   id: string
   address: string
@@ -32,6 +50,8 @@ export interface Property {
   afa_rate: number
   usage_duration: number
   is_self_managed: boolean
+  bundesland: Bundesland | null
+  grunderwerbsteuer: number | null
   created_at: string
 }
 

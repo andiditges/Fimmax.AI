@@ -58,22 +58,22 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
         </Card>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardTitle>Restschuld heute</CardTitle>
-          <p className="text-2xl font-bold text-gray-900">{euro(status.remaining_balance)}</p>
+          <CardTitle className="min-h-10">Restschuld heute</CardTitle>
+          <p className="text-lg md:text-2xl font-bold text-gray-900 break-words">{euro(status.remaining_balance)}</p>
         </Card>
         <Card>
-          <CardTitle>Rate je Zahlung</CardTitle>
-          <p className="text-2xl font-bold text-blue-600">{euro(status.current_annuity_amount)}</p>
+          <CardTitle className="min-h-10">Rate je Zahlung</CardTitle>
+          <p className="text-lg md:text-2xl font-bold text-blue-600 break-words">{euro(status.current_annuity_amount)}</p>
         </Card>
         <Card>
-          <CardTitle>Zinsen kumuliert</CardTitle>
-          <p className="text-2xl font-bold text-red-500">{euro(status.cumulative_interest_paid)}</p>
+          <CardTitle className="min-h-10">Zinsen kumuliert</CardTitle>
+          <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(status.cumulative_interest_paid)}</p>
         </Card>
         <Card>
-          <CardTitle>Tilgung kumuliert</CardTitle>
-          <p className="text-2xl font-bold text-green-600">{euro(status.cumulative_principal_paid)}</p>
+          <CardTitle className="min-h-10">Tilgung kumuliert</CardTitle>
+          <p className="text-lg md:text-2xl font-bold text-green-600 break-words">{euro(status.cumulative_principal_paid)}</p>
         </Card>
       </div>
 

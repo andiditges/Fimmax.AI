@@ -81,25 +81,25 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
       </div>
 
       {/* Portfolio-KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
-          <CardTitle>Einnahmen {year}</CardTitle>
-          <p className="text-2xl font-bold text-green-600">{euro(totalEinnahmen)}</p>
+          <CardTitle className="min-h-10">Einnahmen {year}</CardTitle>
+          <p className="text-lg md:text-2xl font-bold text-green-600 break-words">{euro(totalEinnahmen)}</p>
         </Card>
         <Card>
-          <CardTitle>Ausgaben {year}</CardTitle>
-          <p className="text-2xl font-bold text-red-500">{euro(totalAusgaben)}</p>
+          <CardTitle className="min-h-10">Ausgaben {year}</CardTitle>
+          <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(totalAusgaben)}</p>
         </Card>
         <Card>
-          <CardTitle>Werbungskosten {year} (inkl. AfA)</CardTitle>
-          <p className="text-2xl font-bold text-red-500">{euro(totalWerbungskosten)}</p>
+          <CardTitle className="min-h-10">Werbungskosten {year} (inkl. AfA)</CardTitle>
+          <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(totalWerbungskosten)}</p>
         </Card>
         <Card>
-          <CardTitle>Ergebnis {year} (Anlage V)</CardTitle>
-          <p className="text-2xl font-bold text-green-600">{euro(totalErgebnis)}</p>
+          <CardTitle className="min-h-10">Ergebnis {year} (Anlage V)</CardTitle>
+          <p className="text-lg md:text-2xl font-bold text-green-600 break-words">{euro(totalErgebnis)}</p>
         </Card>
         <Card>
-          <CardTitle>Steuer-Export</CardTitle>
+          <CardTitle className="min-h-10">Steuer-Export</CardTitle>
           {rows.length === 0 ? (
             <p className="text-sm text-gray-400 mt-1">Keine Objekte</p>
           ) : (

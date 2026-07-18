@@ -3,9 +3,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { suggestUsageDuration } from '@/lib/afa'
+import { BUNDESLAND_LIST, calcGrunderwerbsteuer } from '@/lib/grunderwerbsteuer'
 import { Card } from '@/components/ui/card'
 import { AddressAutocomplete } from '@/components/address-autocomplete'
-import { Property } from '@/lib/types'
+import { Bundesland, Property } from '@/lib/types'
 
 export function PropertyForm({ property }: { property?: Property }) {
   const router = useRouter()
@@ -17,6 +18,8 @@ export function PropertyForm({ property }: { property?: Property }) {
     unit_label: property?.unit_label ?? '',
     purchase_date: property?.purchase_date ?? '',
     purchase_price: property ? String(property.purchase_price) : '',
+    bundesland: property?.bundesland ?? ('' as Bundesland | ''),
+    grunderwerbsteuer: property?.grunderwerbsteuer != null ? String(property.grunderwerbsteuer) : '',
     current_value: property?.current_value != null ? String(property.current_value) : '',
     land_value: property ? String(property.land_value) : '',
     building_value: property ? String(property.building_value) : '',
@@ -65,11 +68,25 @@ export function PropertyForm({ property }: { property?: Property }) {
     const land = parseFloat(form.land_value)
     const building = parseFloat(form.building_value)
     if (isNaN(price)) return
-    if (!isNaN(land)) {
-      setForm(f => ({ ...f, building_value: String(round2(price - land)) }))
-    } else if (!isNaN(building)) {
-      setForm(f => ({ ...f, land_value: String(round2(price - building)) }))
-    }
+
+    setForm(f => {
+      const next = { ...f }
+      if (!isNaN(land)) next.building_value = String(round2(price - land))
+      else if (!isNaN(building)) next.land_value = String(round2(price - building))
+      if (f.bundesland) next.grunderwerbsteuer = String(calcGrunderwerbsteuer(price, f.bundesland))
+      return next
+    })
+  }
+
+  // Grunderwerbsteuer füllt sich automatisch aus Kaufpreis x Satz des
+  // gewählten Bundeslands – bleibt danach aber ein normales, überschreibbares
+  // Feld (z.B. bei Befreiungen oder Sonderfällen).
+  function onBundeslandChange(bundesland: Bundesland | '') {
+    setForm(f => {
+      const price = parseFloat(f.purchase_price)
+      const grunderwerbsteuer = bundesland && !isNaN(price) ? String(calcGrunderwerbsteuer(price, bundesland)) : f.grunderwerbsteuer
+      return { ...f, bundesland, grunderwerbsteuer }
+    })
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -88,6 +105,8 @@ export function PropertyForm({ property }: { property?: Property }) {
       afa_rate: 100 / parseInt(form.usage_duration),
       usage_duration: parseInt(form.usage_duration),
       is_self_managed: form.is_self_managed,
+      bundesland: form.bundesland || null,
+      grunderwerbsteuer: form.grunderwerbsteuer ? parseFloat(form.grunderwerbsteuer) : null,
     }
 
     const { error } = property
@@ -139,6 +158,32 @@ export function PropertyForm({ property }: { property?: Property }) {
           {field('Besitzübergang (Lasten-Nutzen-Wechsel)', 'purchase_date', 'date',
             'Steht im Kaufvertrag, meist unter "Besitzübergang" oder "Übergabe" – NICHT der Notartermin, oft aber nahe am Tag der vollständigen Kaufpreiszahlung. Dieser Tag zählt für AfA und die 15%-Grenze.')}
           {field('Kaufpreis gesamt (€)', 'purchase_price', 'number', 'Reiner Kaufpreis laut notariellem Kaufvertrag, ohne Nebenkosten')}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Bundesland (Kauf)</label>
+            <select
+              value={form.bundesland}
+              onChange={e => onBundeslandChange(e.target.value as Bundesland | '')}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Bitte wählen...</option>
+              {BUNDESLAND_LIST.map(b => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Grunderwerbsteuer (€)</label>
+            <p className="text-xs text-gray-400 mb-1">
+              Automatisch berechnet aus Kaufpreis × Satz des gewählten Bundeslands (Stand 2026). Kann bei Bedarf angepasst werden, z.B. bei Befreiungen.
+            </p>
+            <input
+              type="number"
+              step="0.01"
+              value={form.grunderwerbsteuer}
+              onChange={e => setForm(f => ({ ...f, grunderwerbsteuer: e.target.value }))}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
           {field('Aktueller Wert (€)', 'current_value', 'number',
             'Optional – dein geschätzter aktueller Marktwert, z.B. laut Gutachten oder Vergleichswerten. Fließt ins Finanz-Cockpit (Immobilienwert, Eigenkapital) ein. Leer lassen, um stattdessen den Kaufpreis zu verwenden.')}

@@ -117,22 +117,22 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardTitle>Einnahmen {currentYear}</CardTitle>
-          <p className="text-2xl font-bold text-green-600">{euro(yearIncome)}</p>
+          <CardTitle className="min-h-10">Einnahmen {currentYear}</CardTitle>
+          <p className="text-lg md:text-2xl font-bold text-green-600 break-words">{euro(yearIncome)}</p>
         </Card>
         <Card>
-          <CardTitle>Ausgaben {currentYear}</CardTitle>
-          <p className="text-2xl font-bold text-red-500">{euro(yearExpenses)}</p>
+          <CardTitle className="min-h-10">Ausgaben {currentYear}</CardTitle>
+          <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(yearExpenses)}</p>
         </Card>
         <Card>
-          <CardTitle>AfA / Jahr</CardTitle>
-          <p className="text-2xl font-bold text-blue-600">{euro(annualAfa)}</p>
+          <CardTitle className="min-h-10">AfA / Jahr</CardTitle>
+          <p className="text-lg md:text-2xl font-bold text-blue-600 break-words">{euro(annualAfa)}</p>
         </Card>
         <Card>
-          <CardTitle>Ergebnis vor AfA</CardTitle>
-          <p className={`text-2xl font-bold ${yearIncome - yearExpenses >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+          <CardTitle className="min-h-10">Ergebnis vor AfA</CardTitle>
+          <p className={`text-lg md:text-2xl font-bold break-words ${yearIncome - yearExpenses >= 0 ? 'text-green-600' : 'text-red-500'}`}>
             {euro(yearIncome - yearExpenses)}
           </p>
         </Card>
