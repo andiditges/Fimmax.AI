@@ -32,8 +32,9 @@ interface HoverState {
 
 // Lächeln wächst mit dem Fortschritt (1 - Restschuld/Darlehenssumme): breiter werdender
 // Mund, der ab Halbstrecke zusätzlich aufgeht und Zähne zeigt; bei vollständiger
-// Tilgung kommt eine Krone über den Kopf. Smoothstep statt linear, damit v.a. der
-// Übergang von geschlossenem zu offenem Mund nicht abrupt wirkt.
+// Tilgung kommen zusätzlich eine Krone über dem Kopf und ein Daumen-hoch dazu.
+// Smoothstep statt linear, damit v.a. der Übergang von geschlossenem zu offenem
+// Mund nicht abrupt wirkt.
 function SmileyOverlay({ hover }: { hover: HoverState }) {
   const t = hover.progress
   const ease = t * t * (3 - 2 * t)
@@ -73,10 +74,12 @@ function SmileyOverlay({ hover }: { hover: HoverState }) {
           />
         )}
 
-        <g transform="translate(22,7)">
-          <rect x="-6" y="-4" width="12" height="12" rx="4" fill="#fde047" stroke="#ca8a04" strokeWidth="1.2" />
-          <rect x="-2.5" y="-13" width="5" height="10" rx="2.5" fill="#fde047" stroke="#ca8a04" strokeWidth="1.2" />
-        </g>
+        {hover.payoff && (
+          <g transform="translate(22,7)">
+            <rect x="-6" y="-4" width="12" height="12" rx="4" fill="#fde047" stroke="#ca8a04" strokeWidth="1.2" />
+            <rect x="-2.5" y="-13" width="5" height="10" rx="2.5" fill="#fde047" stroke="#ca8a04" strokeWidth="1.2" />
+          </g>
+        )}
       </svg>
     </div>
   )
