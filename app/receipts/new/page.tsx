@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { buildStoragePath } from '@/lib/storage-path'
 import { Card } from '@/components/ui/card'
-import { Roofed } from '@/components/roofed'
+import { RoofedImmobilie } from '@/components/roofed'
 import { propertyLabel } from '@/lib/format'
 import { CATEGORY_LABELS, ReceiptCategory } from '@/lib/types'
 
@@ -172,7 +172,7 @@ export default function NewReceipt() {
       <Card>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1"><Roofed>Immobilie</Roofed> *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><RoofedImmobilie /> *</label>
             <select
               value={form.property_id}
               onChange={e => setForm(f => ({ ...f, property_id: e.target.value }))}

@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { suggestInitialRepaymentRate } from '@/lib/amortization'
-import { Roofed } from '@/components/roofed'
+import { RoofedImmobilie } from '@/components/roofed'
 import { propertyLabel, euro } from '@/lib/format'
 import { PaymentFrequency, DayCountConvention } from '@/lib/types'
 
@@ -89,7 +89,7 @@ export default function NewLoan() {
       <Card>
         <form onSubmit={onSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1"><Roofed>Immobilie</Roofed> *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"><RoofedImmobilie /> *</label>
             <select
               value={form.property_id}
               onChange={e => setForm(f => ({ ...f, property_id: e.target.value }))}
@@ -135,7 +135,7 @@ export default function NewLoan() {
           {showOverageFields && (
             <div className="space-y-3 bg-amber-50 border border-amber-100 rounded-xl p-4">
               <p className="text-sm text-amber-800">
-                Die Darlehenssumme liegt {euro(overage)} über dem Kaufpreis dieser <Roofed>Immobilie</Roofed>. Wofür ist die Differenz?
+                Die Darlehenssumme liegt {euro(overage)} über dem Kaufpreis dieser <RoofedImmobilie />. Wofür ist die Differenz?
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -152,7 +152,7 @@ export default function NewLoan() {
                 </div>
               </div>
               <p className="text-xs text-amber-700">
-                Kaufnebenkosten werden bei der <Roofed>Immobilie</Roofed> hinterlegt. Der Renovierungsbetrag wird als geplantes Budget
+                Kaufnebenkosten werden bei der <RoofedImmobilie /> hinterlegt. Der Renovierungsbetrag wird als geplantes Budget
                 auf der Objektseite angezeigt – zählt aber erst zur 15%-Hürde, sobald du die tatsächlichen Belege erfasst.
               </p>
             </div>

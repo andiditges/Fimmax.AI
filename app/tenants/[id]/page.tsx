@@ -7,7 +7,7 @@ import { RentChangeForm } from '@/components/tenants/rent-change-form'
 import { RentAdjustmentForm } from '@/components/tenants/rent-adjustment-form'
 import { currentRentAmount } from '@/lib/rent-schedule'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
-import { Roofed } from '@/components/roofed'
+import { RoofedImmobilie } from '@/components/roofed'
 import { Tenant, Property, RentalAgreement, RentAdjustment } from '@/lib/types'
 
 export default async function TenantDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -35,7 +35,7 @@ export default async function TenantDetail({ params }: { params: Promise<{ id: s
     <div className="space-y-6">
       <div>
         <Link href={`/properties/${t.property_id}`} className="text-sm text-gray-400 hover:text-gray-600 mb-1 block">
-          ← {p ? propertyLabel(p) : <Roofed>Immobilie</Roofed>}
+          ← {p ? propertyLabel(p) : <RoofedImmobilie />}
         </Link>
         <div className="flex items-start justify-between">
           <h1 className="text-2xl font-bold text-gray-900">{t.name}</h1>

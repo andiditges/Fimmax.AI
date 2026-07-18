@@ -23,3 +23,9 @@ export function Roofed({ children, className = '' }: { children: ReactNode; clas
     </span>
   )
 }
+
+// "Immobilie(n)" mit Dach nur über dem "mm" - identisch zum Logo (dort sitzt
+// das Dach auch nur über den beiden m in "Fimmax", nicht übers ganze Wort).
+export function RoofedImmobilie({ suffix = '' }: { suffix?: string }) {
+  return <>I<Roofed>mm</Roofed>obilie{suffix}</>
+}

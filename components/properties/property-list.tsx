@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { ThresholdBadge } from '@/components/threshold-badge'
-import { Roofed } from '@/components/roofed'
+import { RoofedImmobilie } from '@/components/roofed'
 import { calcAnnualAfa } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
 import { sumRentForYear } from '@/lib/rent-schedule'
@@ -26,9 +26,9 @@ export function PropertyList({
   if (properties.length === 0) {
     return (
       <Card className="text-center py-12">
-        <p className="text-gray-400 mb-4">Noch keine <Roofed>Immobilien</Roofed> hinterlegt.</p>
+        <p className="text-gray-400 mb-4">Noch keine <RoofedImmobilie suffix="n" /> hinterlegt.</p>
         <Link href="/properties/new" className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors">
-          Erste <Roofed>Immobilie</Roofed> anlegen
+          Erste <RoofedImmobilie /> anlegen
         </Link>
       </Card>
     )

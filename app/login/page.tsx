@@ -64,7 +64,7 @@ export default function Login() {
       <div className="max-w-sm w-full mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight">
-            <Roofed><span className="brick-text">Immobilien</span></Roofed><span className="brick-text">, aber richtig.</span>
+            <span className="brick-text">I</span><Roofed><span className="brick-text">mm</span></Roofed><span className="brick-text">obilien, aber richtig.</span>
           </h1>
           <p className="text-gray-500 mt-2">
             Belege, Kredite, Steuern, Nachrichten und Erinnerungen – alles an einem Ort für Vermieter, egal ob privat, geschäftlich oder irgendwas dazwischen.
