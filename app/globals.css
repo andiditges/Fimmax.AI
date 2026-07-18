@@ -31,3 +31,48 @@ html {
   70% { opacity: 1; transform: translateY(0); }
   85%, 100% { opacity: 0; transform: translateY(4px); }
 }
+
+/* Scrollbar als Aufzug: Schacht mit Stockwerk-Markierungen, Kabine in den
+   Logo-Terrakotta-Tönen mit Türfuge und Anzeigelicht. Firefox bekommt
+   immerhin die Farben (scrollbar-color), die Kabinen-Optik ist ein
+   Webkit/Chromium-Feature (::-webkit-scrollbar-*). */
+html {
+  scrollbar-color: #8f3a1a #f3f4f6;
+}
+
+::-webkit-scrollbar {
+  width: 14px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #f3f4f6;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    #e5e7eb 0,
+    #e5e7eb 1px,
+    transparent 1px,
+    transparent 28px
+  );
+  border-left: 1px solid #e5e7eb;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  border: 3px solid #f8fafc;
+  background-clip: padding-box;
+  background-image:
+    radial-gradient(circle 2.5px at center 10px, #ffd479 2.5px, transparent 3px),
+    linear-gradient(to right, transparent 46%, rgba(0, 0, 0, 0.25) 46%, rgba(0, 0, 0, 0.25) 54%, transparent 54%),
+    linear-gradient(180deg, #c1652f, #8f3a1a);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-image:
+    radial-gradient(circle 2.5px at center 10px, #ffe4a3 2.5px, transparent 3px),
+    linear-gradient(to right, transparent 46%, rgba(0, 0, 0, 0.25) 46%, rgba(0, 0, 0, 0.25) 54%, transparent 54%),
+    linear-gradient(180deg, #d1753f, #9f4a2a);
+}
+
+::-webkit-scrollbar-corner {
+  background-color: #f3f4f6;
+}
