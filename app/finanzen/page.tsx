@@ -5,16 +5,19 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
+import { Roofed } from '@/components/roofed'
 import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus } from '@/lib/amortization'
 import { aggregateNetWorth } from '@/lib/net-worth'
+import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
+import { sumReserveCurrentValue, sumMonthlyReserveFromRent } from '@/lib/reserves'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
-import { ASSET_CATEGORY_LABELS, Asset, AssetCategory, Property, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Receipt } from '@/lib/types'
+import { ASSET_CATEGORY_LABELS, Asset, AssetCategory, Property, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Receipt, PropertyReserve, OperatingCost, RESERVE_CATEGORY_LABELS } from '@/lib/types'
 
 export default async function Finanzen() {
   await requireUser()
   const supabase = await createClient()
 
-  const [{ data: properties }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: receipts }, { data: assetsData }] = await Promise.all([
+  const [{ data: properties }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: receipts }, { data: assetsData }, { data: reservesData }, { data: operatingCostsData }] = await Promise.all([
     supabase.from('properties').select('*'),
     supabase.from('loans').select('*'),
     supabase.from('tenants').select('*'),
@@ -22,6 +25,8 @@ export default async function Finanzen() {
     supabase.from('rent_adjustments').select('*'),
     supabase.from('receipts').select('*'),
     supabase.from('assets').select('*').order('created_at'),
+    supabase.from('property_reserves').select('*').order('created_at'),
+    supabase.from('operating_costs').select('*'),
   ])
 
   const props = (properties ?? []) as Property[]
@@ -31,6 +36,8 @@ export default async function Finanzen() {
   const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
   const recs = (receipts ?? []) as Receipt[]
   const assets = (assetsData ?? []) as Asset[]
+  const reserveList = (reservesData ?? []) as PropertyReserve[]
+  const operatingCostList = (operatingCostsData ?? []) as OperatingCost[]
 
   const { data: specialPayments } = loanList.length
     ? await supabase.from('loan_special_payments').select('*').in('loan_id', loanList.map(l => l.id))
@@ -41,13 +48,25 @@ export default async function Finanzen() {
     return acc
   }, {} as Record<string, LoanSpecialPayment[]>)
 
-  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs)
+  const monthlyReserveFromRent = sumMonthlyReserveFromRent(reserveList)
+  const totalInstandhaltungsruecklage = sumInstandhaltungsruecklage(operatingCostList)
+  const totalReserves = sumReserveCurrentValue(reserveList) + totalInstandhaltungsruecklage
+
+  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs, monthlyReserveFromRent)
   const debtOverTime = aggregateDebtOverTime(loanList, specialPaymentsByLoan)
-  const todayCashflow = aggregateTodayCashflow(loanList, specialPaymentsByLoan, portfolio.monthly_rent_income, portfolio.monthly_operating_cost_runrate)
+  const todayCashflow = aggregateTodayCashflow(loanList, specialPaymentsByLoan, portfolio.monthly_rent_income, portfolio.monthly_operating_cost_runrate, monthlyReserveFromRent)
   const dailyRateOverTime = aggregateDailyRateOverTime(loanList, specialPaymentsByLoan)
-  const netWorth = aggregateNetWorth(assets, portfolio.total_equity)
+  const netWorth = aggregateNetWorth(assets, portfolio.total_equity, totalReserves)
 
   const propertyById = Object.fromEntries(props.map(p => [p.id, p]))
+
+  const reservesByProperty = props
+    .map(p => ({
+      property: p,
+      items: reserveList.filter(r => r.property_id === p.id),
+      ruecklage: sumInstandhaltungsruecklage(operatingCostList.filter(c => c.property_id === p.id)),
+    }))
+    .filter(r => r.items.length > 0 || r.ruecklage > 0)
 
   const assetsByCategory = (Object.keys(ASSET_CATEGORY_LABELS) as AssetCategory[])
     .map(cat => ({
@@ -76,7 +95,8 @@ export default async function Finanzen() {
         <CardTitle>Nettovermögen</CardTitle>
         <p className="text-xl md:text-3xl font-bold text-blue-700 break-words">{euro(netWorth.net_worth)}</p>
         <p className="text-sm text-gray-500 mt-1">
-          Immobilien-Eigenkapital {euro(netWorth.total_property_equity)} + sonstige Anlagen {euro(netWorth.total_assets)}
+          <Roofed>Immobilien</Roofed>-Eigenkapital {euro(netWorth.total_property_equity)} + sonstige Anlagen {euro(netWorth.total_assets)}
+          {netWorth.total_reserves > 0 && <> + Rücklagen {euro(netWorth.total_reserves)}</>}
           {netWorth.monthly_savings_rate > 0 && <> · {euro(netWorth.monthly_savings_rate)} Sparrate/Monat</>}
         </p>
       </Card>
@@ -103,10 +123,13 @@ export default async function Finanzen() {
       </div>
 
       <Card>
-        <div className="flex justify-between text-sm mb-2">
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm mb-2">
           <span className="text-gray-500">Miete / Monat: <strong className="text-green-600">{euro(portfolio.monthly_rent_income)}</strong></span>
           <span className="text-gray-500">Kreditrate / Monat: <strong className="text-gray-900">{euro(portfolio.monthly_debt_service)}</strong></span>
           <span className="text-gray-500">Kosten-Laufrate / Monat: <strong className="text-red-500">{euro(portfolio.monthly_operating_cost_runrate)}</strong></span>
+          {monthlyReserveFromRent > 0 && (
+            <span className="text-gray-500">Rücklagenbildung / Monat: <strong className="text-red-500">{euro(monthlyReserveFromRent)}</strong></span>
+          )}
         </div>
         <p className="text-xs text-gray-400">Kosten-Laufrate = Belege der letzten 12 Monate / 12 (statt Einzelmonat, wegen unregelmäßiger Kosten wie Versicherung). AfA ist nicht enthalten, da nicht zahlungswirksam.</p>
       </Card>
@@ -131,6 +154,12 @@ export default async function Finanzen() {
               <span className="text-gray-500">./. Betriebskosten (anteilig)</span>
               <strong className="text-gray-900">-{euro(todayCashflow.operating_cost_so_far)}</strong>
             </div>
+            {todayCashflow.reserve_so_far > 0 && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">./. Rücklagenbildung aus Kaltmiete (anteilig)</span>
+                <strong className="text-gray-900">-{euro(todayCashflow.reserve_so_far)}</strong>
+              </div>
+            )}
             <div className="flex justify-between border-t pt-1.5">
               <span className="text-gray-700 font-medium">= übrig bisher diesen Monat</span>
               <strong className={todayCashflow.remaining_so_far >= 0 ? 'text-green-600' : 'text-red-500'}>{euro(todayCashflow.remaining_so_far)}</strong>
@@ -156,6 +185,44 @@ export default async function Finanzen() {
             Bei fester Annuität sinkt der Zinsanteil pro Tag über die Zeit, während die Tilgung pro Tag entsprechend wächst.
           </p>
         </Card>
+      )}
+
+      {/* Rücklagen-Übersicht */}
+      {reservesByProperty.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-800">Rücklagen ({euro(totalReserves)})</h2>
+          </div>
+          <div className="space-y-2">
+            {reservesByProperty.map(({ property: p, items, ruecklage }) => (
+              <Card key={p.id}>
+                <Link href={`/properties/${p.id}`} className="text-sm font-semibold text-gray-800 hover:text-blue-700 block mb-2">
+                  {propertyLabel(p)}
+                </Link>
+                <div className="space-y-1.5">
+                  {ruecklage > 0 && (
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>Instandhaltungsrücklage (kumuliert)</span>
+                      <span>{euro(ruecklage)}</span>
+                    </div>
+                  )}
+                  {items.map(r => (
+                    <div key={r.id} className="flex justify-between text-sm text-gray-600">
+                      <span>
+                        {RESERVE_CATEGORY_LABELS[r.category]}{r.name ? ` · ${r.name}` : ''}
+                        {r.funded_from_rent && <span className="text-xs text-amber-700"> (aus Kaltmiete)</span>}
+                      </span>
+                      <span>{euro(r.current_value)}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            Wird wie Vermögen behandelt (fließt ins Nettovermögen oben ein), aber gesondert ausgewiesen – erfasst/bearbeitet wird pro Objekt.
+          </p>
+        </div>
       )}
 
       {/* Vermögensübersicht */}

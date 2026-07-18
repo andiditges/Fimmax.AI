@@ -5,18 +5,19 @@ import { buildStoragePath } from '@/lib/storage-path'
 import { Card, CardTitle } from '@/components/ui/card'
 import { euro } from '@/lib/format'
 import { OPERATING_COST_CATEGORIES, OperatingCostCategoryConfig } from '@/lib/operating-costs'
-import { OperatingCost, OperatingCostCategory, Property, UtilitySettlement } from '@/lib/types'
+import { OperatingCost, OperatingCostCategory, Property, Tenant, UtilitySettlement } from '@/lib/types'
 
-type Row = { amount: string; allocable: boolean }
+type Row = { amount: string; allocable: boolean; tenant_id: string }
 
 export function NebenkostenForm({
-  property, year, existingCosts, settlement, advancePaymentsForYear,
+  property, year, existingCosts, settlement, advancePaymentsForYear, tenants,
 }: {
   property: Property
   year: number
   existingCosts: OperatingCost[]
   settlement: UtilitySettlement | null
   advancePaymentsForYear: number
+  tenants: Tenant[]
 }) {
   const supabase = createClient()
   const [saving, setSaving] = useState(false)
@@ -31,6 +32,7 @@ export function NebenkostenForm({
       initial[c.key] = {
         amount: existing ? String(existing.amount) : '',
         allocable: existing ? existing.allocable_to_tenant : c.defaultAllocable,
+        tenant_id: existing?.tenant_id ?? '',
       }
     }
     return initial
@@ -42,6 +44,10 @@ export function NebenkostenForm({
   }
   function setAllocable(key: OperatingCostCategory, allocable: boolean) {
     setRows(r => ({ ...r, [key]: { ...r[key], allocable } }))
+    setSaved(false)
+  }
+  function setTenant(key: OperatingCostCategory, tenant_id: string) {
+    setRows(r => ({ ...r, [key]: { ...r[key], tenant_id } }))
     setSaved(false)
   }
 
@@ -78,6 +84,7 @@ export function NebenkostenForm({
         category: c.key,
         amount: parseFloat(rows[c.key].amount) || 0,
         allocable_to_tenant: rows[c.key].allocable,
+        tenant_id: rows[c.key].tenant_id || null,
       }))
 
     if (costRows.length > 0) {
@@ -130,6 +137,11 @@ export function NebenkostenForm({
 
       <Card>
         <CardTitle>Umlagefähige Betriebskosten (an Mieter weiterberechenbar)</CardTitle>
+        {tenants.length > 1 && (
+          <p className="text-xs text-gray-400 -mt-0.5 mb-2">
+            Mehrere Mietparteien bei diesem Objekt (z.B. Wohnung + separat vermietete Garage) – bei Bedarf je Position zuordnen, wem die Kosten weiterberechnet werden. Ohne Auswahl gilt die Position für alle.
+          </p>
+        )}
         <div className="mt-3 space-y-3">
           {umlagefaehig.map(c => (
             <CostRow
@@ -137,8 +149,10 @@ export function NebenkostenForm({
               config={c}
               row={rows[c.key]}
               showAllocableToggle
+              tenants={tenants.length > 1 ? tenants : undefined}
               onAmount={v => setAmount(c.key, v)}
               onAllocable={v => setAllocable(c.key, v)}
+              onTenant={v => setTenant(c.key, v)}
             />
           ))}
         </div>
@@ -197,12 +211,14 @@ export function NebenkostenForm({
   )
 }
 
-function CostRow({ config, row, showAllocableToggle, onAmount, onAllocable }: {
+function CostRow({ config, row, showAllocableToggle, tenants, onAmount, onAllocable, onTenant }: {
   config: OperatingCostCategoryConfig
   row: Row
   showAllocableToggle: boolean
+  tenants?: Tenant[]
   onAmount: (v: string) => void
   onAllocable: (v: boolean) => void
+  onTenant?: (v: string) => void
 }) {
   return (
     <div>
@@ -228,6 +244,16 @@ function CostRow({ config, row, showAllocableToggle, onAmount, onAllocable }: {
           </label>
         )}
       </div>
+      {tenants && onTenant && (
+        <select
+          value={row.tenant_id}
+          onChange={e => onTenant(e.target.value)}
+          className="mt-1.5 w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Für: alle Mieter</option>
+          {tenants.map(t => <option key={t.id} value={t.id}>Für: {t.name}{t.unit ? ` (${t.unit})` : ''}</option>)}
+        </select>
+      )}
       {config.highlight && <p className="text-xs text-amber-700 mt-1">{config.highlight}</p>}
     </div>
   )

@@ -265,6 +265,7 @@ export function aggregateTodayCashflow(
   specialPaymentsByLoan: Record<string, LoanSpecialPayment[]>,
   monthlyRentIncome: number,
   monthlyOperatingCostRunrate: number,
+  monthlyReserveFromRent: number = 0,
   asOfDate: Date = new Date()
 ): TodayCashflowSnapshot {
   const breakdowns = loans
@@ -279,11 +280,13 @@ export function aggregateTodayCashflow(
   const dayOfMonth = asOfDate.getDate()
   const dailyRent = monthlyRentIncome / daysInMonth
   const dailyOpex = monthlyOperatingCostRunrate / daysInMonth
+  const dailyReserve = monthlyReserveFromRent / daysInMonth
 
   const rentSoFar = dailyRent * dayOfMonth
   const interestSoFar = dailyInterestTotal * dayOfMonth
   const principalSoFar = dailyPrincipalTotal * dayOfMonth
   const operatingCostSoFar = dailyOpex * dayOfMonth
+  const reserveSoFar = dailyReserve * dayOfMonth
 
   return {
     as_of_date: iso(asOfDate),
@@ -292,7 +295,8 @@ export function aggregateTodayCashflow(
     interest_so_far: interestSoFar,
     principal_so_far: principalSoFar,
     operating_cost_so_far: operatingCostSoFar,
-    remaining_so_far: rentSoFar - interestSoFar - principalSoFar - operatingCostSoFar,
+    reserve_so_far: reserveSoFar,
+    remaining_so_far: rentSoFar - interestSoFar - principalSoFar - operatingCostSoFar - reserveSoFar,
     daily_interest_total: dailyInterestTotal,
     daily_principal_total: dailyPrincipalTotal,
     daily_debt_service_total: dailyDebtServiceTotal,
@@ -391,6 +395,7 @@ export function aggregatePortfolioFinancials(
   rentalAgreements: RentalAgreement[],
   rentAdjustments: RentAdjustment[],
   receipts: Receipt[],
+  monthlyReserveFromRent: number = 0,
   asOfDate: Date = new Date()
 ): PortfolioFinancialSummary {
   const loanStatuses = loans.map(l => getLoanStatus(l, specialPaymentsByLoan[l.id] ?? [], asOfDate))
@@ -424,7 +429,8 @@ export function aggregatePortfolioFinancials(
   )
 
   // AfA ist bewusst ausgeschlossen: nicht zahlungswirksam, bereits separat im Dashboard sichtbar.
-  const monthlyNetCashflow = monthlyRentIncome - monthlyDebtService - monthlyOperatingCostRunrate
+  // Rücklagen fließen nur ein, wenn sie laut Andi tatsächlich aus der Kaltmiete gebildet werden.
+  const monthlyNetCashflow = monthlyRentIncome - monthlyDebtService - monthlyOperatingCostRunrate - monthlyReserveFromRent
 
   return {
     as_of_date: iso(asOfDate),

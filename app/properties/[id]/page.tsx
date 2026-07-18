@@ -7,13 +7,15 @@ import { ThresholdBadge, ThresholdBar } from '@/components/threshold-badge'
 import { ReminderRow } from '@/components/reminders/reminder-row'
 import { TaxExportButton } from '@/components/tax-export-button'
 import { Roofed } from '@/components/roofed'
+import { PropertyReserves } from '@/components/properties/property-reserves'
 import { calcAnnualAfa } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
 import { getLoanStatus } from '@/lib/amortization'
 import { buildTaxExportRow } from '@/lib/tax-export'
 import { generateRentSchedule, currentRentAmount } from '@/lib/rent-schedule'
+import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
-import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, Receipt, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment } from '@/lib/types'
+import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, Receipt, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost } from '@/lib/types'
 
 const HOA_STATUS_COLORS: Record<HoaResolutionStatus, string> = {
   offen: 'bg-gray-100 text-gray-700',
@@ -27,7 +29,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
   const supabase = await createClient()
   const currentYear = new Date().getFullYear()
 
-  const [{ data: property }, { data: receipts }, { data: tenants }, { data: loans }, { data: reminders }, { data: hoaDocuments }, { data: hoaResolutions }] = await Promise.all([
+  const [{ data: property }, { data: receipts }, { data: tenants }, { data: loans }, { data: reminders }, { data: hoaDocuments }, { data: hoaResolutions }, { data: reserves }, { data: operatingCosts }] = await Promise.all([
     supabase.from('properties').select('*').eq('id', id).single(),
     supabase.from('receipts').select('*').eq('property_id', id).order('receipt_date', { ascending: false }),
     supabase.from('tenants').select('*').eq('property_id', id),
@@ -35,6 +37,8 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
     supabase.from('reminders').select('*').eq('property_id', id).order('status').order('due_date', { ascending: true, nullsFirst: false }),
     supabase.from('hoa_documents').select('*').eq('property_id', id).order('year', { ascending: false }),
     supabase.from('hoa_resolutions').select('*').eq('property_id', id).gte('year', currentYear - 2).order('year', { ascending: false }),
+    supabase.from('property_reserves').select('*').eq('property_id', id).order('created_at'),
+    supabase.from('operating_costs').select('*').eq('property_id', id),
   ])
 
   if (!property) notFound()
@@ -46,6 +50,8 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
   const reminderList = (reminders ?? []) as Reminder[]
   const hoaDocs = (hoaDocuments ?? []) as HoaDocument[]
   const hoaResolutionList = (hoaResolutions ?? []) as HoaResolution[]
+  const reserveList = (reserves ?? []) as PropertyReserve[]
+  const operatingCostList = (operatingCosts ?? []) as OperatingCost[]
   const reminderById = Object.fromEntries(reminderList.map(r => [r.id, r]))
 
   const { data: rentalAgreements } = tenantList.length
@@ -149,6 +155,13 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
           <Link href={`/properties/${id}/nebenkosten`} className="text-sm text-blue-600 hover:underline whitespace-nowrap">Öffnen →</Link>
         </div>
       </Card>
+
+      {/* Rücklagen */}
+      <PropertyReserves
+        propertyId={id}
+        reserves={reserveList}
+        instandhaltungsruecklage={sumInstandhaltungsruecklage(operatingCostList)}
+      />
 
       {/* To-Dos & Erinnerungen */}
       <div>

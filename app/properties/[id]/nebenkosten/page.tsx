@@ -31,7 +31,8 @@ export default async function NebenkostenPage({
   if (!property) notFound()
 
   const p = property as Property
-  const advancePayments = sumAdvancePaymentsForYear((tenants ?? []) as Tenant[], year)
+  const tenantList = (tenants ?? []) as Tenant[]
+  const advancePayments = sumAdvancePaymentsForYear(tenantList, year)
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -64,6 +65,7 @@ export default async function NebenkostenPage({
         existingCosts={(costs ?? []) as OperatingCost[]}
         settlement={settlement as UtilitySettlement | null}
         advancePaymentsForYear={advancePayments}
+        tenants={tenantList}
       />
     </div>
   )

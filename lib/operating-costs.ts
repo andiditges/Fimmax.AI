@@ -1,4 +1,4 @@
-import { OperatingCostCategory, Tenant } from './types'
+import { OperatingCost, OperatingCostCategory, Tenant } from './types'
 
 export interface OperatingCostCategoryConfig {
   key: OperatingCostCategory
@@ -47,6 +47,13 @@ export const OPERATING_COST_CATEGORIES: OperatingCostCategoryConfig[] = [
 
 export const OPERATING_COST_CATEGORY_MAP: Record<OperatingCostCategory, OperatingCostCategoryConfig> =
   Object.fromEntries(OPERATING_COST_CATEGORIES.map(c => [c.key, c])) as Record<OperatingCostCategory, OperatingCostCategoryConfig>
+
+// Kumulierte Instandhaltungsrücklage über alle Jahre hinweg (nicht nur das
+// aktuell gewählte Jahr) - die WEG-Rücklage baut sich über die Zeit auf,
+// daher summieren wir hier bewusst über den gesamten Datenbestand.
+export function sumInstandhaltungsruecklage(costs: OperatingCost[]): number {
+  return costs.filter(c => c.category === 'ruecklage_zufuehrung').reduce((s, c) => s + c.amount, 0)
+}
 
 // Grobe Schätzung der im Jahr eingegangenen Nebenkostenvorauszahlungen: Monate
 // aktiv im Jahr * aktuelle Vorauszahlung. Ersetzt keine exakte, unterjährig

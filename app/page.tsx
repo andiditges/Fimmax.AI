@@ -9,16 +9,17 @@ import { Roofed } from '@/components/roofed'
 import { calcAnnualAfa } from '@/lib/afa'
 import { aggregatePortfolioFinancials } from '@/lib/amortization'
 import { sumRentForYear } from '@/lib/rent-schedule'
+import { sumMonthlyReserveFromRent } from '@/lib/reserves'
 import { getLandlordNews } from '@/lib/news'
 import { euro } from '@/lib/format'
-import { Property, Receipt, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Reminder } from '@/lib/types'
+import { Property, Receipt, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Reminder, PropertyReserve } from '@/lib/types'
 
 export default async function Dashboard() {
   await requireUser()
   const supabase = await createClient()
   const currentYear = new Date().getFullYear()
 
-  const [{ data: properties }, { data: receipts }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: reminders }, news] = await Promise.all([
+  const [{ data: properties }, { data: receipts }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: reminders }, { data: reserves }, news] = await Promise.all([
     supabase.from('properties').select('*').order('created_at'),
     supabase.from('receipts').select('*'),
     supabase.from('loans').select('*'),
@@ -26,6 +27,7 @@ export default async function Dashboard() {
     supabase.from('rental_agreements').select('*'),
     supabase.from('rent_adjustments').select('*'),
     supabase.from('reminders').select('*').neq('status', 'erledigt'),
+    supabase.from('property_reserves').select('*'),
     getLandlordNews(),
   ])
 
@@ -36,6 +38,7 @@ export default async function Dashboard() {
   const agreementList = (rentalAgreements ?? []) as RentalAgreement[]
   const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
   const reminderList = (reminders ?? []) as Reminder[]
+  const reserveList = (reserves ?? []) as PropertyReserve[]
 
   const { data: specialPayments } = loanList.length
     ? await supabase.from('loan_special_payments').select('*').in('loan_id', loanList.map(l => l.id))
@@ -46,7 +49,7 @@ export default async function Dashboard() {
     return acc
   }, {} as Record<string, LoanSpecialPayment[]>)
 
-  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs)
+  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs, sumMonthlyReserveFromRent(reserveList))
 
   const agreementsByTenant = agreementList.reduce((acc, a) => {
     if (a.tenant_id) (acc[a.tenant_id] ??= []).push(a)

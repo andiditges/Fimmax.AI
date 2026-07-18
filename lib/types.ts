@@ -309,6 +309,7 @@ export interface TodayCashflowSnapshot {
   interest_so_far: number
   principal_so_far: number
   operating_cost_so_far: number
+  reserve_so_far: number
   remaining_so_far: number
   daily_interest_total: number
   daily_principal_total: number
@@ -354,6 +355,27 @@ export interface OperatingCost {
   category: OperatingCostCategory
   amount: number
   allocable_to_tenant: boolean
+  tenant_id: string | null
+  note: string | null
+  created_at: string
+}
+
+export type ReserveCategory = 'mietausfall' | 'sonderumlage' | 'sonstiges'
+
+export const RESERVE_CATEGORY_LABELS: Record<ReserveCategory, string> = {
+  mietausfall: 'Mietausfallrücklage',
+  sonderumlage: 'Sonderumlage-Rücklage',
+  sonstiges: 'Sonstige Rücklage',
+}
+
+export interface PropertyReserve {
+  id: string
+  property_id: string
+  category: ReserveCategory
+  name: string | null
+  current_value: number
+  monthly_contribution: number
+  funded_from_rent: boolean
   note: string | null
   created_at: string
 }
