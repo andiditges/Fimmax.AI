@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/supabase/get-user'
 import { Card, CardTitle } from '@/components/ui/card'
 import { SpecialPaymentForm } from '@/components/loans/special-payment-form'
+import { DayCountEdit } from '@/components/loans/day-count-edit'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { generateAmortizationSchedule, getLoanStatus } from '@/lib/amortization'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
@@ -38,7 +39,10 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
         <Link href={`/properties/${l.property_id}`} className="text-sm text-gray-400 hover:text-gray-600 mb-1 block">
           ← {p ? propertyLabel(p) : 'Immobilie'}
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">{l.name}</h1>
+        <div className="flex items-start justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">{l.name}</h1>
+          <Link href={`/loans/${l.id}/edit`} className="text-sm text-blue-600 hover:underline">Bearbeiten</Link>
+        </div>
         <p className="text-gray-500 text-sm mt-1">
           {l.lender ? `${l.lender} · ` : ''}{euro(l.principal)} · {l.nominal_interest_rate}% Sollzins · {l.payment_frequency}
         </p>
@@ -48,6 +52,7 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
         {l.interest_only_months && (
           <p className="text-sm text-gray-500 mt-1">{l.interest_only_months} Monate tilgungsfrei ab Auszahlung</p>
         )}
+        <DayCountEdit loanId={l.id} current={l.day_count_convention} />
       </div>
 
       {schedule.warning === 'negative_amortization' && (

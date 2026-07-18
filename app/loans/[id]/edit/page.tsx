@@ -1,20 +1,18 @@
 'use client'
-import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { suggestInitialRepaymentRate } from '@/lib/amortization'
-import { propertyLabel, euro } from '@/lib/format'
 import { PaymentFrequency, DayCountConvention } from '@/lib/types'
 
-export default function NewLoan() {
+export default function EditLoan() {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const params = useParams<{ id: string }>()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
-  const [properties, setProperties] = useState<{ id: string; address: string; unit: string | null; unit_label: string | null; purchase_price: number; incidental_costs: number }[]>([])
+  const [loaded, setLoaded] = useState(false)
   const [form, setForm] = useState({
-    property_id: searchParams.get('property') ?? '',
     name: '',
     lender: '',
     principal: '',
@@ -24,16 +22,29 @@ export default function NewLoan() {
     annuity_amount: '',
     payment_frequency: 'monatlich' as PaymentFrequency,
     day_count_convention: '30/360' as DayCountConvention,
-    incidental_costs_amount: '',
     renovation_amount: '',
     interest_only_months: '',
   })
 
-  useState(() => {
-    supabase.from('properties').select('id, address, unit, unit_label, purchase_price, incidental_costs').then(({ data }) => {
-      setProperties(data ?? [])
+  useEffect(() => {
+    supabase.from('loans').select('*').eq('id', params.id).single().then(({ data }) => {
+      if (!data) return
+      setForm({
+        name: data.name ?? '',
+        lender: data.lender ?? '',
+        principal: String(data.principal ?? ''),
+        nominal_interest_rate: String(data.nominal_interest_rate ?? ''),
+        disbursement_date: data.disbursement_date ?? '',
+        initial_fixed_period_years: data.initial_fixed_period_years != null ? String(data.initial_fixed_period_years) : '',
+        annuity_amount: String(data.annuity_amount ?? ''),
+        payment_frequency: data.payment_frequency,
+        day_count_convention: data.day_count_convention,
+        renovation_amount: data.planned_renovation_amount != null ? String(data.planned_renovation_amount) : '',
+        interest_only_months: data.interest_only_months != null ? String(data.interest_only_months) : '',
+      })
+      setLoaded(true)
     })
-  })
+  }, [params.id, supabase])
 
   const principal = parseFloat(form.principal)
   const rate = parseFloat(form.nominal_interest_rate)
@@ -43,22 +54,12 @@ export default function NewLoan() {
       ? suggestInitialRepaymentRate(principal, rate, annuity, form.payment_frequency)
       : null
 
-  const selectedProperty = properties.find(p => p.id === form.property_id)
-  const overage = selectedProperty && !isNaN(principal) ? principal - selectedProperty.purchase_price : 0
-  const showOverageFields = overage > 0
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.property_id) return alert('Bitte eine Immobilie auswählen')
     setLoading(true)
 
-    const name = form.name || (form.lender ? `${form.lender} Kredit` : 'Kredit')
-    const incidentalAmount = showOverageFields && form.incidental_costs_amount ? parseFloat(form.incidental_costs_amount) : 0
-    const renovationAmount = showOverageFields && form.renovation_amount ? parseFloat(form.renovation_amount) : null
-
-    const { error } = await supabase.from('loans').insert({
-      property_id: form.property_id,
-      name,
+    const { error } = await supabase.from('loans').update({
+      name: form.name || (form.lender ? `${form.lender} Kredit` : 'Kredit'),
       lender: form.lender || null,
       principal: parseFloat(form.principal),
       nominal_interest_rate: parseFloat(form.nominal_interest_rate),
@@ -67,44 +68,23 @@ export default function NewLoan() {
       annuity_amount: parseFloat(form.annuity_amount),
       payment_frequency: form.payment_frequency,
       day_count_convention: form.day_count_convention,
-      planned_renovation_amount: renovationAmount,
+      planned_renovation_amount: form.renovation_amount ? parseFloat(form.renovation_amount) : null,
       interest_only_months: form.interest_only_months ? parseInt(form.interest_only_months) : null,
-    })
+    }).eq('id', params.id)
+
     if (error) { alert('Fehler: ' + error.message); setLoading(false); return }
-
-    if (incidentalAmount > 0 && selectedProperty) {
-      const { error: propertyError } = await supabase.from('properties')
-        .update({ incidental_costs: selectedProperty.incidental_costs + incidentalAmount })
-        .eq('id', form.property_id)
-      if (propertyError) { alert('Fehler: ' + propertyError.message); setLoading(false); return }
-    }
-
-    router.push(`/properties/${form.property_id}`)
+    router.push(`/loans/${params.id}`)
   }
+
+  if (!loaded) return null
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Neuer Kredit</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Kredit bearbeiten</h1>
       <Card>
         <form onSubmit={onSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Immobilie *</label>
-            <select
-              value={form.property_id}
-              onChange={e => setForm(f => ({ ...f, property_id: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="">Bitte wählen...</option>
-              {properties.map(p => (
-                <option key={p.id} value={p.id}>{propertyLabel(p)}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Bezeichnung</label>
-            <p className="text-xs text-gray-400 mb-1">Optional – nur nötig, um mehrere Kredite auseinanderzuhalten. Ohne Eingabe wird &bdquo;Kreditgeber + Kredit&ldquo; verwendet.</p>
             <input type="text" placeholder="z.B. Volksbank Baufinanzierung 1" value={form.name}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -130,32 +110,6 @@ export default function NewLoan() {
                 className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
             </div>
           </div>
-
-          {showOverageFields && (
-            <div className="space-y-3 bg-amber-50 border border-amber-100 rounded-xl p-4">
-              <p className="text-sm text-amber-800">
-                Die Darlehenssumme liegt {euro(overage)} über dem Kaufpreis dieser Immobilie. Wofür ist die Differenz?
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">davon Kaufnebenkosten (€)</label>
-                  <input type="number" step="0.01" value={form.incidental_costs_amount}
-                    onChange={e => setForm(f => ({ ...f, incidental_costs_amount: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">davon Renovierung/Sanierung (€)</label>
-                  <input type="number" step="0.01" value={form.renovation_amount}
-                    onChange={e => setForm(f => ({ ...f, renovation_amount: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-              </div>
-              <p className="text-xs text-amber-700">
-                Kaufnebenkosten werden bei der Immobilie hinterlegt. Der Renovierungsbetrag wird als geplantes Budget
-                auf der Objektseite angezeigt – zählt aber erst zur 15%-Hürde, sobald du die tatsächlichen Belege erfasst.
-              </p>
-            </div>
-          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -211,16 +165,29 @@ export default function NewLoan() {
             </select>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">davon Renovierung/Sanierung geplant (€)</label>
+            <input type="number" step="0.01" value={form.renovation_amount}
+              onChange={e => setForm(f => ({ ...f, renovation_amount: e.target.value }))}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+
           {suggestedRate !== null && (
             <p className="text-sm text-gray-500 bg-gray-50 rounded-xl px-3 py-2">
               Rechnerische anfängliche Tilgungsrate: <strong>{suggestedRate.toFixed(2)}%</strong> p.a.
             </p>
           )}
 
-          <button type="submit" disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
-            {loading ? 'Wird gespeichert...' : 'Kredit anlegen'}
-          </button>
+          <div className="flex gap-3">
+            <button type="submit" disabled={loading}
+              className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
+              {loading ? 'Wird gespeichert...' : 'Speichern'}
+            </button>
+            <button type="button" onClick={() => router.push(`/loans/${params.id}`)}
+              className="px-5 py-3 rounded-xl font-medium text-gray-500 hover:text-gray-700 transition-colors">
+              Abbrechen
+            </button>
+          </div>
         </form>
       </Card>
     </div>
