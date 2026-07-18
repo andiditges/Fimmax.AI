@@ -1,10 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { propertyLabel } from '@/lib/format'
 import { generateStaffelSchedule } from '@/lib/rent-schedule'
+import { lookupVpiForMonth } from '@/lib/vpi-history'
 import { Tenant } from '@/lib/types'
 
 const UNIT_TYPES = ['Wohnung', 'Garage/Stellplatz', 'Sonstiges'] as const
@@ -23,6 +24,8 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
     move_in_date: tenant?.move_in_date ?? '',
     move_out_date: tenant?.move_out_date ?? '',
     rent_amount: '',
+    has_furnishing_surcharge: tenant?.furnishing_surcharge != null,
+    furnishing_surcharge: tenant?.furnishing_surcharge != null ? String(tenant.furnishing_surcharge) : '',
     first_month_amount: '',
     rent_type: 'fest' as RentType,
     staffel_percent: '',
@@ -36,6 +39,15 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
     })
   })
 
+  // Sobald "Indexmiete" gewählt ist und ein Einzugsdatum feststeht, den
+  // VPI-Basiswert automatisch aus der eingebauten Tabelle vorschlagen -
+  // überschreibt aber keine bereits manuell eingetragene Zahl.
+  useEffect(() => {
+    if (form.rent_type !== 'index' || !form.move_in_date || form.index_base_value) return
+    const looked_up = lookupVpiForMonth(form.move_in_date)
+    if (looked_up !== null) setForm(f => ({ ...f, index_base_value: String(looked_up) }))
+  }, [form.rent_type, form.move_in_date, form.index_base_value])
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.property_id) return alert('Bitte eine Immobilie auswählen')
@@ -47,6 +59,7 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
         unit: form.unit || null,
         move_in_date: form.move_in_date,
         move_out_date: form.move_out_date || null,
+        furnishing_surcharge: form.has_furnishing_surcharge ? (parseFloat(form.furnishing_surcharge) || null) : null,
       }).eq('id', tenant.id)
       if (!error) router.push(`/tenants/${tenant.id}`)
       else { alert('Fehler: ' + error.message); setLoading(false) }
@@ -62,6 +75,7 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
       move_out_date: form.move_out_date || null,
       rent_base: rentAmount,
       advance_payment: 0,
+      furnishing_surcharge: form.has_furnishing_surcharge ? (parseFloat(form.furnishing_surcharge) || null) : null,
     }).select().single()
 
     if (error || !newTenant) {
@@ -182,6 +196,24 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
             </div>
           </div>
 
+          {tenant && (
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                <input type="checkbox" checked={form.has_furnishing_surcharge}
+                  onChange={e => setForm(f => ({ ...f, has_furnishing_surcharge: e.target.checked }))}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600" />
+                Enthält Zuschlag für Küche, Stellplatz, Möbel o.ä.
+              </label>
+              {form.has_furnishing_surcharge && (
+                <>
+                  <p className="text-xs text-gray-400 mb-1">Anteil der Kaltmiete, der nicht auf die reine Wohnraummiete entfällt</p>
+                  <input type="number" step="0.01" value={form.furnishing_surcharge} onChange={e => setForm(f => ({ ...f, furnishing_surcharge: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                </>
+              )}
+            </div>
+          )}
+
           {!tenant && (
             <>
               <div>
@@ -189,6 +221,22 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
                 <p className="text-xs text-gray-400 mb-1">Gilt automatisch fortlaufend jeden Monat, bis du eine Mieterhöhung oder Abweichung erfasst</p>
                 <input type="number" step="0.01" value={form.rent_amount} onChange={e => setForm(f => ({ ...f, rent_amount: e.target.value }))}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                  <input type="checkbox" checked={form.has_furnishing_surcharge}
+                    onChange={e => setForm(f => ({ ...f, has_furnishing_surcharge: e.target.checked }))}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600" />
+                  Enthält Zuschlag für Küche, Stellplatz, Möbel o.ä.
+                </label>
+                {form.has_furnishing_surcharge && (
+                  <>
+                    <p className="text-xs text-gray-400 mb-1">Anteil der Kaltmiete oben, der nicht auf die reine Wohnraummiete entfällt</p>
+                    <input type="number" step="0.01" value={form.furnishing_surcharge} onChange={e => setForm(f => ({ ...f, furnishing_surcharge: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                  </>
+                )}
               </div>
 
               <div>
@@ -231,10 +279,16 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
 
               {form.rent_type === 'index' && (
                 <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Basis-Indexstand (VPI, Basis 2020=100) *</label>
-                  <p className="text-xs text-gray-400 mb-1">Verbraucherpreisindex zum Einzugsdatum laut Destatis – findest du unter /indexmiete</p>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Basis-Indexstand (VPI, optional)</label>
+                  <p className="text-xs text-gray-400 mb-2">
+                    Der Verbraucherpreisindex (VPI) ist die amtliche Inflationszahl des Statistischen Bundesamts (Basis: Jahr 2020 = 100 Punkte).
+                    Bei einer Indexmiete ist die Miete an diesen Wert gekoppelt – damit die App später berechnen kann, wie stark du erhöhen darfst,
+                    braucht sie den Indexstand zum Vertragsbeginn. Wird zum Einzugsdatum automatisch aus einer eingebauten Tabelle vorgeschlagen
+                    (bei Bedarf mit dem tatsächlichen Wert aus eurem Mietvertrag überschreiben). Kein Vorschlag möglich? Dann leer lassen –
+                    kannst du später auf /indexmiete nachtragen.
+                  </p>
                   <input type="number" step="0.001" value={form.index_base_value} onChange={e => setForm(f => ({ ...f, index_base_value: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               )}
             </>

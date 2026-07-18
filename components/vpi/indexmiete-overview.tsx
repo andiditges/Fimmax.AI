@@ -46,9 +46,51 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
   const [applying, setApplying] = useState(false)
   const [saving, setSaving] = useState(false)
   const [effectiveDate, setEffectiveDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [baseValue, setBaseValue] = useState('')
+  const [savingBase, setSavingBase] = useState(false)
 
   const status = calcIndexmieteStatus(item.agreement, latestReading)
-  if (!status) return null
+
+  async function onSaveBase(e: React.FormEvent) {
+    e.preventDefault()
+    setSavingBase(true)
+    const { error } = await supabase.from('rental_agreements').update({
+      index_base_value: parseFloat(baseValue),
+      index_base_date: item.agreement.start_date,
+    }).eq('id', item.agreement.id)
+    if (!error) router.refresh()
+    else alert('Fehler: ' + error.message)
+    setSavingBase(false)
+  }
+
+  if (!status) {
+    return (
+      <Card>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <Link href={`/tenants/${item.tenant.id}`} className="font-semibold text-gray-900 hover:text-blue-700">{item.tenant.name}</Link>
+            <p className="text-xs text-gray-400">{propertyLabel(item.property)}</p>
+          </div>
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-amber-100 text-amber-800">
+            Basis-Index fehlt noch
+          </span>
+        </div>
+        <form onSubmit={onSaveBase} className="mt-3 flex items-end gap-2">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Basis-Indexstand (VPI) zum {formatDate(item.agreement.start_date)}
+            </label>
+            <input type="number" step="0.001" value={baseValue} onChange={e => setBaseValue(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+          </div>
+          <button type="submit" disabled={savingBase}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
+            {savingBase ? '...' : 'Speichern'}
+          </button>
+        </form>
+      </Card>
+    )
+  }
 
   async function onApply(e: React.FormEvent) {
     e.preventDefault()

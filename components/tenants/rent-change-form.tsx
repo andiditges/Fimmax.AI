@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { generateStaffelSchedule } from '@/lib/rent-schedule'
+import { lookupVpiForMonth } from '@/lib/vpi-history'
 
 type RentType = 'fest' | 'staffel' | 'index'
 
@@ -17,6 +18,12 @@ export function RentChangeForm({ tenantId, propertyId }: { tenantId: string; pro
   const [staffelPercent, setStaffelPercent] = useState('')
   const [staffelYears, setStaffelYears] = useState('')
   const [indexBaseValue, setIndexBaseValue] = useState('')
+
+  useEffect(() => {
+    if (rentType !== 'index' || !startDate || indexBaseValue) return
+    const looked_up = lookupVpiForMonth(startDate)
+    if (looked_up !== null) setIndexBaseValue(String(looked_up))
+  }, [rentType, startDate, indexBaseValue])
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -110,9 +117,10 @@ export function RentChangeForm({ tenantId, propertyId }: { tenantId: string; pro
 
       {rentType === 'index' && (
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Basis-Indexstand (VPI, Basis 2020=100) *</label>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Basis-Indexstand (VPI, optional)</label>
+          <p className="text-xs text-gray-400 mb-1">Wird zum Datum oben automatisch vorgeschlagen, bei Bedarf mit dem Wert aus dem Mietvertrag überschreiben</p>
           <input type="number" step="0.001" value={indexBaseValue} onChange={e => setIndexBaseValue(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
       )}
 

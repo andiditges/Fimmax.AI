@@ -65,6 +65,7 @@ export interface Tenant {
   move_out_date: string | null
   rent_base: number
   advance_payment: number
+  furnishing_surcharge: number | null
 }
 
 export interface Receipt {

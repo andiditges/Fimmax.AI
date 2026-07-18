@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/supabase/get-user'
 import { Card, CardTitle } from '@/components/ui/card'
 import { RentChangeForm } from '@/components/tenants/rent-change-form'
+import { RentHistoryRow } from '@/components/tenants/rent-history-row'
 import { RentAdjustmentForm } from '@/components/tenants/rent-adjustment-form'
 import { currentRentAmount } from '@/lib/rent-schedule'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
@@ -49,6 +50,9 @@ export default async function TenantDetail({ params }: { params: Promise<{ id: s
         <Card>
           <CardTitle>Aktuelle Miete</CardTitle>
           <p className="text-2xl font-bold text-gray-900">{rent !== null ? euro(rent) : '–'}</p>
+          {t.furnishing_surcharge != null && (
+            <p className="text-xs text-gray-400 mt-1">davon {euro(t.furnishing_surcharge)} Küche/Stellplatz/Möbel</p>
+          )}
         </Card>
         <Card>
           <CardTitle>Mietverhältnis</CardTitle>
@@ -62,12 +66,7 @@ export default async function TenantDetail({ params }: { params: Promise<{ id: s
         </div>
         {agreementList.length > 0 && (
           <div className="space-y-2 mb-4">
-            {agreementList.map(a => (
-              <div key={a.id} className="flex justify-between text-sm py-1.5 border-b border-gray-50 last:border-0">
-                <span className="text-gray-600">seit {formatDate(a.start_date)}</span>
-                <span className="font-medium text-gray-900">{euro(a.rent_amount)}</span>
-              </div>
-            ))}
+            {agreementList.map(a => <RentHistoryRow key={a.id} agreement={a} />)}
           </div>
         )}
         <RentChangeForm tenantId={t.id} propertyId={t.property_id} />
