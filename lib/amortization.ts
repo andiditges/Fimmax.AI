@@ -102,18 +102,24 @@ export function generateAmortizationSchedule(
   outer: while (balance > EPS && isAfter(horizonDate, cursor)) {
     const periodEnd = addPeriod(cursor, loan.payment_frequency)
     let subStart = cursor
+    // Zinsen akkumulieren über alle Teilintervalle der Periode (auch die vor
+    // einer zwischenzeitlichen Sondertilgung), damit die reguläre Rate am
+    // Periodenende die tatsächlich angefallenen Gesamtzinsen abdeckt statt
+    // nur die des letzten (durch die Sondertilgung verkürzten) Teilintervalls.
+    let periodInterest = 0
 
     while (spIndex < sortedSp.length && !isAfter(new Date(sortedSp[spIndex].payment_date), periodEnd)) {
       const spDate = new Date(sortedSp[spIndex].payment_date)
       const days = dayCount(subStart, spDate, loan.day_count_convention)
       const interest = balance * rate * (days / basis)
+      periodInterest += interest
       const amt = Math.min(sortedSp[spIndex].amount, balance)
       balance -= amt
 
       entries.push({
         date: iso(spDate),
         days_in_period: days,
-        interest_accrued: interest,
+        interest_accrued: 0,
         scheduled_principal: 0,
         special_payment: amt,
         total_payment: amt,
@@ -129,23 +135,23 @@ export function generateAmortizationSchedule(
     }
 
     const days = dayCount(subStart, periodEnd, loan.day_count_convention)
-    const interest = balance * rate * (days / basis)
+    periodInterest += balance * rate * (days / basis)
 
     if (graceEndDate && !isAfter(periodEnd, graceEndDate)) {
       entries.push({
         date: iso(periodEnd),
         days_in_period: days,
-        interest_accrued: interest,
+        interest_accrued: periodInterest,
         scheduled_principal: 0,
         special_payment: 0,
-        total_payment: interest,
+        total_payment: periodInterest,
         remaining_balance: balance,
       })
       cursor = periodEnd
       continue
     }
 
-    const scheduledPrincipal = loan.annuity_amount - interest
+    const scheduledPrincipal = loan.annuity_amount - periodInterest
 
     if (scheduledPrincipal <= 0) {
       warning = 'negative_amortization'
@@ -158,7 +164,7 @@ export function generateAmortizationSchedule(
     entries.push({
       date: iso(periodEnd),
       days_in_period: days,
-      interest_accrued: interest,
+      interest_accrued: periodInterest,
       scheduled_principal: actualPrincipal,
       special_payment: 0,
       total_payment: loan.annuity_amount,
