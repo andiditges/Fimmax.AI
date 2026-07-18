@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
 import { Logo } from '@/components/logo'
 import { LogoutButton } from '@/components/logout-button'
-import { RoofedImmobilie } from '@/components/roofed'
 
 const LINKS = [
   { href: '/warum', label: 'Warum' },
@@ -37,11 +36,11 @@ export function Nav({ userEmail }: { userEmail: string | null }) {
             <div className="hidden md:flex items-center gap-4 text-sm text-gray-600 min-w-0 flex-wrap justify-end">
               {LINKS.map(l => (
                 <Link key={l.href} href={l.href} className="hover:text-blue-700 transition-colors whitespace-nowrap">
-                  {l.href === '/properties' ? <RoofedImmobilie suffix="n" /> : l.label}
+                  {l.label}
                 </Link>
               ))}
               <Link href="/receipts/new" className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">+ Beleg</Link>
-              <Link href="/properties/new" className="hover:text-blue-700 transition-colors">+ <RoofedImmobilie /></Link>
+              <Link href="/properties/new" className="hover:text-blue-700 transition-colors">+ Immobilie</Link>
               <span className="text-gray-300">|</span>
               <span className="text-gray-400 hidden lg:inline">{userEmail}</span>
               <LogoutButton />
@@ -77,7 +76,7 @@ export function Nav({ userEmail }: { userEmail: string | null }) {
             <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-1 text-sm">
               {LINKS.map(l => (
                 <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="py-2.5 text-gray-700 border-b border-gray-50">
-                  {l.href === '/properties' ? <RoofedImmobilie suffix="n" /> : l.label}
+                  {l.label}
                 </Link>
               ))}
               <Link
@@ -88,7 +87,7 @@ export function Nav({ userEmail }: { userEmail: string | null }) {
                 + Beleg
               </Link>
               <Link href="/properties/new" onClick={() => setOpen(false)} className="mt-2 text-center py-2.5 text-blue-600">
-                + <RoofedImmobilie />
+                + Immobilie
               </Link>
             </div>
 

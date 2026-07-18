@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { buildStoragePath } from '@/lib/storage-path'
 import { Card } from '@/components/ui/card'
 import { propertyLabel } from '@/lib/format'
-import { RoofedImmobilie } from '@/components/roofed'
 import { HOA_RESOLUTION_STATUS_LABELS, HoaResolutionStatus } from '@/lib/types'
 
 export default function NewHoaDocument() {
@@ -86,7 +85,7 @@ export default function NewHoaDocument() {
       <Card className="mb-5">
         <form onSubmit={onSubmitDocument} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1"><RoofedImmobilie /> *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Immobilie *</label>
             <select
               value={propertyId}
               onChange={e => setPropertyId(e.target.value)}

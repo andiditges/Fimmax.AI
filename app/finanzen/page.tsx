@@ -5,7 +5,6 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
-import { RoofedImmobilie } from '@/components/roofed'
 import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus } from '@/lib/amortization'
 import { aggregateNetWorth } from '@/lib/net-worth'
 import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
@@ -95,7 +94,7 @@ export default async function Finanzen() {
         <CardTitle>Nettovermögen</CardTitle>
         <p className="text-xl md:text-3xl font-bold text-blue-700 break-words">{euro(netWorth.net_worth)}</p>
         <p className="text-sm text-gray-500 mt-1">
-          <RoofedImmobilie suffix="n" />-Eigenkapital {euro(netWorth.total_property_equity)} + sonstige Anlagen {euro(netWorth.total_assets)}
+          Immobilien-Eigenkapital {euro(netWorth.total_property_equity)} + sonstige Anlagen {euro(netWorth.total_assets)}
           {netWorth.total_reserves > 0 && <> + Rücklagen {euro(netWorth.total_reserves)}</>}
           {netWorth.monthly_savings_rate > 0 && <> · {euro(netWorth.monthly_savings_rate)} Sparrate/Monat</>}
         </p>

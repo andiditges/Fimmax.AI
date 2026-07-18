@@ -5,7 +5,6 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { NewsFeed } from '@/components/news-feed'
 import { RemindersWidget } from '@/components/reminders/reminders-widget'
 import { PropertyList } from '@/components/properties/property-list'
-import { RoofedImmobilie } from '@/components/roofed'
 import { calcAnnualAfa } from '@/lib/afa'
 import { aggregatePortfolioFinancials } from '@/lib/amortization'
 import { sumRentForYear } from '@/lib/rent-schedule'
@@ -76,7 +75,7 @@ export default async function Dashboard() {
       {/* KPI-Karten */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardTitle className="min-h-10"><RoofedImmobilie suffix="n" /></CardTitle>
+          <CardTitle className="min-h-10">Immobilien</CardTitle>
           <p className="text-2xl md:text-3xl font-bold text-gray-900 break-words">{props.length}</p>
         </Card>
         <Card>
@@ -131,7 +130,7 @@ export default async function Dashboard() {
           {/* Immobilien-Liste */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">Meine <RoofedImmobilie suffix="n" /></h2>
+              <h2 className="text-lg font-semibold text-gray-800">Meine Immobilien</h2>
               <Link href="/properties" className="text-sm text-blue-600 hover:underline">Alle anzeigen →</Link>
             </div>
             <PropertyList properties={props} receipts={recs} tenants={tenantList} rentalAgreements={agreementList} rentAdjustments={adjustmentList} currentYear={currentYear} />

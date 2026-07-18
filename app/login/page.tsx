@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { BrickLoader } from '@/components/brick-loader'
-import { Roofed } from '@/components/roofed'
 
 export default function Login() {
   const router = useRouter()
@@ -63,9 +62,7 @@ export default function Login() {
 
       <div className="max-w-sm w-full mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">
-            <span className="brick-text">I</span><Roofed><span className="brick-text">mm</span></Roofed><span className="brick-text">obilien, aber richtig.</span>
-          </h1>
+          <h1 className="brick-text text-3xl font-bold tracking-tight">Immobilien, aber richtig.</h1>
           <p className="text-gray-500 mt-2">
             Belege, Kredite, Steuern, Nachrichten und Erinnerungen – alles an einem Ort für Vermieter, egal ob privat, geschäftlich oder irgendwas dazwischen.
           </p>

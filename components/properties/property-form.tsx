@@ -6,7 +6,6 @@ import { suggestUsageDuration } from '@/lib/afa'
 import { BUNDESLAND_LIST, calcGrunderwerbsteuer, matchBundesland } from '@/lib/grunderwerbsteuer'
 import { Card } from '@/components/ui/card'
 import { AddressAutocomplete } from '@/components/address-autocomplete'
-import { RoofedImmobilie } from '@/components/roofed'
 import { Bundesland, Property } from '@/lib/types'
 
 export function PropertyForm({ property }: { property?: Property }) {
@@ -164,7 +163,7 @@ export function PropertyForm({ property }: { property?: Property }) {
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">{property ? <><RoofedImmobilie /> bearbeiten</> : <>Neue <RoofedImmobilie /></>}</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">{property ? 'Immobilie bearbeiten' : 'Neue Immobilie'}</h1>
       <Card>
         <form onSubmit={onSubmit} className="space-y-5">
           <div>
@@ -266,7 +265,7 @@ export function PropertyForm({ property }: { property?: Property }) {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
-            {loading ? 'Wird gespeichert...' : property ? 'Änderungen speichern' : <><RoofedImmobilie /> anlegen</>}
+            {loading ? 'Wird gespeichert...' : property ? 'Änderungen speichern' : 'Immobilie anlegen'}
           </button>
         </form>
       </Card>

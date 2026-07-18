@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
-import { RoofedImmobilie } from '@/components/roofed'
 import { propertyLabel } from '@/lib/format'
 import { Tenant } from '@/lib/types'
 
@@ -103,7 +102,7 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
       <Card>
         <form onSubmit={onSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1"><RoofedImmobilie /> *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Immobilie *</label>
             <select
               value={form.property_id}
               onChange={e => setForm(f => ({ ...f, property_id: e.target.value }))}
