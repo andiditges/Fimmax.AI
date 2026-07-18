@@ -6,6 +6,7 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { SpecialPaymentForm } from '@/components/loans/special-payment-form'
 import { DayCountEdit } from '@/components/loans/day-count-edit'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
+import { TilgungZinsChart } from '@/components/charts/tilgung-zins-chart'
 import { generateAmortizationSchedule, getLoanStatus } from '@/lib/amortization'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
 import { Loan, LoanSpecialPayment, Property } from '@/lib/types'
@@ -32,6 +33,16 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
 
   const chartData = schedule.entries.map(e => ({ date: e.date, remaining_balance: e.remaining_balance }))
   chartData.unshift({ date: l.disbursement_date, remaining_balance: l.principal })
+
+  const tilgungZinsData = schedule.entries
+    .filter(e => e.special_payment === 0)
+    .map(e => ({
+      date: e.date,
+      interest: e.interest_accrued,
+      principal: e.scheduled_principal,
+      remaining_balance: e.remaining_balance,
+      progress: Math.max(0, Math.min(1, 1 - e.remaining_balance / l.principal)),
+    }))
 
   return (
     <div className="space-y-6">
@@ -116,7 +127,10 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
 
       <Card>
         <CardTitle>Tilgungsplan</CardTitle>
-        <div className="mt-3 overflow-x-auto">
+        <div className="mt-3 mb-5">
+          <TilgungZinsChart data={tilgungZinsData} />
+        </div>
+        <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-gray-400 border-b border-gray-100">
