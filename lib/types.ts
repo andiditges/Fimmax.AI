@@ -270,3 +270,79 @@ export interface PortfolioFinancialSummary {
   monthly_net_cashflow: number
   loans: LoanStatus[]
 }
+
+export interface DailyRateBreakdown {
+  as_of_date: string
+  period_start: string
+  period_end: string
+  days_in_period: number
+  daily_interest: number
+  daily_principal: number
+  daily_total: number
+}
+
+export interface TodayCashflowSnapshot {
+  as_of_date: string
+  days_elapsed_in_month: number
+  rent_so_far: number
+  interest_so_far: number
+  principal_so_far: number
+  operating_cost_so_far: number
+  remaining_so_far: number
+  daily_interest_total: number
+  daily_principal_total: number
+  daily_debt_service_total: number
+}
+
+export interface DailyRatePoint {
+  date: string
+  daily_interest: number
+  daily_principal: number
+}
+
+export type OperatingCostCategory =
+  | 'grundsteuer'
+  | 'wasser'
+  | 'abwasser'
+  | 'heizung'
+  | 'warmwasser'
+  | 'aufzug'
+  | 'strassenreinigung_gewerbemuell'
+  | 'restmuell_privat'
+  | 'gebaeudereinigung_ungeziefer'
+  | 'gartenpflege'
+  | 'allgemeinstrom'
+  | 'schornsteinreinigung'
+  | 'sach_haftpflichtversicherung'
+  | 'hauswart'
+  | 'gemeinschaftsantenne_kabel'
+  | 'wascheinrichtung'
+  | 'sonstige_umlagefaehig'
+  | 'verwaltungskosten'
+  | 'instandhaltung'
+  | 'ruecklage_zufuehrung'
+  | 'bankgebuehren'
+  | 'mietausfallwagnis'
+  | 'rechtsverfolgungskosten'
+  | 'sonstige_nicht_umlagefaehig'
+
+export interface OperatingCost {
+  id: string
+  property_id: string
+  year: number
+  category: OperatingCostCategory
+  amount: number
+  allocable_to_tenant: boolean
+  note: string | null
+  created_at: string
+}
+
+export interface UtilitySettlement {
+  id: string
+  property_id: string
+  year: number
+  total_costs: number | null
+  source_file_url: string | null
+  status: 'draft' | 'sent'
+  created_at: string
+}

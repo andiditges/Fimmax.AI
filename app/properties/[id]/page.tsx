@@ -138,6 +138,17 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
         </Card>
       </div>
 
+      {/* Nebenkosten */}
+      <Card>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <CardTitle>Nebenkosten</CardTitle>
+            <p className="text-sm text-gray-500">Betriebskosten-Checkliste für die Abrechnung an deine Mieter</p>
+          </div>
+          <Link href={`/properties/${id}/nebenkosten`} className="text-sm text-blue-600 hover:underline whitespace-nowrap">Öffnen →</Link>
+        </div>
+      </Card>
+
       {/* To-Dos & Erinnerungen */}
       <div>
         <div className="flex items-center justify-between mb-3">

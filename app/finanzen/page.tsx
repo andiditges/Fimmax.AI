@@ -3,8 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/supabase/get-user'
 import { Card, CardTitle } from '@/components/ui/card'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
+import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
-import { aggregatePortfolioFinancials, aggregateDebtOverTime, generateAmortizationSchedule, getLoanStatus } from '@/lib/amortization'
+import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus } from '@/lib/amortization'
 import { aggregateNetWorth } from '@/lib/net-worth'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
 import { ASSET_CATEGORY_LABELS, Asset, AssetCategory, Property, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Receipt } from '@/lib/types'
@@ -42,6 +43,8 @@ export default async function Finanzen() {
 
   const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs)
   const debtOverTime = aggregateDebtOverTime(loanList, specialPaymentsByLoan)
+  const todayCashflow = aggregateTodayCashflow(loanList, specialPaymentsByLoan, portfolio.monthly_rent_income, portfolio.monthly_operating_cost_runrate)
+  const dailyRateOverTime = aggregateDailyRateOverTime(loanList, specialPaymentsByLoan)
   const netWorth = aggregateNetWorth(assets, portfolio.total_equity)
 
   const propertyById = Object.fromEntries(props.map(p => [p.id, p]))
@@ -108,10 +111,52 @@ export default async function Finanzen() {
         <p className="text-xs text-gray-400">Kosten-Laufrate = Belege der letzten 12 Monate / 12 (statt Einzelmonat, wegen unregelmäßiger Kosten wie Versicherung). AfA ist nicht enthalten, da nicht zahlungswirksam.</p>
       </Card>
 
+      {loanList.length > 0 && (
+        <Card>
+          <CardTitle>Stand heute ({formatDate(todayCashflow.as_of_date)})</CardTitle>
+          <div className="mt-2 space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Miete bisher diesen Monat</span>
+              <strong className="text-green-600">+{euro(todayCashflow.rent_so_far)}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">./. Zinsen (bisher, tagesgenau)</span>
+              <strong className="text-gray-900">-{euro(todayCashflow.interest_so_far)}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">./. Tilgung (bisher, tagesgenau)</span>
+              <strong className="text-gray-900">-{euro(todayCashflow.principal_so_far)}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">./. Betriebskosten (anteilig)</span>
+              <strong className="text-gray-900">-{euro(todayCashflow.operating_cost_so_far)}</strong>
+            </div>
+            <div className="flex justify-between border-t pt-1.5">
+              <span className="text-gray-700 font-medium">= übrig bisher diesen Monat</span>
+              <strong className={todayCashflow.remaining_so_far >= 0 ? 'text-green-600' : 'text-red-500'}>{euro(todayCashflow.remaining_so_far)}</strong>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            Tagessatz = aktuelle Monatsrate der laufenden Kreditperiode / Tage im Zeitraum, hochgerechnet auf die bereits vergangenen Tage des Monats.
+            Betriebskosten als Kosten-Laufrate (siehe oben) – sobald Nebenkosten je Objekt gepflegt sind, fließen sie hier künftig genauer ein.
+          </p>
+        </Card>
+      )}
+
       <Card>
         <CardTitle>Gesamtschulden-Verlauf (alle Kredite)</CardTitle>
         <DebtOverTimeChart data={debtOverTime} />
       </Card>
+
+      {loanList.length > 0 && (
+        <Card>
+          <CardTitle>Tägliche Tilgung & Zinsen – Entwicklung</CardTitle>
+          <DailyTilgungChart data={dailyRateOverTime} />
+          <p className="text-xs text-gray-400 mt-2">
+            Bei fester Annuität sinkt der Zinsanteil pro Tag über die Zeit, während die Tilgung pro Tag entsprechend wächst.
+          </p>
+        </Card>
+      )}
 
       {/* Vermögensübersicht */}
       <div>

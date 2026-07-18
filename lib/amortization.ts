@@ -13,6 +13,9 @@ import type {
   Receipt,
   PaymentFrequency,
   DayCountConvention,
+  DailyRateBreakdown,
+  TodayCashflowSnapshot,
+  DailyRatePoint,
 } from './types'
 import { sumRentForMonth } from './rent-schedule'
 import { propertyValue } from './format'
@@ -217,6 +220,119 @@ export function getLoanStatus(
     next_payment_date: nextEntry ? nextEntry.date : null,
     current_annuity_amount: nextEntry ? nextEntry.total_payment : loan.annuity_amount,
   }
+}
+
+/**
+ * Tages-Zins-/Tilgungssatz der laufenden Periode: die reguläre Periodenrate
+ * (Zins + Tilgung) geteilt durch die Tage der Periode – bewusst simpel statt
+ * unterjährig neu verzinst, analog zur bestehenden Monatsraten-Umrechnung in
+ * aggregatePortfolioFinancials.
+ */
+export function getDailyRateBreakdown(
+  loan: Loan,
+  specialPayments: LoanSpecialPayment[],
+  asOfDate: Date = new Date()
+): DailyRateBreakdown | null {
+  const { entries } = generateAmortizationSchedule(loan, specialPayments)
+  const regular = entries.filter(e => e.special_payment === 0)
+  const currentIndex = regular.findIndex(e => !isAfter(asOfDate, new Date(e.date)) || iso(new Date(e.date)) === iso(asOfDate))
+  if (currentIndex === -1) return null // Kredit bereits getilgt oder außerhalb des Horizonts
+
+  const current = regular[currentIndex]
+  const periodStart = currentIndex > 0 ? regular[currentIndex - 1].date : loan.disbursement_date
+  const days = current.days_in_period
+
+  return {
+    as_of_date: iso(asOfDate),
+    period_start: periodStart,
+    period_end: current.date,
+    days_in_period: days,
+    daily_interest: days > 0 ? current.interest_accrued / days : 0,
+    daily_principal: days > 0 ? current.scheduled_principal / days : 0,
+    daily_total: days > 0 ? current.total_payment / days : 0,
+  }
+}
+
+/**
+ * "Stand heute"-Karte fürs Finanz-Cockpit: rechnet die Tagessätze aller
+ * Kredite sowie Miete/Betriebskosten-Laufrate auf die bereits vergangenen
+ * Tage des laufenden Kalendermonats hoch. Bewusst kalendermonatsbasiert
+ * (nicht periodenbasiert), damit Miete und Betriebskosten (beide ohnehin
+ * monatlich gedacht) direkt vergleichbar bleiben.
+ */
+export function aggregateTodayCashflow(
+  loans: Loan[],
+  specialPaymentsByLoan: Record<string, LoanSpecialPayment[]>,
+  monthlyRentIncome: number,
+  monthlyOperatingCostRunrate: number,
+  asOfDate: Date = new Date()
+): TodayCashflowSnapshot {
+  const breakdowns = loans
+    .map(l => getDailyRateBreakdown(l, specialPaymentsByLoan[l.id] ?? [], asOfDate))
+    .filter((b): b is DailyRateBreakdown => b !== null)
+
+  const dailyInterestTotal = breakdowns.reduce((s, b) => s + b.daily_interest, 0)
+  const dailyPrincipalTotal = breakdowns.reduce((s, b) => s + b.daily_principal, 0)
+  const dailyDebtServiceTotal = dailyInterestTotal + dailyPrincipalTotal
+
+  const daysInMonth = new Date(asOfDate.getFullYear(), asOfDate.getMonth() + 1, 0).getDate()
+  const dayOfMonth = asOfDate.getDate()
+  const dailyRent = monthlyRentIncome / daysInMonth
+  const dailyOpex = monthlyOperatingCostRunrate / daysInMonth
+
+  const rentSoFar = dailyRent * dayOfMonth
+  const interestSoFar = dailyInterestTotal * dayOfMonth
+  const principalSoFar = dailyPrincipalTotal * dayOfMonth
+  const operatingCostSoFar = dailyOpex * dayOfMonth
+
+  return {
+    as_of_date: iso(asOfDate),
+    days_elapsed_in_month: dayOfMonth,
+    rent_so_far: rentSoFar,
+    interest_so_far: interestSoFar,
+    principal_so_far: principalSoFar,
+    operating_cost_so_far: operatingCostSoFar,
+    remaining_so_far: rentSoFar - interestSoFar - principalSoFar - operatingCostSoFar,
+    daily_interest_total: dailyInterestTotal,
+    daily_principal_total: dailyPrincipalTotal,
+    daily_debt_service_total: dailyDebtServiceTotal,
+  }
+}
+
+/**
+ * Monatlich gesampelter Verlauf der Tagessätze über alle Kredite hinweg –
+ * zeigt, wie die Tages-Tilgung bei fester Annuität mit sinkendem Zinsanteil
+ * wächst.
+ */
+export function aggregateDailyRateOverTime(
+  loans: Loan[],
+  specialPaymentsByLoan: Record<string, LoanSpecialPayment[]>,
+  monthsAhead = 36
+): DailyRatePoint[] {
+  if (loans.length === 0) return []
+
+  const earliestDisbursement = loans.reduce(
+    (min, l) => (l.disbursement_date < min ? l.disbursement_date : min),
+    loans[0].disbursement_date
+  )
+  const startDate = new Date(new Date(earliestDisbursement).getFullYear(), new Date(earliestDisbursement).getMonth(), 1)
+  const endDate = addMonths(new Date(), monthsAhead)
+
+  const points: DailyRatePoint[] = []
+  let cursor = startDate
+  while (!isAfter(cursor, endDate)) {
+    const breakdowns = loans
+      .map(l => getDailyRateBreakdown(l, specialPaymentsByLoan[l.id] ?? [], cursor))
+      .filter((b): b is DailyRateBreakdown => b !== null)
+
+    points.push({
+      date: iso(cursor),
+      daily_interest: breakdowns.reduce((s, b) => s + b.daily_interest, 0),
+      daily_principal: breakdowns.reduce((s, b) => s + b.daily_principal, 0),
+    })
+    cursor = addMonths(cursor, 1)
+  }
+  return points
 }
 
 /**
