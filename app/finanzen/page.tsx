@@ -190,10 +190,10 @@ export default async function Finanzen() {
         )}
       </div>
 
-      {/* Abzahl-Übersicht */}
+      {/* Abzahlungs-Übersicht */}
       {payoffOverview.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">Abzahl-Übersicht</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">Abzahlungs-Übersicht</h2>
           <Card>
             <div className="space-y-2">
               {payoffOverview.map(({ loan, payoffDate }) => (

@@ -72,20 +72,20 @@ export default async function Dashboard() {
       {/* KPI-Karten */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
-          <CardTitle>Immobilien</CardTitle>
-          <p className="text-3xl font-bold text-gray-900">{props.length}</p>
+          <CardTitle className="min-h-10">Immobilien</CardTitle>
+          <p className="text-2xl md:text-3xl font-bold text-gray-900 break-words">{props.length}</p>
         </Card>
         <Card>
-          <CardTitle>Einnahmen {currentYear}</CardTitle>
-          <p className="text-3xl font-bold text-green-600">{euro(totalIncome)}</p>
+          <CardTitle className="min-h-10">Einnahmen {currentYear}</CardTitle>
+          <p className="text-2xl md:text-3xl font-bold text-green-600 break-words">{euro(totalIncome)}</p>
         </Card>
         <Card>
-          <CardTitle>Ausgaben {currentYear}</CardTitle>
-          <p className="text-3xl font-bold text-red-500">{euro(totalExpenses)}</p>
+          <CardTitle className="min-h-10">Ausgaben {currentYear}</CardTitle>
+          <p className="text-2xl md:text-3xl font-bold text-red-500 break-words">{euro(totalExpenses)}</p>
         </Card>
         <Card>
-          <CardTitle>AfA gesamt / Jahr</CardTitle>
-          <p className="text-3xl font-bold text-blue-600">{euro(totalAfa)}</p>
+          <CardTitle className="min-h-10">AfA gesamt / Jahr</CardTitle>
+          <p className="text-2xl md:text-3xl font-bold text-blue-600 break-words">{euro(totalAfa)}</p>
         </Card>
       </div>
 
@@ -103,20 +103,20 @@ export default async function Dashboard() {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card>
-                  <CardTitle>Gesamtschulden</CardTitle>
-                  <p className="text-2xl font-bold text-red-500">{euro(portfolio.total_debt)}</p>
+                  <CardTitle className="min-h-10">Gesamtschulden</CardTitle>
+                  <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(portfolio.total_debt)}</p>
                 </Card>
                 <Card>
-                  <CardTitle>Kreditrate / Monat</CardTitle>
-                  <p className="text-2xl font-bold text-gray-900">{euro(portfolio.monthly_debt_service)}</p>
+                  <CardTitle className="min-h-10">Kreditrate / Monat</CardTitle>
+                  <p className="text-lg md:text-2xl font-bold text-gray-900 break-words">{euro(portfolio.monthly_debt_service)}</p>
                 </Card>
                 <Card>
-                  <CardTitle>Eigenkapital</CardTitle>
-                  <p className="text-2xl font-bold text-blue-600">{euro(portfolio.total_equity)}</p>
+                  <CardTitle className="min-h-10">Eigenkapital</CardTitle>
+                  <p className="text-lg md:text-2xl font-bold text-blue-600 break-words">{euro(portfolio.total_equity)}</p>
                 </Card>
                 <Card>
-                  <CardTitle>Cashflow / Monat</CardTitle>
-                  <p className={`text-2xl font-bold ${portfolio.monthly_net_cashflow >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                  <CardTitle className="min-h-10">Cashflow / Monat</CardTitle>
+                  <p className={`text-lg md:text-2xl font-bold break-words ${portfolio.monthly_net_cashflow >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                     {euro(portfolio.monthly_net_cashflow)}
                   </p>
                 </Card>

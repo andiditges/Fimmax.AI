@@ -9,5 +9,5 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
 }
 
 export function CardTitle({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <h2 className={`text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1 ${className}`}>{children}</h2>
+  return <h2 className={`text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1 break-words ${className}`}>{children}</h2>
 }
