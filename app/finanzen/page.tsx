@@ -91,6 +91,7 @@ export default async function Finanzen() {
     .sort((a, b) => (a.payoffDate ?? '9999').localeCompare(b.payoffDate ?? '9999'))
 
   const thisYear = new Date().getFullYear()
+  const principalLastYear = loanSchedules.reduce((s, { entries }) => s + principalPaidInYear(entries, thisYear - 1), 0)
   const principalThisYear = loanSchedules.reduce((s, { entries }) => s + principalPaidInYear(entries, thisYear), 0)
   const principalNextYear = loanSchedules.reduce((s, { entries }) => s + principalPaidInYear(entries, thisYear + 1), 0)
 
@@ -169,11 +170,15 @@ export default async function Finanzen() {
         <Card className="bg-green-50 border-green-100">
           <CardTitle>Tilgung im Überblick</CardTitle>
           <ul className="mt-2 space-y-1.5 text-sm text-gray-700 list-disc list-inside">
+            <li>Deine Mieter haben dir {thisYear - 1} bereits <strong className="text-green-700">{euro(principalLastYear)}</strong> getilgt</li>
             <li>Deine Mieter haben dir heute <strong className="text-green-700">{euro(todayCashflow.daily_principal_total)}</strong> getilgt</li>
             <li>Deine Gesamttilgung über alle Kredite steht jetzt bei <strong className="text-green-700">{euro(totalPrincipalPaid)}</strong></li>
             <li>Deine Mieter werden dir {thisYear} insgesamt <strong className="text-green-700">{euro(principalThisYear)}</strong> tilgen</li>
             <li>{thisYear + 1} werden es voraussichtlich <strong className="text-green-700">{euro(principalNextYear)}</strong> sein (angenommen keine Mietausfälle, Kündigungen oder Mieterhöhungen)</li>
           </ul>
+          <p className="text-xs text-gray-400 mt-2">
+            Jahreswerte zeigen nur die planmäßige Tilgung (ohne Sondertilgungen), damit die Zahlen die tatsächliche, stetig steigende Tilgungskurve abbilden. "Gesamttilgung" oben enthält Sondertilgungen weiterhin, da dort die reale Restschuld-Reduzierung zählt.
+          </p>
         </Card>
       )}
 
