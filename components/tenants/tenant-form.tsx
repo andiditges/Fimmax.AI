@@ -31,6 +31,7 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
     staffel_percent: '',
     staffel_years: '',
     index_base_value: '',
+    note: tenant?.note ?? '',
   })
 
   useState(() => {
@@ -60,6 +61,7 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
         move_in_date: form.move_in_date,
         move_out_date: form.move_out_date || null,
         furnishing_surcharge: form.has_furnishing_surcharge ? (parseFloat(form.furnishing_surcharge) || null) : null,
+        note: form.note || null,
       }).eq('id', tenant.id)
       if (!error) router.push(`/tenants/${tenant.id}`)
       else { alert('Fehler: ' + error.message); setLoading(false) }
@@ -76,6 +78,7 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
       rent_base: rentAmount,
       advance_payment: 0,
       furnishing_surcharge: form.has_furnishing_surcharge ? (parseFloat(form.furnishing_surcharge) || null) : null,
+      note: form.note || null,
     }).select().single()
 
     if (error || !newTenant) {
@@ -293,6 +296,13 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
               )}
             </>
           )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notiz</label>
+            <p className="text-xs text-gray-400 mb-1">Freitext, z.B. Kaution oder sonstige Vermerke</p>
+            <textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} rows={2}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
 
           <button type="submit" disabled={loading}
             className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">

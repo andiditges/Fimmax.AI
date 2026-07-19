@@ -60,6 +60,13 @@ export default async function TenantDetail({ params }: { params: Promise<{ id: s
         </Card>
       </div>
 
+      {t.note && (
+        <Card>
+          <CardTitle>Notiz</CardTitle>
+          <p className="text-sm text-gray-700 whitespace-pre-wrap mt-1">{t.note}</p>
+        </Card>
+      )}
+
       <Card>
         <div className="flex items-center justify-between mb-3">
           <CardTitle>Miethistorie ({agreementList.length})</CardTitle>

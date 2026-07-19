@@ -66,6 +66,7 @@ export interface Tenant {
   rent_base: number
   advance_payment: number
   furnishing_surcharge: number | null
+  note: string | null
 }
 
 export interface Receipt {
