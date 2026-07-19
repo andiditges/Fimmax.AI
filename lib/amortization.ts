@@ -101,6 +101,12 @@ export function generateAmortizationSchedule(
 
   outer: while (balance > EPS && isAfter(horizonDate, cursor)) {
     const periodEnd = addPeriod(cursor, loan.payment_frequency)
+    // Volle Periodenlänge (nicht nur das letzte Teilintervall nach einer
+    // Sondertilgung) - days_in_period muss die gesamte Periode abdecken,
+    // damit z.B. getDailyRateBreakdown daraus einen korrekten Tagesschnitt
+    // bilden kann, statt die Periodenzinsen/-tilgung fälschlich nur auf die
+    // wenigen Tage nach der Sondertilgung umzulegen.
+    const periodDays = dayCount(cursor, periodEnd, loan.day_count_convention)
     let subStart = cursor
     // Zinsen akkumulieren über alle Teilintervalle der Periode (auch die vor
     // einer zwischenzeitlichen Sondertilgung), damit die reguläre Rate am
@@ -140,7 +146,7 @@ export function generateAmortizationSchedule(
     if (graceEndDate && !isAfter(periodEnd, graceEndDate)) {
       entries.push({
         date: iso(periodEnd),
-        days_in_period: days,
+        days_in_period: periodDays,
         interest_accrued: periodInterest,
         scheduled_principal: 0,
         special_payment: 0,
@@ -163,7 +169,7 @@ export function generateAmortizationSchedule(
 
     entries.push({
       date: iso(periodEnd),
-      days_in_period: days,
+      days_in_period: periodDays,
       interest_accrued: periodInterest,
       scheduled_principal: actualPrincipal,
       special_payment: 0,
