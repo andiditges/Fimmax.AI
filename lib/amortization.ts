@@ -192,6 +192,17 @@ export function generateAmortizationSchedule(
   }
 }
 
+/**
+ * Summiert Tilgung (planmäßige Rate + Sondertilgungen) eines Tilgungsplans
+ * innerhalb eines Kalenderjahres - für "wird dieses/nächstes Jahr getilgt".
+ */
+export function principalPaidInYear(entries: AmortizationEntry[], year: number): number {
+  const yearPrefix = String(year)
+  return entries
+    .filter(e => e.date.slice(0, 4) === yearPrefix)
+    .reduce((s, e) => s + e.scheduled_principal + e.special_payment, 0)
+}
+
 export function calcRestschuldOnDate(
   loan: Loan,
   specialPayments: LoanSpecialPayment[],

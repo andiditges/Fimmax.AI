@@ -5,7 +5,8 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
-import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus } from '@/lib/amortization'
+import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus, principalPaidInYear } from '@/lib/amortization'
+import { totalEquityInvested, calcEquityBreakEven } from '@/lib/equity-breakeven'
 import { aggregateNetWorth } from '@/lib/net-worth'
 import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
 import { sumReserveCurrentValue, sumMonthlyReserveFromRent } from '@/lib/reserves'
@@ -78,12 +79,41 @@ export default async function Finanzen() {
 
   const totalPrincipalPaid = portfolio.loans.reduce((s, l) => s + l.cumulative_principal_paid, 0)
 
+  const loanSchedules = loanList.map(l => ({
+    loan: l,
+    entries: generateAmortizationSchedule(l, specialPaymentsByLoan[l.id] ?? []).entries,
+  }))
   const payoffOverview = loanList
     .map(l => {
       const schedule = generateAmortizationSchedule(l, specialPaymentsByLoan[l.id] ?? [])
       return { loan: l, payoffDate: schedule.payoff_date }
     })
     .sort((a, b) => (a.payoffDate ?? '9999').localeCompare(b.payoffDate ?? '9999'))
+
+  const thisYear = new Date().getFullYear()
+  const principalThisYear = loanSchedules.reduce((s, { entries }) => s + principalPaidInYear(entries, thisYear), 0)
+  const principalNextYear = loanSchedules.reduce((s, { entries }) => s + principalPaidInYear(entries, thisYear + 1), 0)
+
+  const agreementsByTenant = agreementList.reduce((acc, a) => {
+    if (a.tenant_id) (acc[a.tenant_id] ??= []).push(a)
+    return acc
+  }, {} as Record<string, RentalAgreement[]>)
+  const adjustmentsByTenant = adjustmentList.reduce((acc, a) => {
+    (acc[a.tenant_id] ??= []).push(a)
+    return acc
+  }, {} as Record<string, RentAdjustment[]>)
+
+  const equityInvested = totalEquityInvested(props, loanList)
+  const breakEven = calcEquityBreakEven(
+    props,
+    loanSchedules,
+    tenantList,
+    agreementsByTenant,
+    adjustmentsByTenant,
+    portfolio.monthly_operating_cost_runrate,
+    monthlyReserveFromRent,
+    equityInvested
+  )
 
   return (
     <div className="space-y-8">
@@ -141,7 +171,30 @@ export default async function Finanzen() {
           <ul className="mt-2 space-y-1.5 text-sm text-gray-700 list-disc list-inside">
             <li>Deine Mieter haben dir heute <strong className="text-green-700">{euro(todayCashflow.daily_principal_total)}</strong> getilgt</li>
             <li>Deine Gesamttilgung über alle Kredite steht jetzt bei <strong className="text-green-700">{euro(totalPrincipalPaid)}</strong></li>
+            <li>Deine Mieter werden dir {thisYear} insgesamt <strong className="text-green-700">{euro(principalThisYear)}</strong> tilgen</li>
+            <li>{thisYear + 1} werden es voraussichtlich <strong className="text-green-700">{euro(principalNextYear)}</strong> sein (angenommen keine Mietausfälle, Kündigungen oder Mieterhöhungen)</li>
           </ul>
+        </Card>
+      )}
+
+      {loanList.length > 0 && (
+        <Card className="bg-blue-50 border-blue-100">
+          <CardTitle>Meilensteine</CardTitle>
+          <ul className="mt-2 space-y-1.5 text-sm text-gray-700 list-disc list-inside">
+            {breakEven.break_even_date && (
+              <li>
+                {breakEven.already_reached ? (
+                  <>Du hast deinen Break-even für dein bisher eingesetztes Eigenkapital (<strong className="text-blue-700">{euro(breakEven.equity_invested)}</strong>) bereits am <strong className="text-blue-700">{formatDate(breakEven.break_even_date)}</strong> erreicht</>
+                ) : (
+                  <>An Tag <strong className="text-blue-700">{formatDate(breakEven.break_even_date)}</strong> wirst du deinen Break-even für dein bisher eingesetztes Eigenkapital (<strong className="text-blue-700">{euro(breakEven.equity_invested)}</strong>) erreicht haben</>
+                )}
+              </li>
+            )}
+            <li>Wären deine Immobilien fiktiv heute abbezahlt, bekämst du eine zu versteuernde Sofortrente von <strong className="text-blue-700">{euro(portfolio.monthly_rent_income)}</strong> / Monat</li>
+          </ul>
+          <p className="text-xs text-gray-400 mt-2">
+            Break-even = kumulierter Cashflow (Miete abzüglich Zinsen, Tilgung, Kosten-Laufrate und Rücklagenbildung) seit dem frühesten Kaufdatum, verglichen mit dem eingesetzten Eigenkapital (Kaufpreis + Kaufnebenkosten abzüglich Kreditsumme je Objekt). Kosten-/Rücklagen-Laufrate werden dabei vereinfacht als konstant über die Zeit angenommen.
+          </p>
         </Card>
       )}
 
