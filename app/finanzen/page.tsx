@@ -76,6 +76,8 @@ export default async function Finanzen() {
     }))
     .filter(c => c.items.length > 0)
 
+  const totalPrincipalPaid = portfolio.loans.reduce((s, l) => s + l.cumulative_principal_paid, 0)
+
   const payoffOverview = loanList
     .map(l => {
       const schedule = generateAmortizationSchedule(l, specialPaymentsByLoan[l.id] ?? [])
@@ -132,6 +134,16 @@ export default async function Finanzen() {
         </div>
         <p className="text-xs text-gray-400">Kosten-Laufrate = Belege der letzten 12 Monate / 12 (statt Einzelmonat, wegen unregelmäßiger Kosten wie Versicherung). AfA ist nicht enthalten, da nicht zahlungswirksam.</p>
       </Card>
+
+      {loanList.length > 0 && (
+        <Card className="bg-green-50 border-green-100">
+          <CardTitle>Tilgung im Überblick</CardTitle>
+          <ul className="mt-2 space-y-1.5 text-sm text-gray-700 list-disc list-inside">
+            <li>Deine Mieter haben dir heute <strong className="text-green-700">{euro(todayCashflow.daily_principal_total)}</strong> getilgt</li>
+            <li>Deine Gesamttilgung über alle Kredite steht jetzt bei <strong className="text-green-700">{euro(totalPrincipalPaid)}</strong></li>
+          </ul>
+        </Card>
+      )}
 
       {loanList.length > 0 && (
         <Card>
