@@ -7,6 +7,7 @@ import { ThresholdBadge, ThresholdBar } from '@/components/threshold-badge'
 import { ReminderRow } from '@/components/reminders/reminder-row'
 import { TaxExportButton } from '@/components/tax-export-button'
 import { PropertyReserves } from '@/components/properties/property-reserves'
+import { RiskOverview } from '@/components/tipps/risk-overview'
 import { calcAnnualAfa } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
 import { getLoanStatus } from '@/lib/amortization'
@@ -154,6 +155,12 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
           <Link href={`/properties/${id}/nebenkosten`} className="text-sm text-blue-600 hover:underline whitespace-nowrap">Öffnen →</Link>
         </div>
       </Card>
+
+      {/* Standortrisiko */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-800 mb-3">Standortrisiko</h2>
+        <RiskOverview properties={[p]} />
+      </div>
 
       {/* Rücklagen */}
       <PropertyReserves

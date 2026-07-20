@@ -53,7 +53,17 @@ export interface Property {
   bundesland: Bundesland | null
   movable_items_value: number | null
   grunderwerbsteuer: number | null
+  risk_score: number | null
+  risk_summary: string | null
+  risk_factors: RiskFactor[] | null
+  risk_assessed_at: string | null
   created_at: string
+}
+
+export interface RiskFactor {
+  label: string
+  direction: 'positiv' | 'negativ' | 'neutral'
+  note: string
 }
 
 export interface Tenant {
@@ -390,6 +400,16 @@ export interface PropertyReserve {
   funded_from_rent: boolean
   note: string | null
   created_at: string
+}
+
+export type TipSeverity = 'info' | 'warnung' | 'aktion'
+
+export interface Tip {
+  id: string
+  severity: TipSeverity
+  title: string
+  body: string
+  cta?: { label: string; href: string }
 }
 
 export interface UtilitySettlement {

@@ -22,6 +22,7 @@ export function PropertyForm({ property }: { property?: Property }) {
     movable_items: property?.movable_items_value != null ? String(property.movable_items_value) : '',
     grunderwerbsteuer: property?.grunderwerbsteuer != null ? String(property.grunderwerbsteuer) : '',
     current_value: property?.current_value != null ? String(property.current_value) : '',
+    incidental_costs: property ? String(property.incidental_costs) : '0',
     land_value: property ? String(property.land_value) : '',
     building_value: property ? String(property.building_value) : '',
     build_year: property ? String(property.build_year) : '',
@@ -35,11 +36,6 @@ export function PropertyForm({ property }: { property?: Property }) {
       setForm(f => ({ ...f, usage_duration: String(suggestUsageDuration(year)) }))
     }
   }
-
-  // Kaufnebenkosten (Notar, Grundbuch, Grunderwerbsteuer, Makler) kommen bewusst
-  // noch nicht hier ins Formular – die werden später automatisch aus hochgeladenen
-  // Belegen ermittelt und der Immobilie zugeordnet. Bis dahin bleibt die
-  // incidental_costs-Spalte in der DB auf ihrem Default (0).
 
   // Grundstücks- und Gebäudeanteil ergänzen sich immer zum Kaufpreis: welches
   // der beiden Felder zuletzt verlassen wird, füllt das jeweils andere mit der
@@ -129,6 +125,7 @@ export function PropertyForm({ property }: { property?: Property }) {
       bundesland: form.bundesland || null,
       movable_items_value: form.movable_items ? parseFloat(form.movable_items) : null,
       grunderwerbsteuer: form.grunderwerbsteuer ? parseFloat(form.grunderwerbsteuer) : null,
+      incidental_costs: form.incidental_costs ? parseFloat(form.incidental_costs) : 0,
     }
 
     const { error } = property
@@ -156,7 +153,7 @@ export function PropertyForm({ property }: { property?: Property }) {
             : undefined
         }
         className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        required={key !== 'unit' && key !== 'unit_label' && key !== 'current_value' && key !== 'movable_items'}
+        required={key !== 'unit' && key !== 'unit_label' && key !== 'current_value' && key !== 'movable_items' && key !== 'incidental_costs'}
       />
     </div>
   )
@@ -215,6 +212,9 @@ export function PropertyForm({ property }: { property?: Property }) {
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
+          {field('Kaufnebenkosten (€)', 'incidental_costs', 'number',
+            'Notar, Grundbuch/Amtsgericht, Makler, Grundschuldbestellung, Nutzungsdauergutachten u.ä. – ohne Grunderwerbsteuer (die hat ihr eigenes Feld oben) und ohne Renovierung (kommt als Beleg mit is_renovation-Flag). Fließt in die Eigenkapital-Berechnung im Finanz-Cockpit ein.')}
 
           {field('Aktueller Wert (€)', 'current_value', 'number',
             'Optional – dein geschätzter aktueller Marktwert, z.B. laut Gutachten oder Vergleichswerten. Fließt ins Finanz-Cockpit (Immobilienwert, Eigenkapital) ein. Leer lassen, um stattdessen den Kaufpreis zu verwenden.')}

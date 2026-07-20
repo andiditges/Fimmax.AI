@@ -11,6 +11,7 @@ const LINKS = [
   { href: '/properties', label: 'Immobilien' },
   { href: '/steuer', label: 'Steuerübersicht' },
   { href: '/finanzen', label: 'Finanzen' },
+  { href: '/tipps', label: 'Tipps' },
   { href: '/indexmiete', label: 'Indexmiete' },
   { href: '/reminders', label: 'Erinnerungen' },
   { href: '/charity', label: 'Charity' },
