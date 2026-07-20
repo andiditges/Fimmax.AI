@@ -76,3 +76,29 @@ html {
 ::-webkit-scrollbar-corner {
   background-color: #f3f4f6;
 }
+
+/* Ehegattenschaukel: schaukelt in jedem Zyklus von ruhig zu immer stärkeren
+   Ausschlägen hoch (wie beim echten Anschubsen einer Schaukel), bevor sie
+   zum nächsten Zyklus wieder ausklingt. --amp bestimmt die maximale
+   Auslenkung und wird pro Immobilie aus dem AfA-Potenzial berechnet. */
+@keyframes ehegattenschaukel-swing {
+  0%   { transform: rotate(0deg); }
+  6%   { transform: rotate(calc(var(--amp, 10deg) * 0.15)); }
+  12%  { transform: rotate(calc(var(--amp, 10deg) * -0.15)); }
+  20%  { transform: rotate(calc(var(--amp, 10deg) * 0.35)); }
+  28%  { transform: rotate(calc(var(--amp, 10deg) * -0.35)); }
+  38%  { transform: rotate(calc(var(--amp, 10deg) * 0.6)); }
+  48%  { transform: rotate(calc(var(--amp, 10deg) * -0.6)); }
+  60%  { transform: rotate(calc(var(--amp, 10deg) * 0.85)); }
+  72%  { transform: rotate(calc(var(--amp, 10deg) * -1)); }
+  84%  { transform: rotate(var(--amp, 10deg)); }
+  92%  { transform: rotate(calc(var(--amp, 10deg) * -0.4)); }
+  100% { transform: rotate(0deg); }
+}
+
+.ehegattenschaukel-plank {
+  transform-origin: 50% 50%;
+  animation-name: ehegattenschaukel-swing;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
