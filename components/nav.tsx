@@ -1,9 +1,10 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { Menu, X } from 'lucide-react'
+import { Menu, Search, X } from 'lucide-react'
 import { Logo } from '@/components/logo'
 import { LogoutButton } from '@/components/logout-button'
+import { SearchModal } from '@/components/search/search-modal'
 
 const LINKS = [
   { href: '/warum', label: 'Warum' },
@@ -19,6 +20,7 @@ const LINKS = [
 
 export function Nav({ userEmail }: { userEmail: string | null }) {
   const [open, setOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
 
   return (
     <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
@@ -41,6 +43,14 @@ export function Nav({ userEmail }: { userEmail: string | null }) {
                   {l.label}
                 </Link>
               ))}
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                className="text-gray-400 hover:text-blue-700 transition-colors p-1"
+                aria-label="Suche öffnen"
+              >
+                <Search size={18} />
+              </button>
               <Link href="/receipts/new" className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">+ Beleg</Link>
               <Link href="/properties/new" className="hover:text-blue-700 transition-colors">+ Immobilie</Link>
               <span className="text-gray-300">|</span>
@@ -48,18 +58,30 @@ export function Nav({ userEmail }: { userEmail: string | null }) {
               <LogoutButton />
             </div>
 
-            {/* Mobile: Menü-Button */}
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="md:hidden p-2 -mr-2 text-gray-600"
-              aria-label="Menü öffnen"
-            >
-              <Menu size={22} />
-            </button>
+            {/* Mobile: Suche + Menü-Button */}
+            <div className="md:hidden flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                className="p-2 text-gray-600"
+                aria-label="Suche öffnen"
+              >
+                <Search size={20} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="p-2 -mr-2 text-gray-600"
+                aria-label="Menü öffnen"
+              >
+                <Menu size={22} />
+              </button>
+            </div>
           </>
         )}
       </div>
+
+      {userEmail && searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
 
       {/* Mobile-Seitenleiste */}
       {userEmail && open && (
