@@ -29,6 +29,7 @@ export function PropertyForm({ property }: { property?: Property }) {
     usage_duration: property ? String(property.usage_duration) : '',
     is_self_managed: property?.is_self_managed ?? true,
   })
+  const [deleteConfirm, setDeleteConfirm] = useState('')
 
   function onBuildYearBlur() {
     const year = parseInt(form.build_year)
@@ -133,6 +134,14 @@ export function PropertyForm({ property }: { property?: Property }) {
       : await supabase.from('properties').insert(payload)
 
     if (!error) router.push(property ? `/properties/${property.id}` : '/')
+    else { alert('Fehler: ' + error.message); setLoading(false) }
+  }
+
+  async function onDelete() {
+    if (!property || deleteConfirm !== property.address) return
+    setLoading(true)
+    const { error } = await supabase.from('properties').delete().eq('id', property.id)
+    if (!error) router.push('/properties')
     else { alert('Fehler: ' + error.message); setLoading(false) }
   }
 
@@ -269,6 +278,35 @@ export function PropertyForm({ property }: { property?: Property }) {
           </button>
         </form>
       </Card>
+
+      {property && (
+        <Card className="mt-6 border-red-200 bg-red-50">
+          <h2 className="text-sm font-semibold text-red-700 mb-1">Immobilie löschen</h2>
+          <p className="text-xs text-red-700/80 mb-3">
+            Löscht diese Immobilie unwiderruflich - inklusive aller Mieter, Mietverträge, Belege, Kredite,
+            Sondertilgungen, Erinnerungen, Rücklagen und Nebenkosten dazu. Das kann nicht rückgängig gemacht werden.
+          </p>
+          <label className="block text-xs font-medium text-red-700 mb-1">
+            Gib zur Bestätigung die Adresse ein: <strong>{property.address}</strong>
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={deleteConfirm}
+              onChange={e => setDeleteConfirm(e.target.value)}
+              className="flex-1 border border-red-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-400"
+            />
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={loading || deleteConfirm !== property.address}
+              className="bg-red-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              Endgültig löschen
+            </button>
+          </div>
+        </Card>
+      )}
     </div>
   )
 }
