@@ -134,6 +134,22 @@ export function currentAgreement(agreements: RentalAgreement[], asOfDate: Date =
   return applicable.length > 0 ? applicable[applicable.length - 1] : null
 }
 
+// Eine Staffelmiete wird beim Anlegen als mehrere rental_agreements-Zeilen
+// (eine je Stufe, mit zukünftigem start_date) hinterlegt - anders als bei
+// Indexmiete oder fester Miete, wo i.d.R. nur eine Zeile bzw. Erhöhungen mit
+// is_index_rent existieren.
+export function isStaffelSchedule(agreements: RentalAgreement[]): boolean {
+  return agreements.length > 1 && !agreements.some(a => a.is_index_rent)
+}
+
+export function nextAgreementStep(agreements: RentalAgreement[], asOfDate: Date = new Date()): RentalAgreement | null {
+  const today = iso(asOfDate)
+  const future = [...agreements]
+    .filter(a => a.start_date > today)
+    .sort((a, b) => a.start_date.localeCompare(b.start_date))
+  return future.length > 0 ? future[0] : null
+}
+
 export function currentRentAmount(agreements: RentalAgreement[], asOfDate: Date = new Date()): number | null {
   return currentAgreement(agreements, asOfDate)?.rent_amount ?? null
 }

@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/supabase/get-user'
 import { VpiReadingsForm } from '@/components/vpi/vpi-readings-form'
 import { IndexmieteOverview } from '@/components/vpi/indexmiete-overview'
-import { currentAgreement } from '@/lib/rent-schedule'
+import { StaffelmieteOverview } from '@/components/vpi/staffelmiete-overview'
+import { currentAgreement, isStaffelSchedule } from '@/lib/rent-schedule'
 import { latestVpiReading } from '@/lib/vpi'
 import { Property, RentalAgreement, Tenant, VpiReading } from '@/lib/types'
 
@@ -36,12 +37,22 @@ export default async function IndexmietePage() {
     })
     .filter((x): x is { tenant: Tenant; property: Property; agreement: RentalAgreement } => x !== null)
 
+  const staffelItems = tenantList
+    .map(t => {
+      const agreements = agreementList.filter(a => a.tenant_id === t.id)
+      if (!isStaffelSchedule(agreements)) return null
+      const property = propertyById[t.property_id]
+      if (!property) return null
+      return { tenant: t, property, agreements }
+    })
+    .filter((x): x is { tenant: Tenant; property: Property; agreements: RentalAgreement[] } => x !== null)
+
   return (
     <div className="space-y-8 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Indexmiete</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Indexmiete &amp; Staffelmiete</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Aktuelle Erhöhungsmöglichkeit nach § 557b BGB für Mietverhältnisse mit Indexmiete, auf Basis des Verbraucherpreisindex (VPI).
+          Aktuelle Erhöhungsmöglichkeit nach § 557b BGB für Mietverhältnisse mit Indexmiete (auf Basis des Verbraucherpreisindex/VPI) sowie Überblick über bereits vereinbarte Staffelmieten nach § 557a BGB.
         </p>
       </div>
 
@@ -50,6 +61,11 @@ export default async function IndexmietePage() {
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-3">Mietverhältnisse mit Indexmiete ({indexItems.length})</h2>
         <IndexmieteOverview items={indexItems} latestReading={latest} />
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold text-gray-800 mb-3">Mietverhältnisse mit Staffelmiete ({staffelItems.length})</h2>
+        <StaffelmieteOverview items={staffelItems} />
       </div>
     </div>
   )

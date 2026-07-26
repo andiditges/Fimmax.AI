@@ -31,11 +31,33 @@ export function IndexmieteOverview({ items, latestReading }: { items: Item[]; la
     )
   }
 
+  let totalToday = 0
+  let totalInclFuture = 0
+  for (const item of items) {
+    const status = calcIndexmieteStatus(item.agreement, latestReading)
+    if (!status) continue
+    const delta = status.possible_new_rent - status.current_rent
+    totalInclFuture += delta
+    if (status.eligible) totalToday += delta
+  }
+
   return (
     <div className="space-y-3">
       {items.map(item => (
         <IndexmieteRow key={item.tenant.id} item={item} latestReading={latestReading} />
       ))}
+      {totalInclFuture > 0 && (
+        <Card className="bg-blue-50 border-blue-100">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-sm font-medium text-gray-700">Gesamtsumme heute bereits möglich</p>
+            <p className="font-semibold text-green-700">+{euro(totalToday)} / Monat</p>
+          </div>
+          <div className="flex items-center justify-between flex-wrap gap-2 mt-1">
+            <p className="text-sm font-medium text-gray-700">Gesamtsumme inkl. zukünftig möglicher Erhöhungen</p>
+            <p className="font-semibold text-blue-700">+{euro(totalInclFuture)} / Monat</p>
+          </div>
+        </Card>
+      )}
     </div>
   )
 }
@@ -125,7 +147,7 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
         </span>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 text-sm">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3 text-sm">
         <div>
           <p className="text-gray-400 text-xs">Aktuelle Miete</p>
           <p className="font-medium text-gray-900">{euro(status.current_rent)}</p>
@@ -141,6 +163,16 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
         <div>
           <p className="text-gray-400 text-xs">Rechnerisch möglich</p>
           <p className="font-medium text-blue-700">{euro(status.possible_new_rent)}</p>
+        </div>
+        <div>
+          <p className="text-gray-400 text-xs">Erhöhung heute möglich</p>
+          <p className={`font-medium ${status.eligible ? 'text-green-700' : 'text-gray-400'}`}>
+            {status.eligible ? `+${euro(status.possible_new_rent - status.current_rent)}` : '– noch nicht'}
+          </p>
+        </div>
+        <div>
+          <p className="text-gray-400 text-xs">Erhöhung inkl. zukünftig möglich</p>
+          <p className="font-medium text-blue-700">+{euro(status.possible_new_rent - status.current_rent)}</p>
         </div>
       </div>
 
