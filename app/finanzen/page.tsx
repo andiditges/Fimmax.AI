@@ -5,19 +5,21 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
-import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus, principalPaidInYear, getDailyRateBreakdown } from '@/lib/amortization'
+import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus, principalPaidInYear, getDailyRateBreakdown, iso } from '@/lib/amortization'
 import { totalEquityInvested, calcEquityBreakEven } from '@/lib/equity-breakeven'
 import { aggregateNetWorth } from '@/lib/net-worth'
 import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
 import { sumReserveCurrentValue, sumMonthlyReserveFromRent } from '@/lib/reserves'
+import { currentAgreement } from '@/lib/rent-schedule'
+import { latestVpiReading, calcIndexmieteStatus } from '@/lib/vpi'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
-import { ASSET_CATEGORY_LABELS, Asset, AssetCategory, Property, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Receipt, PropertyReserve, OperatingCost, RESERVE_CATEGORY_LABELS } from '@/lib/types'
+import { ASSET_CATEGORY_LABELS, Asset, AssetCategory, Property, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Receipt, PropertyReserve, OperatingCost, RESERVE_CATEGORY_LABELS, VpiReading } from '@/lib/types'
 
 export default async function Finanzen() {
   await requireUser()
   const supabase = await createClient()
 
-  const [{ data: properties }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: receipts }, { data: assetsData }, { data: reservesData }, { data: operatingCostsData }] = await Promise.all([
+  const [{ data: properties }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: receipts }, { data: assetsData }, { data: reservesData }, { data: operatingCostsData }, { data: vpiReadingsData }] = await Promise.all([
     supabase.from('properties').select('*'),
     supabase.from('loans').select('*'),
     supabase.from('tenants').select('*'),
@@ -27,6 +29,7 @@ export default async function Finanzen() {
     supabase.from('assets').select('*').order('created_at'),
     supabase.from('property_reserves').select('*').order('created_at'),
     supabase.from('operating_costs').select('*'),
+    supabase.from('vpi_readings').select('*'),
   ])
 
   const props = (properties ?? []) as Property[]
@@ -38,6 +41,7 @@ export default async function Finanzen() {
   const assets = (assetsData ?? []) as Asset[]
   const reserveList = (reservesData ?? []) as PropertyReserve[]
   const operatingCostList = (operatingCostsData ?? []) as OperatingCost[]
+  const vpiReadingList = (vpiReadingsData ?? []) as VpiReading[]
 
   const { data: specialPayments } = loanList.length
     ? await supabase.from('loan_special_payments').select('*').in('loan_id', loanList.map(l => l.id))
@@ -78,6 +82,9 @@ export default async function Finanzen() {
     .filter(c => c.items.length > 0)
 
   const totalPrincipalPaid = portfolio.loans.reduce((s, l) => s + l.cumulative_principal_paid, 0)
+  const totalSondertilgungenPaid = (specialPayments ?? [])
+    .filter(sp => sp.payment_date <= iso(new Date()))
+    .reduce((s, sp) => s + sp.amount, 0)
 
   const loanSchedules = loanList.map(l => ({
     loan: l,
@@ -94,6 +101,23 @@ export default async function Finanzen() {
   const principalLastYear = loanSchedules.reduce((s, { entries }) => s + principalPaidInYear(entries, thisYear - 1), 0)
   const principalThisYear = loanSchedules.reduce((s, { entries }) => s + principalPaidInYear(entries, thisYear), 0)
   const principalNextYear = loanSchedules.reduce((s, { entries }) => s + principalPaidInYear(entries, thisYear + 1), 0)
+
+  // Rechnerisches Sondertilgungspotential: monatliche Mehreinnahme aller
+  // Indexmiete-Mietverhältnisse, die bis zum 1.1. des Folgejahres nach §
+  // 557b BGB erhöhungsberechtigt sein werden (auf Basis des zuletzt
+  // erfassten VPI-Werts, da ein künftiger Indexstand nicht bekannt ist),
+  // hochgerechnet auf 12 Monate ab einer angenommenen Erhöhung im Januar.
+  const latestReading = latestVpiReading(vpiReadingList)
+  const nextJan1 = new Date(thisYear + 1, 0, 1)
+  const indexRentIncreasePotential = latestReading
+    ? tenantList.reduce((sum, t) => {
+        const active = currentAgreement(agreementList.filter(a => a.tenant_id === t.id))
+        if (!active || !active.is_index_rent) return sum
+        const status = calcIndexmieteStatus(active, latestReading, nextJan1)
+        if (!status || !status.eligible) return sum
+        return sum + (status.possible_new_rent - status.current_rent) * 12
+      }, 0)
+    : 0
 
   const now = new Date()
   const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1)
@@ -182,13 +206,21 @@ export default async function Finanzen() {
             <li>Deine Mieter haben dir {thisYear - 1} bereits <strong className="text-green-700">{euro(principalLastYear)}</strong> getilgt</li>
             <li>
               Deine Mieter tilgen dir im {currentMonthName} täglich <strong className="text-green-700">{euro(todayCashflow.daily_principal_total)}</strong>
-              {Math.round(dailyPrincipalNextMonth) !== Math.round(todayCashflow.daily_principal_total) && (
-                <>, im {nextMonthName} sind es <strong className="text-green-700">{euro(dailyPrincipalNextMonth)}</strong></>
-              )}
+              , im {nextMonthName} sind es <strong className="text-green-700">{euro(dailyPrincipalNextMonth)}</strong>
             </li>
-            <li>Deine Gesamttilgung über alle Kredite steht jetzt bei <strong className="text-green-700">{euro(totalPrincipalPaid)}</strong></li>
+            <li>
+              Deine Gesamttilgung über alle Kredite steht jetzt bei <strong className="text-green-700">{euro(totalPrincipalPaid)}</strong>
+              {totalSondertilgungenPaid > 0 && <> (davon <strong className="text-green-700">{euro(totalSondertilgungenPaid)}</strong> Sondertilgungen)</>}
+            </li>
             <li>Deine Mieter werden dir {thisYear} insgesamt <strong className="text-green-700">{euro(principalThisYear)}</strong> tilgen</li>
             <li>{thisYear + 1} werden es voraussichtlich <strong className="text-green-700">{euro(principalNextYear)}</strong> sein (angenommen keine Mietausfälle, Kündigungen oder Mieterhöhungen)</li>
+            {indexRentIncreasePotential > 0 && (
+              <li>
+                Falls du im Januar {thisYear + 1} bei allen dann Indexmiete-erhöhungsberechtigten Mietverhältnissen erhöhst, kämen rechnerisch zusätzlich bis zu{' '}
+                <strong className="text-green-700">{euro(indexRentIncreasePotential)}</strong> Mehreinnahme für {thisYear + 1} zusammen –
+                z.B. geeignet für eine zusätzliche Sondertilgung Ende {thisYear + 1} (auf Basis des zuletzt erfassten VPI-Werts, ohne Gewähr)
+              </li>
+            )}
           </ul>
           <p className="text-xs text-gray-400 mt-2">
             Jahreswerte zeigen nur die planmäßige Tilgung (ohne Sondertilgungen), damit die Zahlen die tatsächliche, stetig steigende Tilgungskurve abbilden. "Gesamttilgung" oben enthält Sondertilgungen weiterhin, da dort die reale Restschuld-Reduzierung zählt.

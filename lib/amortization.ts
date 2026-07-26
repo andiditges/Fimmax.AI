@@ -213,6 +213,26 @@ export function principalPaidInYear(entries: AmortizationEntry[], year: number):
     .reduce((s, e) => s + e.scheduled_principal, 0)
 }
 
+/**
+ * Verbleibendes kostenloses Sondertilgungskontingent für das Kalenderjahr von
+ * asOfDate (z.B. die üblichen 5% der urspr. Darlehenssumme p.a. ohne
+ * Vorfälligkeitsentschädigung). null, wenn für den Kredit keine Grenze
+ * hinterlegt ist (dann unbegrenzt/unbekannt).
+ */
+export function specialPaymentAllowanceRemaining(
+  loan: Loan,
+  specialPayments: LoanSpecialPayment[],
+  asOfDate: Date = new Date()
+): number | null {
+  if (loan.special_payment_limit_percent == null) return null
+  const year = asOfDate.getFullYear()
+  const limit = loan.principal * (loan.special_payment_limit_percent / 100)
+  const usedThisYear = specialPayments
+    .filter(sp => new Date(sp.payment_date).getFullYear() === year)
+    .reduce((s, sp) => s + sp.amount, 0)
+  return Math.max(0, limit - usedThisYear)
+}
+
 export function calcRestschuldOnDate(
   loan: Loan,
   specialPayments: LoanSpecialPayment[],

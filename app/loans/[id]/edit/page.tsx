@@ -24,6 +24,7 @@ export default function EditLoan() {
     day_count_convention: '30/360' as DayCountConvention,
     renovation_amount: '',
     interest_only_months: '',
+    special_payment_limit_percent: '',
   })
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function EditLoan() {
         day_count_convention: data.day_count_convention,
         renovation_amount: data.planned_renovation_amount != null ? String(data.planned_renovation_amount) : '',
         interest_only_months: data.interest_only_months != null ? String(data.interest_only_months) : '',
+        special_payment_limit_percent: data.special_payment_limit_percent != null ? String(data.special_payment_limit_percent) : '',
       })
       setLoaded(true)
     })
@@ -70,6 +72,7 @@ export default function EditLoan() {
       day_count_convention: form.day_count_convention,
       planned_renovation_amount: form.renovation_amount ? parseFloat(form.renovation_amount) : null,
       interest_only_months: form.interest_only_months ? parseInt(form.interest_only_months) : null,
+      special_payment_limit_percent: form.special_payment_limit_percent ? parseFloat(form.special_payment_limit_percent) : null,
     }).eq('id', params.id)
 
     if (error) { alert('Fehler: ' + error.message); setLoading(false); return }
@@ -169,6 +172,14 @@ export default function EditLoan() {
             <label className="block text-sm font-medium text-gray-700 mb-1">davon Renovierung/Sanierung geplant (€)</label>
             <input type="number" step="0.01" value={form.renovation_amount}
               onChange={e => setForm(f => ({ ...f, renovation_amount: e.target.value }))}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Sondertilgungsgrenze pro Jahr (%)</label>
+            <p className="text-xs text-gray-400 mb-1">Optional – üblich sind 5% der Darlehenssumme pro Jahr ohne Vorfälligkeitsentschädigung. Steht im Darlehensvertrag. Ohne Angabe wird kein Limit geprüft.</p>
+            <input type="number" step="0.01" value={form.special_payment_limit_percent}
+              onChange={e => setForm(f => ({ ...f, special_payment_limit_percent: e.target.value }))}
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 

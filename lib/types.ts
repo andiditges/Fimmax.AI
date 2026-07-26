@@ -270,6 +270,7 @@ export interface Loan {
   day_count_convention: DayCountConvention
   planned_renovation_amount: number | null
   interest_only_months: number | null
+  special_payment_limit_percent: number | null
   created_at: string
 }
 

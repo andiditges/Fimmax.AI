@@ -7,7 +7,7 @@ import { SpecialPaymentForm } from '@/components/loans/special-payment-form'
 import { DayCountEdit } from '@/components/loans/day-count-edit'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { TilgungZinsChart } from '@/components/charts/tilgung-zins-chart'
-import { generateAmortizationSchedule, getLoanStatus } from '@/lib/amortization'
+import { generateAmortizationSchedule, getLoanStatus, specialPaymentAllowanceRemaining } from '@/lib/amortization'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
 import { Loan, LoanSpecialPayment, Property } from '@/lib/types'
 
@@ -30,6 +30,7 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
 
   const schedule = generateAmortizationSchedule(l, sp)
   const status = getLoanStatus(l, sp)
+  const allowanceRemaining = specialPaymentAllowanceRemaining(l, sp)
 
   const chartData = schedule.entries.map(e => ({ date: e.date, remaining_balance: e.remaining_balance }))
   chartData.unshift({ date: l.disbursement_date, remaining_balance: l.principal })
@@ -112,6 +113,13 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
         <div className="flex items-center justify-between mb-3">
           <CardTitle>Sondertilgungen ({sp.length})</CardTitle>
         </div>
+        {allowanceRemaining !== null && (
+          <p className={`text-sm mb-3 ${allowanceRemaining > 0.01 ? 'text-gray-600' : 'text-amber-700'}`}>
+            {allowanceRemaining > 0.01
+              ? `Noch ${euro(allowanceRemaining)} kostenloses Sondertilgungskontingent für ${new Date().getFullYear()} (${l.special_payment_limit_percent}% p.a.).`
+              : `Sondertilgungsgrenze für ${new Date().getFullYear()} ausgeschöpft (${l.special_payment_limit_percent}% p.a.) – weitere Sondertilgung erst wieder ab ${new Date().getFullYear() + 1} ohne Vorfälligkeitsentschädigung.`}
+          </p>
+        )}
         {sp.length > 0 && (
           <div className="space-y-2 mb-4">
             {sp.map(s => (

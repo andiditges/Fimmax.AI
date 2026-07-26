@@ -1,4 +1,4 @@
-import { getLoanStatus, simulateSpecialPayment } from './amortization'
+import { getLoanStatus, simulateSpecialPayment, specialPaymentAllowanceRemaining } from './amortization'
 import { calc15Threshold } from './threshold15'
 import { euro, propertyLabel } from './format'
 import {
@@ -54,18 +54,42 @@ export function generateTips(input: TipsInput): Tip[] {
 function sondertilgungTip({ loans, specialPaymentsByLoan, assets, portfolio, properties }: TipsInput): Tip | null {
   const propertyById = Object.fromEntries(properties.map(p => [p.id, p]))
   const candidates = loans
-    .map(loan => ({ loan, status: getLoanStatus(loan, specialPaymentsByLoan[loan.id] ?? []) }))
+    .map(loan => ({
+      loan,
+      status: getLoanStatus(loan, specialPaymentsByLoan[loan.id] ?? []),
+      allowanceRemaining: specialPaymentAllowanceRemaining(loan, specialPaymentsByLoan[loan.id] ?? []),
+    }))
     .filter(c => c.status.remaining_balance > EPS)
 
   if (candidates.length === 0) return null
 
-  const worst = candidates.reduce((a, b) => (b.loan.nominal_interest_rate > a.loan.nominal_interest_rate ? b : a))
+  // Kredite mit ausgeschöpfter Sondertilgungsgrenze (z.B. 5% p.a.) fürs
+  // laufende Jahr ausklammern, sonst würde eine weitere Sondertilgung eine
+  // Vorfälligkeitsentschädigung auslösen.
+  const eligible = candidates.filter(c => c.allowanceRemaining === null || c.allowanceRemaining > EPS)
+
+  if (eligible.length === 0) {
+    const nextJan1 = new Date(new Date().getFullYear() + 1, 0, 1)
+    return {
+      id: 'sondertilgung-grenze-ausgeschoepft',
+      severity: 'info',
+      title: 'Sondertilgungsgrenze für dieses Jahr bereits ausgeschöpft',
+      body: `Bei allen Krediten mit hinterlegter Sondertilgungsgrenze ist das kostenlose Jahreskontingent bereits ausgeschöpft. Eine weitere Sondertilgung ohne Vorfälligkeitsentschädigung ist erst wieder ab ${nextJan1.toLocaleDateString('de-DE')} möglich.`,
+      cta: { label: 'Zu Finanzen', href: '/finanzen' },
+    }
+  }
+
+  const worst = eligible.reduce((a, b) => (b.loan.nominal_interest_rate > a.loan.nominal_interest_rate ? b : a))
 
   const liquidReserve = assets
     .filter(a => a.category === 'tagesgeld_festgeld' || a.category === 'girokonto')
     .reduce((s, a) => s + a.current_value, 0)
   const safetyBuffer = 3 * (portfolio.monthly_debt_service + portfolio.monthly_operating_cost_runrate)
-  const available = Math.floor((liquidReserve - safetyBuffer) / 500) * 500
+  let available = Math.floor((liquidReserve - safetyBuffer) / 500) * 500
+
+  if (worst.allowanceRemaining !== null) {
+    available = Math.min(available, Math.floor(worst.allowanceRemaining / 500) * 500)
+  }
 
   if (available < 500) return null
 
@@ -77,7 +101,7 @@ function sondertilgungTip({ loans, specialPaymentsByLoan, assets, portfolio, pro
     id: 'sondertilgung',
     severity: 'aktion',
     title: `Sondertilgung: ${worst.loan.name} hat mit ${worst.loan.nominal_interest_rate}% deinen schlechtesten Zins`,
-    body: `Nach Abzug einer Reserve von ${euro(safetyBuffer)} (3 Monate Rate + Kosten) hättest du noch ${euro(suggested)} aus deinem Tagesgeld/Festgeld übrig${property ? ` für ${propertyLabel(property)}` : ''}. Das würde dir ${euro(sim.interest_saved_total)} Zinsen sparen und die Restlaufzeit um ${sim.months_saved} Monate verkürzen.`,
+    body: `Nach Abzug einer Reserve von ${euro(safetyBuffer)} (3 Monate Rate + Kosten)${worst.allowanceRemaining !== null ? ` und begrenzt auf dein verbleibendes Sondertilgungskontingent für dieses Jahr` : ''} hättest du noch ${euro(suggested)} aus deinem Girokonto/Tagesgeld/Festgeld übrig${property ? ` für ${propertyLabel(property)}` : ''}. Das würde dir ${euro(sim.interest_saved_total)} Zinsen sparen und die Restlaufzeit um ${sim.months_saved} Monate verkürzen.`,
     cta: { label: 'Zum Kredit', href: `/loans/${worst.loan.id}` },
   }
 }
