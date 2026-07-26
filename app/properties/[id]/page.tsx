@@ -8,6 +8,7 @@ import { ReminderRow } from '@/components/reminders/reminder-row'
 import { TaxExportButton } from '@/components/tax-export-button'
 import { PropertyReserves } from '@/components/properties/property-reserves'
 import { RiskOverview } from '@/components/tipps/risk-overview'
+import { ReceiptBrowser } from '@/components/receipts/receipt-browser'
 import { Ehegattenschaukel } from '@/components/properties/ehegattenschaukel'
 import { calcAnnualAfa } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
@@ -106,6 +107,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
 
   const taxExportRow = buildTaxExportRow(p, currentYear, recs, yearIncome)
   const openReminders = reminderList.filter(r => r.status !== 'erledigt')
+  const receiptYears = [...new Set(recs.map(r => r.tax_year))].sort((a, b) => b - a)
 
   return (
     <div className="space-y-6">
@@ -290,29 +292,23 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
 
       {/* Belegliste */}
       <div>
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <h2 className="text-lg font-semibold text-gray-800">Belege ({recs.length})</h2>
-          <Link href={`/receipts/new?property=${id}`} className="text-sm text-blue-600 hover:underline">+ Beleg erfassen</Link>
+          <div className="flex items-center gap-3 flex-wrap">
+            {receiptYears.map(y => (
+              <a key={y} href={`/api/receipts/zip?propertyId=${id}&year=${y}`} className="text-sm text-gray-500 hover:text-blue-600 hover:underline whitespace-nowrap">
+                ZIP {y}
+              </a>
+            ))}
+            <Link href={`/receipts/new?property=${id}`} className="text-sm text-blue-600 hover:underline whitespace-nowrap">+ Beleg erfassen</Link>
+          </div>
         </div>
         {recs.length === 0 ? (
           <Card className="text-center py-8 text-gray-400">Noch keine Belege</Card>
         ) : (
-          <div className="space-y-2">
-            {recs.map(r => (
-              <Card key={r.id} className="py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{r.vendor ?? r.description ?? '–'}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {new Date(r.receipt_date).toLocaleDateString('de-DE')} · {CATEGORY_LABELS[r.category]}
-                      {r.is_renovation && ' · Renovierung'}
-                    </p>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">{euro(r.amount)}</span>
-                </div>
-              </Card>
-            ))}
-          </div>
+          <Card>
+            <ReceiptBrowser receipts={recs} />
+          </Card>
         )}
       </div>
 

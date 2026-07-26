@@ -1,0 +1,121 @@
+'use client'
+
+import { useMemo, useState } from 'react'
+import Link from 'next/link'
+import { getReceiptSignedUrl } from '@/app/actions/receipts'
+import { euro, propertyLabel } from '@/lib/format'
+import { CATEGORY_LABELS, Property, Receipt } from '@/lib/types'
+
+export function ReceiptBrowser({
+  receipts,
+  properties,
+  showPropertyColumn = false,
+}: {
+  receipts: Receipt[]
+  properties?: Property[]
+  showPropertyColumn?: boolean
+}) {
+  const [query, setQuery] = useState('')
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  const [openingId, setOpeningId] = useState<string | null>(null)
+
+  const propertyById = useMemo(
+    () => Object.fromEntries((properties ?? []).map(p => [p.id, p])),
+    [properties]
+  )
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return receipts
+      .filter(r => {
+        if (from && r.receipt_date < from) return false
+        if (to && r.receipt_date > to) return false
+        if (!q) return true
+        const haystack = [r.vendor, r.description, CATEGORY_LABELS[r.category], String(r.tax_year)]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        return haystack.includes(q)
+      })
+      .sort((a, b) => b.receipt_date.localeCompare(a.receipt_date))
+  }, [receipts, query, from, to])
+
+  async function openReceipt(r: Receipt) {
+    if (!r.file_url) return
+    setOpeningId(r.id)
+    const url = await getReceiptSignedUrl(r.file_url)
+    setOpeningId(null)
+    if (url) window.open(url, '_blank')
+    else alert('Datei konnte nicht geöffnet werden.')
+  }
+
+  return (
+    <div>
+      <div className="flex flex-wrap gap-2 mb-3">
+        <input
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder='Suche, z.B. "Wasserhahn 2024"...'
+          className="flex-1 min-w-[220px] border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <input
+          type="date"
+          value={from}
+          onChange={e => setFrom(e.target.value)}
+          className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <span className="self-center text-gray-400 text-sm">–</span>
+        <input
+          type="date"
+          value={to}
+          onChange={e => setTo(e.target.value)}
+          className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className="text-sm text-gray-400 py-6 text-center">Keine Belege gefunden.</p>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(r => (
+            <div key={r.id} className="flex items-center justify-between gap-3 border border-gray-100 rounded-xl px-3 py-2.5 text-sm">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 truncate">
+                  {r.vendor ?? r.description ?? '–'}
+                  {showPropertyColumn && propertyById[r.property_id] && (
+                    <span className="text-gray-400 font-normal"> · {propertyLabel(propertyById[r.property_id])}</span>
+                  )}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {new Date(r.receipt_date).toLocaleDateString('de-DE')} · {CATEGORY_LABELS[r.category]}
+                  {r.is_renovation && ' · Renovierung'}
+                </p>
+              </div>
+              <span className="font-semibold text-gray-900 whitespace-nowrap">{euro(r.amount)}</span>
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                {r.file_url ? (
+                  <button
+                    type="button"
+                    onClick={() => openReceipt(r)}
+                    disabled={openingId === r.id}
+                    className="text-xs text-blue-600 hover:underline disabled:opacity-50"
+                  >
+                    {openingId === r.id ? 'Öffnet...' : 'Öffnen ↗'}
+                  </button>
+                ) : (
+                  <span className="text-xs text-gray-300">kein Scan</span>
+                )}
+                <Link href={`/receipts/${r.id}/edit`} className="text-xs text-gray-400 hover:text-blue-600 hover:underline">
+                  Bearbeiten
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="text-xs text-gray-400 mt-2">{filtered.length} von {receipts.length} Belegen</p>
+    </div>
+  )
+}

@@ -77,28 +77,22 @@ html {
   background-color: #f3f4f6;
 }
 
-/* Ehegattenschaukel: schaukelt in jedem Zyklus von ruhig zu immer stärkeren
-   Ausschlägen hoch (wie beim echten Anschubsen einer Schaukel), bevor sie
-   zum nächsten Zyklus wieder ausklingt. --amp bestimmt die maximale
-   Auslenkung und wird pro Immobilie aus dem AfA-Potenzial berechnet. */
-@keyframes ehegattenschaukel-swing {
-  0%   { transform: rotate(0deg); }
-  6%   { transform: rotate(calc(var(--amp, 10deg) * 0.15)); }
-  12%  { transform: rotate(calc(var(--amp, 10deg) * -0.15)); }
-  20%  { transform: rotate(calc(var(--amp, 10deg) * 0.35)); }
-  28%  { transform: rotate(calc(var(--amp, 10deg) * -0.35)); }
-  38%  { transform: rotate(calc(var(--amp, 10deg) * 0.6)); }
-  48%  { transform: rotate(calc(var(--amp, 10deg) * -0.6)); }
-  60%  { transform: rotate(calc(var(--amp, 10deg) * 0.85)); }
-  72%  { transform: rotate(calc(var(--amp, 10deg) * -1)); }
-  84%  { transform: rotate(var(--amp, 10deg)); }
-  92%  { transform: rotate(calc(var(--amp, 10deg) * -0.4)); }
-  100% { transform: rotate(0deg); }
+/* Ehegattenschaukel: wippt wie eine echte Spielplatz-Wippe stetig zwischen
+   den beiden Enden hin und her - kurzes Verharren unten, dann zackig zur
+   Gegenseite (statt gleichmäßig zu pendeln, wie eine hängende Schaukel es
+   täte). --amp bestimmt die maximale Auslenkung und wird pro Immobilie aus
+   dem AfA-Potenzial berechnet (siehe swingIntensity()). */
+@keyframes ehegattenschaukel-wippe {
+  0%   { transform: rotate(var(--amp, 10deg)); }
+  42%  { transform: rotate(var(--amp, 10deg)); }
+  50%  { transform: rotate(calc(var(--amp, 10deg) * -1)); }
+  92%  { transform: rotate(calc(var(--amp, 10deg) * -1)); }
+  100% { transform: rotate(var(--amp, 10deg)); }
 }
 
 .ehegattenschaukel-plank {
   transform-origin: 50% 50%;
-  animation-name: ehegattenschaukel-swing;
+  animation-name: ehegattenschaukel-wippe;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
 }

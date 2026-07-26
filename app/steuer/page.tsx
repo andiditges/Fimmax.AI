@@ -4,6 +4,7 @@ import { requireUser } from '@/lib/supabase/get-user'
 import { Card, CardTitle } from '@/components/ui/card'
 import { ThresholdBadge } from '@/components/threshold-badge'
 import { TaxExportButton } from '@/components/tax-export-button'
+import { ReceiptBrowser } from '@/components/receipts/receipt-browser'
 import { calc15Threshold } from '@/lib/threshold15'
 import { buildTaxExportRow } from '@/lib/tax-export'
 import { sumRentForYear } from '@/lib/rent-schedule'
@@ -153,13 +154,29 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
                   <span className="text-gray-500">AfA: <strong className="text-blue-600">{euro(r.taxRow.afa)}</strong></span>
                   <span className="text-gray-500">Ergebnis: <strong className="text-green-600">{euro(r.taxRow.ergebnis)}</strong></span>
                 </div>
-                <div className="mt-3">
+                <div className="mt-3 flex items-center gap-4 flex-wrap">
                   <TaxExportButton rows={[r.taxRow]} filename={`steuer-export-${r.property.address.replace(/\s+/g, '-')}-${year}.csv`} label="CSV-Export" />
+                  {r.receiptCount > 0 && (
+                    <a
+                      href={`/api/receipts/zip?propertyId=${r.property.id}&year=${year}`}
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      Belege {year} als ZIP
+                    </a>
+                  )}
                 </div>
               </Card>
             ))}
           </div>
         )}
+      </div>
+
+      {/* Beleg-Suche */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-800 mb-3">Belege durchsuchen (alle Objekte, alle Jahre)</h2>
+        <Card>
+          <ReceiptBrowser receipts={recs} properties={props} showPropertyColumn />
+        </Card>
       </div>
     </div>
   )

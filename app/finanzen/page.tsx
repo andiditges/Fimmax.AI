@@ -5,7 +5,7 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
-import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus, principalPaidInYear } from '@/lib/amortization'
+import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus, principalPaidInYear, getDailyRateBreakdown } from '@/lib/amortization'
 import { totalEquityInvested, calcEquityBreakEven } from '@/lib/equity-breakeven'
 import { aggregateNetWorth } from '@/lib/net-worth'
 import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
@@ -95,6 +95,15 @@ export default async function Finanzen() {
   const principalThisYear = loanSchedules.reduce((s, { entries }) => s + principalPaidInYear(entries, thisYear), 0)
   const principalNextYear = loanSchedules.reduce((s, { entries }) => s + principalPaidInYear(entries, thisYear + 1), 0)
 
+  const now = new Date()
+  const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+  const dailyPrincipalNextMonth = loanList.reduce((s, l) => {
+    const breakdown = getDailyRateBreakdown(l, specialPaymentsByLoan[l.id] ?? [], nextMonthDate)
+    return s + (breakdown?.daily_principal ?? 0)
+  }, 0)
+  const currentMonthName = now.toLocaleDateString('de-DE', { month: 'long' })
+  const nextMonthName = nextMonthDate.toLocaleDateString('de-DE', { month: 'long' })
+
   const agreementsByTenant = agreementList.reduce((acc, a) => {
     if (a.tenant_id) (acc[a.tenant_id] ??= []).push(a)
     return acc
@@ -171,7 +180,12 @@ export default async function Finanzen() {
           <CardTitle>Tilgung im Überblick</CardTitle>
           <ul className="mt-2 space-y-1.5 text-sm text-gray-700 list-disc list-inside">
             <li>Deine Mieter haben dir {thisYear - 1} bereits <strong className="text-green-700">{euro(principalLastYear)}</strong> getilgt</li>
-            <li>Deine Mieter haben dir heute <strong className="text-green-700">{euro(todayCashflow.daily_principal_total)}</strong> getilgt</li>
+            <li>
+              Deine Mieter tilgen dir im {currentMonthName} täglich <strong className="text-green-700">{euro(todayCashflow.daily_principal_total)}</strong>
+              {Math.round(dailyPrincipalNextMonth) !== Math.round(todayCashflow.daily_principal_total) && (
+                <>, im {nextMonthName} sind es <strong className="text-green-700">{euro(dailyPrincipalNextMonth)}</strong></>
+              )}
+            </li>
             <li>Deine Gesamttilgung über alle Kredite steht jetzt bei <strong className="text-green-700">{euro(totalPrincipalPaid)}</strong></li>
             <li>Deine Mieter werden dir {thisYear} insgesamt <strong className="text-green-700">{euro(principalThisYear)}</strong> tilgen</li>
             <li>{thisYear + 1} werden es voraussichtlich <strong className="text-green-700">{euro(principalNextYear)}</strong> sein (angenommen keine Mietausfälle, Kündigungen oder Mieterhöhungen)</li>

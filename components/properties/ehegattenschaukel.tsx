@@ -27,15 +27,18 @@ export function Ehegattenschaukel({ property }: { property: Property }) {
       </p>
 
       <div className="relative w-56 h-28 mx-auto my-2">
-        <div className="absolute left-1/2 bottom-0 -translate-x-1/2 w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-b-[22px] border-b-gray-300" />
-        <div className="absolute left-1/2 bottom-[26px] -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-gray-400 z-10" />
+        <div className="absolute left-1/2 bottom-0 -translate-x-1/2 w-48 h-1 bg-green-200 rounded-full" />
+        <div className="absolute left-1/2 bottom-0 -translate-x-1/2 w-0 h-0 border-l-[16px] border-l-transparent border-r-[16px] border-r-transparent border-b-[24px] border-b-red-500" />
+        <div className="absolute left-1/2 bottom-[24px] -translate-x-1/2 w-3 h-3 rounded-full bg-yellow-400 border-2 border-white z-10" />
         <div
-          className="ehegattenschaukel-plank absolute left-1/2 bottom-[26px] -translate-x-1/2 w-44 h-2"
+          className="ehegattenschaukel-plank absolute left-1/2 bottom-[27px] -translate-x-1/2 w-44 h-2.5"
           style={{ '--amp': `${amplitude}deg`, animationDuration: `${duration}s` } as CSSProperties}
         >
-          <div className="absolute inset-0 bg-amber-700 rounded-full" />
-          <span className="absolute -left-1 -top-7 text-2xl select-none">🧔</span>
-          <span className="absolute -right-1 -top-7 text-2xl select-none">👩</span>
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-yellow-400 to-red-500 rounded-full" />
+          <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-yellow-400 border border-white" />
+          <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-yellow-400 border border-white" />
+          <span className="absolute -left-1 -top-6 text-2xl select-none">🧔</span>
+          <span className="absolute -right-1 -top-6 text-2xl select-none">👩</span>
         </div>
       </div>
 
