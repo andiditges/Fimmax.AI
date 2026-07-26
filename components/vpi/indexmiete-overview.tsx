@@ -177,7 +177,7 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
       </div>
 
       <p className="text-xs text-gray-400 mt-2">
-        Rein rechnerisch, ersetzt keine Rechtsberatung – die Erhöhung muss dem Mieter aktiv in Textform erklärt werden.
+        Ohne Gewähr, rein rechnerisch, ersetzt keine Rechtsberatung – die Erhöhung muss dem Mieter aktiv in Textform erklärt werden.
       </p>
 
       {status.eligible && !applying && (

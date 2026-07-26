@@ -77,6 +77,10 @@ function StaffelmieteRow({ item }: { item: Item }) {
           ))}
         </div>
       </div>
+
+      <p className="text-xs text-gray-400 mt-2">
+        Ohne Gewähr, auf Basis der hier hinterlegten Staffelvereinbarung – bitte gegen den Mietvertrag prüfen.
+      </p>
     </Card>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
@@ -12,6 +13,7 @@ export default function Login() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
@@ -27,6 +29,11 @@ export default function Login() {
       if (error) setError(error.message)
       else { router.push('/'); router.refresh() }
     } else {
+      if (!acceptedTerms) {
+        setError('Bitte bestätige den Haftungsausschluss und die Datenschutzerklärung.')
+        setLoading(false)
+        return
+      }
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -94,12 +101,31 @@ export default function Login() {
               />
             </div>
 
+            {mode === 'signup' && (
+              <label className="flex items-start gap-2 text-xs text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={e => setAcceptedTerms(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600"
+                  required
+                />
+                <span>
+                  Ich habe den{' '}
+                  <Link href="/haftungsausschluss" target="_blank" className="text-blue-600 hover:underline">Haftungsausschluss</Link>{' '}
+                  und die{' '}
+                  <Link href="/datenschutz" target="_blank" className="text-blue-600 hover:underline">Datenschutzerklärung</Link>{' '}
+                  gelesen und akzeptiere sie.
+                </span>
+              </label>
+            )}
+
             {error && <p className="text-sm text-red-600">{error}</p>}
             {info && <p className="text-sm text-green-600">{info}</p>}
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (mode === 'signup' && !acceptedTerms)}
               className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 min-h-[48px]"
             >
               {loading ? <BrickLoader /> : mode === 'signin' ? 'Anmelden' : 'Konto anlegen'}

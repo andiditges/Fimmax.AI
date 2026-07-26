@@ -67,6 +67,10 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Steuerübersicht</h1>
           <p className="text-gray-500 text-sm mt-1">Alles für die Steuererklärung (Anlage V) auf einen Blick</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Ohne Gewähr, rein rechnerische Aufbereitung deiner Daten, ersetzt keine Steuerberatung – vor Abgabe bitte prüfen bzw. von einer Steuerberatung gegenprüfen lassen. Siehe auch{' '}
+            <Link href="/haftungsausschluss" className="text-blue-600 hover:underline">Haftungsausschluss</Link>.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {yearOptions.map(y => (
