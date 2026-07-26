@@ -7,10 +7,15 @@ export function calc15Threshold(property: Property, receipts: Receipt[]): Thresh
 
   const within3Years = new Date() <= cutoffDate
 
+  // Bewusst ohne untere Datumsgrenze: Renovierungskosten, die noch vor dem
+  // offiziellen Besitzübergang anfallen (z.B. mit Duldung des Verkäufers
+  // bereits vorab beauftragt), stehen im wirtschaftlichen Zusammenhang mit
+  // der Anschaffung und zählen für die 15%-Grenze ebenso mit wie Kosten
+  // danach - nur die Obergrenze (3 Jahre nach Anschaffung) ist relevant.
   const renovationTotal = receipts
     .filter(r => {
       const date = new Date(r.receipt_date)
-      return r.is_renovation && date >= purchaseDate && date <= cutoffDate
+      return r.is_renovation && date <= cutoffDate
     })
     .reduce((sum, r) => sum + r.amount, 0)
 
