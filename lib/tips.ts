@@ -62,7 +62,7 @@ function sondertilgungTip({ loans, specialPaymentsByLoan, assets, portfolio, pro
   const worst = candidates.reduce((a, b) => (b.loan.nominal_interest_rate > a.loan.nominal_interest_rate ? b : a))
 
   const liquidReserve = assets
-    .filter(a => a.category === 'tagesgeld_festgeld')
+    .filter(a => a.category === 'tagesgeld_festgeld' || a.category === 'girokonto')
     .reduce((s, a) => s + a.current_value, 0)
   const safetyBuffer = 3 * (portfolio.monthly_debt_service + portfolio.monthly_operating_cost_runrate)
   const available = Math.floor((liquidReserve - safetyBuffer) / 500) * 500
@@ -83,7 +83,7 @@ function sondertilgungTip({ loans, specialPaymentsByLoan, assets, portfolio, pro
 }
 
 function cashPufferTip({ assets, reserves, portfolio }: TipsInput): Tip | null {
-  const liquid = assets.filter(a => a.category === 'tagesgeld_festgeld').reduce((s, a) => s + a.current_value, 0)
+  const liquid = assets.filter(a => a.category === 'tagesgeld_festgeld' || a.category === 'girokonto').reduce((s, a) => s + a.current_value, 0)
     + reserves.reduce((s, r) => s + r.current_value, 0)
   const monthlyBurn = portfolio.monthly_debt_service + portfolio.monthly_operating_cost_runrate
   if (monthlyBurn <= 0) return null

@@ -218,16 +218,22 @@ export interface NewsItem {
 }
 
 export type AssetCategory =
-  | 'wertpapiere'
+  | 'girokonto'
+  | 'mietkonto'
   | 'tagesgeld_festgeld'
+  | 'wertpapiere'
+  | 'crypto'
   | 'bausparvertrag'
   | 'vl_vertrag'
   | 'rentenversicherung'
   | 'sonstiges'
 
 export const ASSET_CATEGORY_LABELS: Record<AssetCategory, string> = {
-  wertpapiere: 'Wertpapiere (Aktien/ETFs/Fonds)',
+  girokonto: 'Girokonto',
+  mietkonto: 'Mietkonto',
   tagesgeld_festgeld: 'Tagesgeld/Festgeld',
+  wertpapiere: 'Wertpapiere (Aktien/ETFs/Fonds)',
+  crypto: 'Krypto',
   bausparvertrag: 'Bausparvertrag',
   vl_vertrag: 'VL-Vertrag',
   rentenversicherung: 'Rentenversicherung/Altersvorsorge',
@@ -237,7 +243,7 @@ export const ASSET_CATEGORY_LABELS: Record<AssetCategory, string> = {
 export interface Asset {
   id: string
   category: AssetCategory
-  name: string
+  name: string | null
   institution: string | null
   current_value: number
   monthly_contribution: number

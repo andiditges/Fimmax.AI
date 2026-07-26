@@ -24,7 +24,7 @@ export function AssetForm({ asset }: { asset?: Asset }) {
     setLoading(true)
     const payload = {
       category: form.category,
-      name: form.name,
+      name: form.name || null,
       institution: form.institution || null,
       current_value: parseFloat(form.current_value),
       monthly_contribution: parseFloat(form.monthly_contribution) || 0,
@@ -68,10 +68,11 @@ export function AssetForm({ asset }: { asset?: Asset }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bezeichnung *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Bezeichnung</label>
+            <p className="text-xs text-gray-400 mb-1">Optional – ohne Angabe wird die Kategorie als Bezeichnung angezeigt</p>
             <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               placeholder='z.B. "Bausparvertrag Schwäbisch Hall"'
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <div>

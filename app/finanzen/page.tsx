@@ -329,7 +329,7 @@ export default async function Finanzen() {
                 <div className="space-y-1.5">
                   {c.items.map(a => (
                     <Link key={a.id} href={`/assets/${a.id}/edit`} className="flex justify-between text-sm text-gray-600 hover:text-blue-700">
-                      <span>{a.name}{a.institution ? ` · ${a.institution}` : ''}</span>
+                      <span>{a.name || c.label}{a.institution ? ` · ${a.institution}` : ''}</span>
                       <span>{euro(a.current_value)}</span>
                     </Link>
                   ))}
