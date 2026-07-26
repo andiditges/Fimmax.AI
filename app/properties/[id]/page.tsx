@@ -14,7 +14,7 @@ import { calcAnnualAfa } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
 import { getLoanStatus } from '@/lib/amortization'
 import { buildTaxExportRow } from '@/lib/tax-export'
-import { generateRentSchedule, currentRentAmount } from '@/lib/rent-schedule'
+import { generateRentSchedule, currentRentAmount, currentAgreement } from '@/lib/rent-schedule'
 import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
 import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, Receipt, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost } from '@/lib/types'
@@ -266,7 +266,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
             {tenantList.map(t => {
               const agreements = agreementsByTenant[t.id] ?? []
               const rent = currentRentAmount(agreements)
-              const activeAgreement = [...agreements].sort((a, b) => a.start_date.localeCompare(b.start_date)).pop()
+              const activeAgreement = currentAgreement(agreements)
               return (
                 <Link key={t.id} href={`/tenants/${t.id}`}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer py-3">
