@@ -104,7 +104,7 @@ export default async function Dashboard() {
                 <h2 className="text-lg font-semibold text-gray-800">Finanz-Cockpit</h2>
                 <Link href="/finanzen" className="text-sm text-blue-600 hover:underline">Portfolio-Übersicht →</Link>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Card>
                   <CardTitle className="min-h-10">Gesamtschulden</CardTitle>
                   <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(portfolio.total_debt)}</p>
