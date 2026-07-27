@@ -1,3 +1,4 @@
+import { differenceInCalendarMonths } from 'date-fns'
 import { RentAdjustment, RentalAgreement, RentScheduleEntry, Tenant } from '@/lib/types'
 
 function iso(d: Date): string {
@@ -137,9 +138,25 @@ export function currentAgreement(agreements: RentalAgreement[], asOfDate: Date =
 // Eine Staffelmiete wird beim Anlegen als mehrere rental_agreements-Zeilen
 // (eine je Stufe, mit zukünftigem start_date) hinterlegt - anders als bei
 // Indexmiete oder fester Miete, wo i.d.R. nur eine Zeile bzw. Erhöhungen mit
-// is_index_rent existieren.
+// is_index_rent existieren. Mehrere Zeilen allein reichen als Kriterium aber
+// NICHT aus: auch eine über Jahre gewachsene Historie einzelner, unregel-
+// mäßiger Mieterhöhungen (§ 558/§ 559, frei vereinbart) erzeugt mehrere
+// Zeilen, ist aber keine Staffelmiete. Kennzeichnend für eine echte Staffel
+// (vgl. generateStaffelSchedule) sind stattdessen regelmäßige (~jährliche)
+// Abstände UND eine über alle Stufen hinweg konsistente Steigerungsrate.
 export function isStaffelSchedule(agreements: RentalAgreement[]): boolean {
-  return agreements.length > 1 && !agreements.some(a => a.is_index_rent)
+  if (agreements.length < 2 || agreements.some(a => a.is_index_rent)) return false
+  const sorted = [...agreements].sort((a, b) => a.start_date.localeCompare(b.start_date))
+  const gapsMonths: number[] = []
+  const rates: number[] = []
+  for (let i = 1; i < sorted.length; i++) {
+    gapsMonths.push(differenceInCalendarMonths(new Date(sorted[i].start_date), new Date(sorted[i - 1].start_date)))
+    rates.push((sorted[i].rent_amount - sorted[i - 1].rent_amount) / sorted[i - 1].rent_amount)
+  }
+  const regularGaps = gapsMonths.every(m => m >= 11 && m <= 13)
+  const avgRate = rates.reduce((s, r) => s + r, 0) / rates.length
+  const consistentRate = avgRate > 0 && rates.every(r => Math.abs(r - avgRate) < 0.02)
+  return regularGaps && consistentRate
 }
 
 export function nextAgreementStep(agreements: RentalAgreement[], asOfDate: Date = new Date()): RentalAgreement | null {

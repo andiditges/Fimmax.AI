@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getContractSignedUrl } from '@/app/actions/contracts'
+import { buildStoragePath } from '@/lib/storage-path'
 import { euro, formatDate } from '@/lib/format'
 import { lookupVpiForMonth } from '@/lib/vpi-history'
 import { RentalAgreement } from '@/lib/types'
@@ -11,10 +13,12 @@ export function RentHistoryRow({ agreement }: { agreement: RentalAgreement }) {
   const supabase = createClient()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [opening, setOpening] = useState(false)
   const [startDate, setStartDate] = useState(agreement.start_date)
   const [amount, setAmount] = useState(String(agreement.rent_amount))
   const [isIndexRent, setIsIndexRent] = useState(agreement.is_index_rent)
   const [indexBaseValue, setIndexBaseValue] = useState(agreement.index_base_value != null ? String(agreement.index_base_value) : '')
+  const [file, setFile] = useState<File | null>(null)
 
   useEffect(() => {
     if (!isIndexRent || !startDate || indexBaseValue) return
@@ -22,18 +26,41 @@ export function RentHistoryRow({ agreement }: { agreement: RentalAgreement }) {
     if (looked_up !== null) setIndexBaseValue(String(looked_up))
   }, [isIndexRent, startDate, indexBaseValue])
 
+  async function onOpenFile() {
+    if (!agreement.file_url) return
+    setOpening(true)
+    const url = await getContractSignedUrl(agreement.file_url)
+    setOpening(false)
+    if (url) window.open(url, '_blank')
+    else alert('Datei konnte nicht geöffnet werden.')
+  }
+
   async function onSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
+
+    let fileUrl = agreement.file_url
+    if (file) {
+      const { data: userData } = await supabase.auth.getUser()
+      const userId = userData.user?.id
+      if (userId) {
+        const path = buildStoragePath(userId, agreement.property_id, 'mietvertrag', new Date(startDate).getFullYear(), file.name)
+        const { error: uploadError } = await supabase.storage.from('contracts').upload(path, file)
+        if (!uploadError) fileUrl = path
+      }
+    }
+
     const { error } = await supabase.from('rental_agreements').update({
       start_date: startDate,
       rent_amount: parseFloat(amount),
       is_index_rent: isIndexRent,
       index_base_value: isIndexRent ? (parseFloat(indexBaseValue) || null) : null,
       index_base_date: isIndexRent ? startDate : null,
+      file_url: fileUrl,
     }).eq('id', agreement.id)
     if (!error) {
       setEditing(false)
+      setFile(null)
       router.refresh()
     } else {
       alert('Fehler: ' + error.message)
@@ -62,6 +89,11 @@ export function RentHistoryRow({ agreement }: { agreement: RentalAgreement }) {
               className="w-32 border border-gray-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
         )}
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Beleg (Vertrag/Erhöhungsschreiben)</label>
+          <input type="file" accept="image/*,application/pdf" onChange={e => setFile(e.target.files?.[0] ?? null)} className="w-full text-xs" />
+          {agreement.file_url && !file && <p className="text-xs text-gray-400 mt-0.5">✓ Beleg bereits hinterlegt</p>}
+        </div>
         <div className="flex gap-2">
           <button type="submit" disabled={saving} className="text-xs text-blue-600 hover:underline whitespace-nowrap">
             {saving ? '...' : 'Sichern'}
@@ -82,6 +114,11 @@ export function RentHistoryRow({ agreement }: { agreement: RentalAgreement }) {
       </span>
       <div className="flex items-center gap-2">
         <span className="font-medium text-gray-900">{euro(agreement.rent_amount)}</span>
+        {agreement.file_url && (
+          <button onClick={onOpenFile} disabled={opening} className="text-xs text-gray-400 hover:text-blue-600 underline">
+            {opening ? '...' : 'Beleg'}
+          </button>
+        )}
         <button onClick={() => setEditing(true)} className="text-xs text-blue-600 hover:underline">
           Bearbeiten
         </button>

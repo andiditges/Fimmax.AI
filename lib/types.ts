@@ -112,6 +112,7 @@ export interface RentalAgreement {
   is_index_rent: boolean
   index_base_value: number | null
   index_base_date: string | null
+  file_url: string | null
   created_at: string
 }
 
