@@ -12,7 +12,7 @@ import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
 import { sumReserveCurrentValue, sumMonthlyReserveFromRent } from '@/lib/reserves'
 import { currentAgreement } from '@/lib/rent-schedule'
 import { latestVpiReading, calcIndexmieteStatus } from '@/lib/vpi'
-import { euro, formatDate, propertyLabel } from '@/lib/format'
+import { euro, formatDate, propertyLabel, percent } from '@/lib/format'
 import { ASSET_CATEGORY_LABELS, Asset, AssetCategory, Property, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Receipt, PropertyReserve, OperatingCost, RESERVE_CATEGORY_LABELS, VpiReading } from '@/lib/types'
 
 export default async function Finanzen() {
@@ -86,15 +86,12 @@ export default async function Finanzen() {
     .filter(sp => sp.payment_date <= iso(new Date()))
     .reduce((s, sp) => s + sp.amount, 0)
 
-  const loanSchedules = loanList.map(l => ({
-    loan: l,
-    entries: generateAmortizationSchedule(l, specialPaymentsByLoan[l.id] ?? []).entries,
-  }))
-  const payoffOverview = loanList
-    .map(l => {
-      const schedule = generateAmortizationSchedule(l, specialPaymentsByLoan[l.id] ?? [])
-      return { loan: l, payoffDate: schedule.payoff_date }
-    })
+  const loanSchedules = loanList.map(l => {
+    const schedule = generateAmortizationSchedule(l, specialPaymentsByLoan[l.id] ?? [])
+    return { loan: l, entries: schedule.entries, payoffDate: schedule.payoff_date }
+  })
+  const payoffOverview = loanSchedules
+    .map(({ loan, payoffDate }) => ({ loan, payoffDate }))
     .sort((a, b) => (a.payoffDate ?? '9999').localeCompare(b.payoffDate ?? '9999'))
 
   const thisYear = new Date().getFullYear()
@@ -128,6 +125,7 @@ export default async function Finanzen() {
   const nextMonthName = new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleDateString('de-DE', { month: 'long' })
 
   const in12MonthsDate = new Date(now.getFullYear() + 1, now.getMonth(), 15)
+  const monthlyPrincipalNow = loanList.reduce((s, l) => s + getMonthlyPrincipalAt(l, specialPaymentsByLoan[l.id] ?? [], now), 0)
   const monthlyPrincipalIn12Months = loanList.reduce((s, l) => s + getMonthlyPrincipalAt(l, specialPaymentsByLoan[l.id] ?? [], in12MonthsDate), 0)
   const in12MonthsLabel = in12MonthsDate.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })
 
@@ -151,6 +149,58 @@ export default async function Finanzen() {
     monthlyReserveFromRent,
     equityInvested
   )
+
+  // Tilgungsmeilensteine: 10/20/30-Jahres-Stand + Halbzeitmarke greifen auf
+  // debtOverTime zurück (Restschuld je Datum über alle Kredite), statt pro
+  // Meilenstein neu zu rechnen. Schreibt Status quo fort (keine weiteren
+  // Sondertilgungen/Zinsänderungen/Anschlussfinanzierungen unterstellt).
+  const totalOriginalPrincipal = loanList.reduce((s, l) => s + l.principal, 0)
+  const totalDebtAt = (date: Date): number => {
+    const entry = debtOverTime.find(d => new Date(d.date) >= date)
+    return entry ? entry.remaining_balance : 0
+  }
+  const tilgungMilestones = [10, 20, 30].map(years => {
+    const date = new Date(now.getFullYear() + years, now.getMonth(), now.getDate())
+    const paid = totalOriginalPrincipal - totalDebtAt(date)
+    return { years, date, paid, percent: totalOriginalPrincipal > 0 ? (paid / totalOriginalPrincipal) * 100 : 0 }
+  })
+  const halfDebtPoint = totalOriginalPrincipal > 0
+    ? debtOverTime.find(d => new Date(d.date) >= now && d.remaining_balance <= totalOriginalPrincipal * 0.5)
+    : undefined
+
+  const firstPayoff = payoffOverview[0]
+  const lastPayoffDate = payoffOverview.length > 0 && payoffOverview.every(p => p.payoffDate)
+    ? payoffOverview[payoffOverview.length - 1].payoffDate
+    : null
+
+  // "Bruttorendite"-Analogie: je Kredit die annualisierte Wachstumsrate (CAGR)
+  // des monatlichen Tilgungsanteils von heute bis zum eigenen Laufzeitende,
+  // nach Kreditsumme gewichtet zu einem Portfolio-Schnitt zusammengefasst.
+  // Kredite in der tilgungsfreien Anlaufzeit (Tilgungsanteil aktuell 0) sind
+  // ausgeklammert, da eine CAGR von einem Startwert 0 aus nicht definiert ist.
+  const tilgungCagrData = loanSchedules
+    .map(({ loan, entries, payoffDate }) => {
+      if (!payoffDate) return null
+      const payoff = new Date(payoffDate)
+      const years = (payoff.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+      if (years <= 0) return null
+      const startMonthly = getMonthlyPrincipalAt(loan, specialPaymentsByLoan[loan.id] ?? [], now)
+      if (startMonthly <= 0) return null
+      // Die letzte reguläre Rate vor Volltilgung ist oft nur eine verkürzte
+      // "Restbetrag"-Zahlung (kleiner als der eigentliche Trend, da nur noch
+      // die kleine Restschuld beglichen wird) - als Endwert daher die
+      // vorletzte reguläre Rate verwenden, nicht die tatsächlich letzte.
+      const regularEntries = entries.filter(e => e.special_payment === 0)
+      const trendEntry = regularEntries[regularEntries.length - 2]
+      if (!trendEntry) return null
+      const endMonthly = getMonthlyPrincipalAt(loan, specialPaymentsByLoan[loan.id] ?? [], new Date(trendEntry.date))
+      if (endMonthly <= 0) return null
+      return { cagr: Math.pow(endMonthly / startMonthly, 1 / years) - 1, weight: loan.principal }
+    })
+    .filter((d): d is { cagr: number; weight: number } => d !== null)
+  const tilgungCagr = tilgungCagrData.length > 0
+    ? tilgungCagrData.reduce((s, d) => s + d.cagr * d.weight, 0) / tilgungCagrData.reduce((s, d) => s + d.weight, 0)
+    : null
 
   return (
     <div className="space-y-8">
@@ -210,7 +260,10 @@ export default async function Finanzen() {
             <li>
               Deine Mieter tilgen dir im {currentMonthName} täglich <strong className="text-green-700">{euro(todayCashflow.daily_principal_total)}</strong>
               , im {nextMonthName} sind es <strong className="text-green-700">{euro(dailyPrincipalNextMonth)}</strong>
-              . Im {in12MonthsLabel} werden es bei gleichen Voraussetzungen (keine weiteren Sondertilgungen, Zinsänderungen o.ä.) bereits <strong className="text-green-700">{euro(monthlyPrincipalIn12Months)}</strong> pro Monat sein
+            </li>
+            <li>
+              Deine monatliche Tilgungssumme über alle Kredite liegt aktuell bei <strong className="text-green-700">{euro(monthlyPrincipalNow)}</strong> pro Monat
+              {' '}und wird bei gleichen Voraussetzungen (keine weiteren Sondertilgungen, Zinsänderungen o.ä.) bis {in12MonthsLabel} auf <strong className="text-green-700">{euro(monthlyPrincipalIn12Months)}</strong> pro Monat steigen
             </li>
             <li>
               Deine Gesamttilgung über alle Kredite steht jetzt bei <strong className="text-green-700">{euro(totalPrincipalPaid)}</strong>
@@ -246,9 +299,42 @@ export default async function Finanzen() {
               </li>
             )}
             <li>Wären deine Immobilien fiktiv heute abbezahlt, bekämst du eine zu versteuernde Sofortrente von <strong className="text-blue-700">{euro(portfolio.monthly_rent_income)}</strong> / Monat</li>
+            {firstPayoff?.payoffDate && (
+              <li>
+                Deine erste Immobilie ({propertyById[firstPayoff.loan.property_id] ? propertyLabel(propertyById[firstPayoff.loan.property_id]) : firstPayoff.loan.name}) wird voraussichtlich am{' '}
+                <strong className="text-blue-700">{formatDate(firstPayoff.payoffDate)}</strong> schuldenfrei sein
+              </li>
+            )}
+            {lastPayoffDate && (
+              <li>
+                Dein gesamtes Portfolio wird bei gleichbleibenden Konditionen voraussichtlich am{' '}
+                <strong className="text-blue-700">{formatDate(lastPayoffDate)}</strong> komplett schuldenfrei sein
+              </li>
+            )}
+            {halfDebtPoint && (
+              <li>
+                Am <strong className="text-blue-700">{formatDate(halfDebtPoint.date)}</strong> hast du rechnerisch die Hälfte deiner ursprünglichen Kreditsumme ({euro(totalOriginalPrincipal)}) getilgt
+              </li>
+            )}
+            {tilgungMilestones.map(m => (
+              <li key={m.years}>
+                Nach {m.years} Jahren (bis {formatDate(m.date)}) hast du voraussichtlich <strong className="text-blue-700">{euro(m.paid)}</strong> getilgt
+                {' '}({percent(m.percent, 1)} deiner ursprünglichen Kreditsumme)
+              </li>
+            ))}
+            {tilgungCagr !== null && (
+              <li>
+                Deine Tilgung wächst bis zum jeweiligen Laufzeitende deiner Kredite im (nach Kreditsumme gewichteten) Schnitt um{' '}
+                <strong className="text-blue-700">{percent(tilgungCagr * 100, 1)}</strong> pro Jahr – wie eine durchgehende jährliche Gehaltserhöhung in dieser Höhe.
+                Rechnerisch ist das die Bruttorendite, die dir dein aktueller Tilgungsplan bis zum fiktiven Laufzeitende verschafft
+              </li>
+            )}
           </ul>
           <p className="text-xs text-gray-400 mt-2">
             Break-even = kumulierter Cashflow (Miete abzüglich Zinsen, Tilgung, Kosten-Laufrate und Rücklagenbildung) seit dem frühesten Kaufdatum, verglichen mit dem eingesetzten Eigenkapital (Kaufpreis + Kaufnebenkosten abzüglich Kreditsumme je Objekt). Kosten-/Rücklagen-Laufrate werden dabei vereinfacht als konstant über die Zeit angenommen.
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            10/20/30-Jahres-Stand, Halbzeitmarke und Bruttorendite-Analogie schreiben den aktuellen Tilgungsplan (inkl. bereits erfolgter Sondertilgungen) unverändert fort – ohne Annahme weiterer Sondertilgungen, Zinsanpassungen oder Anschlussfinanzierungen zum Laufzeitende. Kredite in der tilgungsfreien Anlaufzeit sind aus der Bruttorendite-Berechnung ausgeklammert, da ihr Tilgungsanteil dort bei 0 startet.
           </p>
         </Card>
       )}
