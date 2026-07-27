@@ -368,6 +368,8 @@ export type OperatingCostCategory =
   | 'hauswart'
   | 'gemeinschaftsantenne_kabel'
   | 'wascheinrichtung'
+  | 'rauchwarnmelder'
+  | 'verbrauchserfassung'
   | 'sonstige_umlagefaehig'
   | 'verwaltungskosten'
   | 'instandhaltung'
@@ -427,4 +429,15 @@ export interface UtilitySettlement {
   source_file_url: string | null
   status: 'draft' | 'sent'
   created_at: string
+}
+
+// Vermieter-Stammdaten (Absender), einmalig gepflegt und für generierte
+// Schreiben (Nebenkostenabrechnung, künftig z.B. Mieterhöhung) wiederverwendet.
+export interface UserSettings {
+  user_id: string
+  landlord_name: string | null
+  address_line: string | null
+  postal_code: string | null
+  city: string | null
+  updated_at: string
 }

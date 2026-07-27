@@ -129,10 +129,14 @@ export function NebenkostenForm({
 
       <Card className="bg-amber-50 border-amber-100">
         <CardTitle>Nicht vergessen</CardTitle>
-        <p className="text-sm text-gray-700 mt-1">
-          <strong>Grundsteuer</strong> wird in Hausgeld-/WEG-Abrechnungen oft nicht separat ausgewiesen – auf der Jahresabrechnung gezielt danach suchen.{' '}
-          <strong>Restmüll</strong> für die eigene Tonne läuft nicht immer über das Hausgeld – falls du dafür direkt an Stadt/Gemeinde zahlst, trägst du diese Kosten oft selbst, statt sie umzulegen.
-        </p>
+        <ul className="text-sm text-gray-700 mt-1 space-y-1.5 list-disc list-inside">
+          <li><strong>Grundsteuer</strong> wird in Hausgeld-/WEG-Abrechnungen oft nicht separat ausgewiesen – auf der Jahresabrechnung gezielt danach suchen.</li>
+          <li><strong>Restmüll</strong> für die eigene Tonne läuft nicht immer über das Hausgeld – falls du dafür direkt an Stadt/Gemeinde zahlst, trägst du diese Kosten oft selbst, statt sie umzulegen.</li>
+          <li><strong>Rauchwarnmelder</strong> und <strong>Verbrauchserfassung</strong> (Wärme-/Wasserzähler-Miete, Ablesedienst) laufen oft über separate Dienstleister und gehen dadurch unter.</li>
+          <li><strong>Heizkosten</strong>: seit 2023 trägst du je nach energetischem Zustand des Gebäudes einen Anteil der CO2-Kosten selbst (CO2-Kostenaufteilungsgesetz).</li>
+          <li><strong>Kabel/Breitband</strong>: seit der TKG-Novelle zum 01.07.2024 i.d.R. nicht mehr umlagefähig – vor Ansatz prüfen.</li>
+          <li>Die Abrechnung muss dem Mieter innerhalb von <strong>12 Monaten</strong> nach Ende des Abrechnungszeitraums zugehen (§ 556 Abs. 3 BGB), sonst sind Nachforderungen meist ausgeschlossen – Frist siehe Abrechnungsschreiben unten.</li>
+        </ul>
       </Card>
 
       <Card>

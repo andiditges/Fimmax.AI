@@ -16,6 +16,7 @@ const LINKS = [
   { href: '/indexmiete', label: 'Mieterhöhung' },
   { href: '/reminders', label: 'Erinnerungen' },
   { href: '/charity', label: 'Charity' },
+  { href: '/einstellungen', label: 'Einstellungen' },
 ]
 
 export function Nav({ userEmail }: { userEmail: string | null }) {
