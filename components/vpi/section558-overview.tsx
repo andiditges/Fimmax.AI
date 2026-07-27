@@ -49,6 +49,12 @@ function Section558Row({ item }: { item: Item }) {
         </span>
       </div>
 
+      {status.reference_is_future && (
+        <p className="text-xs text-blue-700 mt-2 bg-blue-50 border border-blue-100 rounded-lg px-2.5 py-2">
+          Bereits vereinbart: {euro(status.reference_rent)} ab {formatDate(status.reference_date)}. Der Countdown unten rechnet ab diesem Stand weiter, auch wenn er noch nicht wirksam ist.
+        </p>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 text-sm">
         <div>
           <p className="text-gray-400 text-xs">Aktuelle Miete</p>
@@ -84,7 +90,7 @@ function Section558Row({ item }: { item: Item }) {
       )}
 
       <p className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-100">
-        Letzte Mietänderung: {formatDate(status.last_change_date)}. Wartefrist von 15 Monaten seitdem {status.wartefrist_erfuellt ? 'erfüllt' : 'noch nicht erfüllt'} (§ 558 Abs. 1 BGB).
+        Letzte Mietänderung: {formatDate(status.reference_date)}. Wartefrist von 15 Monaten seitdem {status.wartefrist_erfuellt ? 'erfüllt' : 'noch nicht erfüllt'} (§ 558 Abs. 1 BGB).
         Eine danach gestellte Erhöhung wirkt frühestens ab {formatDate(status.earliest_effective_date)} (§ 558b Abs. 1 BGB, vereinfachte Annahme). Ohne Gewähr, ersetzt keine Rechtsberatung.
       </p>
     </Card>

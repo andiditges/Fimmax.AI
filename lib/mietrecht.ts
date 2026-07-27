@@ -1,5 +1,5 @@
 import { addMonths, differenceInCalendarMonths, startOfMonth } from 'date-fns'
-import { currentAgreement, currentRentAmount } from './rent-schedule'
+import { currentRentAmount } from './rent-schedule'
 import { RentalAgreement } from './types'
 import gemeindenData from './data/kappungsgrenze-gemeinden.json'
 
@@ -69,8 +69,10 @@ function iso(d: Date): string {
 
 export interface Section558Status {
   current_rent: number
-  last_change_date: string
-  months_since_last_change: number
+  reference_rent: number
+  reference_date: string
+  reference_is_future: boolean
+  months_since_reference: number
   wartefrist_erfuellt: boolean
   next_request_possible_date: string
   earliest_effective_date: string
@@ -85,6 +87,13 @@ export interface Section558Status {
  * Status für eine reguläre Mieterhöhung nach § 558 BGB (Anpassung an die
  * ortsübliche Vergleichsmiete) - für Mietverhältnisse OHNE Staffel- oder
  * Indexmiete, die eigene Erhöhungsmechanismen mit eigenen Fristen haben.
+ * Als Referenzpunkt dient bewusst die chronologisch NEUESTE hinterlegte
+ * Mietvereinbarung (auch wenn ihr start_date noch in der Zukunft liegt, z.B.
+ * eine bereits vereinbarte, aber noch nicht wirksame Erhöhung) - unabhängig
+ * davon, ob diese Änderung einseitig per § 558 oder einvernehmlich zustande
+ * kam: beides setzt für eine SPÄTERE einseitige Erhöhung die Wartefrist und
+ * die Kappungsgrenze gleichermaßen neu in Gang bzw. zählt in deren
+ * 3-Jahres-Vergleich mit.
  * Zwei unabhängige Grenzen:
  * - Wartefrist (§ 558 Abs. 1 BGB): die Miete muss seit 15 Monaten unverändert
  *   sein, bevor eine Erhöhung verlangt werden darf. Die Erhöhung selbst wirkt
@@ -92,31 +101,35 @@ export interface Section558Status {
  *   (§ 558b Abs. 1 BGB) - hier vereinfachend direkt nach Ablauf der
  *   Wartefrist angenommen, ohne Gewähr für den tatsächlichen Zustelltermin.
  * - Kappungsgrenze (§ 558 Abs. 3 BGB): max. 20 % (bzw. 15 % in ausgewiesenen
- *   Gebieten) Erhöhung innerhalb von 3 Jahren, gemessen an der vor 3 Jahren
- *   geltenden Miete (bzw. der ursprünglichen Vertragsmiete, falls die
- *   Mietdauer noch keine 3 Jahre beträgt).
+ *   Gebieten) Erhöhung innerhalb von 3 Jahren, gemessen an der Miete, die 3
+ *   Jahre vor dem frühestmöglichen Wirksamwerden der nächsten Erhöhung galt
+ *   (bzw. der ursprünglichen Vertragsmiete, falls die Mietdauer zu diesem
+ *   Zeitpunkt noch keine 3 Jahre beträgt).
  */
 export function calcSection558Status(
   agreements: RentalAgreement[],
   kappungsgrenzePercentValue: number,
   asOfDate: Date = new Date()
 ): Section558Status | null {
-  const active = currentAgreement(agreements, asOfDate)
-  if (!active) return null
+  const sortedAgreements = [...agreements].sort((a, b) => a.start_date.localeCompare(b.start_date))
+  if (sortedAgreements.length === 0) return null
+  const earliestAgreement = sortedAgreements[0]
+  const referenceAgreement = sortedAgreements[sortedAgreements.length - 1]
+  const currentRent = currentRentAmount(agreements, asOfDate) ?? earliestAgreement.rent_amount
 
-  const lastChangeDate = new Date(active.start_date)
-  const monthsSinceLastChange = differenceInCalendarMonths(asOfDate, lastChangeDate)
-  const wartefristErfuellt = monthsSinceLastChange >= 15
-  const nextRequestPossibleDate = addMonths(lastChangeDate, 15)
+  const referenceDate = new Date(referenceAgreement.start_date)
+  const monthsSinceReference = differenceInCalendarMonths(asOfDate, referenceDate)
+  const wartefristErfuellt = monthsSinceReference >= 15
+  const nextRequestPossibleDate = addMonths(referenceDate, 15)
   const earliestEffectiveDate = startOfMonth(addMonths(nextRequestPossibleDate, 3))
 
-  const threeYearsAgo = new Date(asOfDate.getFullYear() - 3, asOfDate.getMonth(), asOfDate.getDate())
-  const sortedAgreements = [...agreements].sort((a, b) => a.start_date.localeCompare(b.start_date))
-  const earliestAgreement = sortedAgreements[0]
-  const baseRent36Months = currentRentAmount(agreements, threeYearsAgo) ?? earliestAgreement?.rent_amount ?? null
+  const threeYearsBeforeEffective = new Date(
+    earliestEffectiveDate.getFullYear() - 3, earliestEffectiveDate.getMonth(), earliestEffectiveDate.getDate()
+  )
+  const baseRent36Months = currentRentAmount(agreements, threeYearsBeforeEffective) ?? earliestAgreement.rent_amount
 
-  const percentIncrease36Months = baseRent36Months && baseRent36Months > 0
-    ? ((active.rent_amount - baseRent36Months) / baseRent36Months) * 100
+  const percentIncrease36Months = baseRent36Months > 0
+    ? ((referenceAgreement.rent_amount - baseRent36Months) / baseRent36Months) * 100
     : null
   const kappungsgrenzeRemainingPercent = percentIncrease36Months !== null
     ? Math.max(0, kappungsgrenzePercentValue - percentIncrease36Months)
@@ -126,9 +139,11 @@ export function calcSection558Status(
     : null
 
   return {
-    current_rent: active.rent_amount,
-    last_change_date: active.start_date,
-    months_since_last_change: monthsSinceLastChange,
+    current_rent: currentRent,
+    reference_rent: referenceAgreement.rent_amount,
+    reference_date: referenceAgreement.start_date,
+    reference_is_future: referenceDate > asOfDate,
+    months_since_reference: monthsSinceReference,
     wartefrist_erfuellt: wartefristErfuellt,
     next_request_possible_date: iso(nextRequestPossibleDate),
     earliest_effective_date: iso(earliestEffectiveDate),
