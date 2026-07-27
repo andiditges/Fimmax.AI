@@ -225,7 +225,7 @@ export function PropertyForm({ property }: { property?: Property }) {
           {field('Kaufnebenkosten (€)', 'incidental_costs', 'number',
             'Notar, Grundbuch/Amtsgericht, Makler, Grundschuldbestellung, Nutzungsdauergutachten u.ä. – ohne Grunderwerbsteuer (die hat ihr eigenes Feld oben) und ohne Renovierung (kommt als Beleg mit is_renovation-Flag). Fließt in die Eigenkapital-Berechnung im Finanz-Cockpit ein.')}
 
-          {field('Aktueller Wert (€)', 'current_value', 'number',
+          {field('Aktueller Marktwert (€)', 'current_value', 'number',
             'Optional – dein geschätzter aktueller Marktwert, z.B. laut Gutachten oder Vergleichswerten. Fließt ins Finanz-Cockpit (Immobilienwert, Eigenkapital) ein. Leer lassen, um stattdessen den Kaufpreis zu verwenden.')}
 
           {field('davon Gebäudeanteil – AfA-Basis (€)', 'building_value', 'number',

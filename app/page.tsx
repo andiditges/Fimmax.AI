@@ -106,7 +106,7 @@ export default async function Dashboard() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Card>
-                  <CardTitle className="min-h-10">Gesamtschulden</CardTitle>
+                  <CardTitle className="min-h-10">Restschulden (aktuell)</CardTitle>
                   <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(portfolio.total_debt)}</p>
                 </Card>
                 <Card>
