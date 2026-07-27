@@ -1,4 +1,4 @@
-import { addMonths, addYears, differenceInCalendarDays, differenceInCalendarMonths, isAfter } from 'date-fns'
+import { addDays, addMonths, addYears, differenceInCalendarDays, differenceInCalendarMonths, isAfter } from 'date-fns'
 import type {
   Loan,
   LoanSpecialPayment,
@@ -298,6 +298,45 @@ export function getDailyRateBreakdown(
     daily_principal: days > 0 ? current.scheduled_principal / days : 0,
     daily_total: days > 0 ? current.total_payment / days : 0,
   }
+}
+
+/**
+ * Tagesrate der auf die aktuell laufende Periode folgenden Periode - für
+ * Portfolio-Vorschauen wie "nächsten Monat". Bewusst NICHT einfach der 1.
+ * Tag des nächsten Kalendermonats als asOfDate an getDailyRateBreakdown,
+ * da Zahlungsperioden am Auszahlungstag des jeweiligen Kredits verankert
+ * sind (nicht am Kalendermonat) - bei den meisten Krediten läge der 1. des
+ * Folgemonats noch in derselben laufenden Periode wie "heute" und würde
+ * z.B. den Effekt frischer Sondertilgungen unsichtbar machen. Stattdessen
+ * wird der Tag direkt nach Ende der aktuellen Periode abgefragt, was
+ * unabhängig vom Auszahlungstag garantiert die nächste Periode trifft.
+ */
+export function getNextPeriodDailyRateBreakdown(
+  loan: Loan,
+  specialPayments: LoanSpecialPayment[],
+  asOfDate: Date = new Date()
+): DailyRateBreakdown | null {
+  const current = getDailyRateBreakdown(loan, specialPayments, asOfDate)
+  if (!current) return null
+  return getDailyRateBreakdown(loan, specialPayments, addDays(new Date(current.period_end), 1))
+}
+
+/**
+ * Monatliche (auf 12 Monate normierte) Tilgungsrate der zu asOfDate laufenden
+ * Periode - z.B. für eine "in 12 Monaten"-Vorschau bei gleichbleibenden
+ * Bedingungen (keine weiteren Sondertilgungen als die bereits erfassten).
+ * Normierung via periodsPerYear/12, damit auch nicht-monatliche
+ * Zahlungsfrequenzen (vierteljährlich/jährlich) korrekt umgelegt werden.
+ */
+export function getMonthlyPrincipalAt(
+  loan: Loan,
+  specialPayments: LoanSpecialPayment[],
+  asOfDate: Date
+): number {
+  const breakdown = getDailyRateBreakdown(loan, specialPayments, asOfDate)
+  if (!breakdown) return 0
+  const periodPrincipal = breakdown.daily_principal * breakdown.days_in_period
+  return periodPrincipal * (periodsPerYear(loan.payment_frequency) / 12)
 }
 
 /**

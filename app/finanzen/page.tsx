@@ -5,7 +5,7 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
-import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus, principalPaidInYear, getDailyRateBreakdown, iso } from '@/lib/amortization'
+import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus, principalPaidInYear, getNextPeriodDailyRateBreakdown, getMonthlyPrincipalAt, iso } from '@/lib/amortization'
 import { totalEquityInvested, calcEquityBreakEven } from '@/lib/equity-breakeven'
 import { aggregateNetWorth } from '@/lib/net-worth'
 import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
@@ -120,13 +120,16 @@ export default async function Finanzen() {
     : 0
 
   const now = new Date()
-  const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1)
   const dailyPrincipalNextMonth = loanList.reduce((s, l) => {
-    const breakdown = getDailyRateBreakdown(l, specialPaymentsByLoan[l.id] ?? [], nextMonthDate)
+    const breakdown = getNextPeriodDailyRateBreakdown(l, specialPaymentsByLoan[l.id] ?? [], now)
     return s + (breakdown?.daily_principal ?? 0)
   }, 0)
   const currentMonthName = now.toLocaleDateString('de-DE', { month: 'long' })
-  const nextMonthName = nextMonthDate.toLocaleDateString('de-DE', { month: 'long' })
+  const nextMonthName = new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleDateString('de-DE', { month: 'long' })
+
+  const in12MonthsDate = new Date(now.getFullYear() + 1, now.getMonth(), 15)
+  const monthlyPrincipalIn12Months = loanList.reduce((s, l) => s + getMonthlyPrincipalAt(l, specialPaymentsByLoan[l.id] ?? [], in12MonthsDate), 0)
+  const in12MonthsLabel = in12MonthsDate.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })
 
   const agreementsByTenant = agreementList.reduce((acc, a) => {
     if (a.tenant_id) (acc[a.tenant_id] ??= []).push(a)
@@ -172,7 +175,7 @@ export default async function Finanzen() {
           <p className="text-lg md:text-2xl font-bold text-gray-900 break-words">{euro(portfolio.total_property_value)}</p>
         </Card>
         <Card>
-          <CardTitle className="min-h-10">Gesamtschulden</CardTitle>
+          <CardTitle className="min-h-10">Restschulden (aktuell)</CardTitle>
           <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(portfolio.total_debt)}</p>
         </Card>
         <Card>
@@ -207,6 +210,7 @@ export default async function Finanzen() {
             <li>
               Deine Mieter tilgen dir im {currentMonthName} täglich <strong className="text-green-700">{euro(todayCashflow.daily_principal_total)}</strong>
               , im {nextMonthName} sind es <strong className="text-green-700">{euro(dailyPrincipalNextMonth)}</strong>
+              . Im {in12MonthsLabel} werden es bei gleichen Voraussetzungen (keine weiteren Sondertilgungen, Zinsänderungen o.ä.) bereits <strong className="text-green-700">{euro(monthlyPrincipalIn12Months)}</strong> pro Monat sein
             </li>
             <li>
               Deine Gesamttilgung über alle Kredite steht jetzt bei <strong className="text-green-700">{euro(totalPrincipalPaid)}</strong>

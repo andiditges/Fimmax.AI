@@ -1,7 +1,9 @@
 'use client'
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { Card, CardTitle } from '@/components/ui/card'
-import { getLoanStatus, simulateSpecialPayment } from '@/lib/amortization'
+import { getLoanStatus, simulateSpecialPayment, iso } from '@/lib/amortization'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
 import { Loan, LoanSpecialPayment, Property } from '@/lib/types'
 
@@ -14,10 +16,12 @@ export function SondertilgungSimulator({
   specialPaymentsByLoan: Record<string, LoanSpecialPayment[]>
   properties: Property[]
 }) {
+  const router = useRouter()
   const propertyById = Object.fromEntries(properties.map(p => [p.id, p]))
   const [loanId, setLoanId] = useState(loans[0]?.id ?? '')
   const [mode, setMode] = useState<'euro' | 'prozent'>('euro')
   const [value, setValue] = useState('')
+  const [applying, setApplying] = useState(false)
 
   const loan = loans.find(l => l.id === loanId)
   const existingSpecialPayments = useMemo(
@@ -41,13 +45,32 @@ export function SondertilgungSimulator({
     return simulateSpecialPayment(loan, existingSpecialPayments, hypotheticalAmount)
   }, [loan, existingSpecialPayments, hypotheticalAmount])
 
+  async function applyNow() {
+    if (!loan || hypotheticalAmount <= 0) return
+    setApplying(true)
+    const supabase = createClient()
+    const { error } = await supabase.from('loan_special_payments').insert({
+      loan_id: loan.id,
+      payment_date: iso(new Date()),
+      amount: hypotheticalAmount,
+      note: 'Über Sondertilgungs-Simulator erfasst',
+    })
+    if (!error) {
+      setValue('')
+      router.refresh()
+    } else {
+      alert('Fehler: ' + error.message)
+    }
+    setApplying(false)
+  }
+
   if (loans.length === 0) return null
 
   return (
     <Card>
       <CardTitle>Sondertilgungs-Simulator</CardTitle>
       <p className="text-xs text-gray-400 mt-1 mb-3">
-        Rein hypothetisch – speichert nichts. Für eine echte Sondertilgung nutze &bdquo;+ Sondertilgung erfassen&ldquo; auf der Kredit-Seite.
+        Zunächst rein hypothetisch – erst mit Klick auf &bdquo;Jetzt genau so erfassen&ldquo; unten wird die Sondertilgung heute mit dem berechneten Betrag tatsächlich gespeichert.
       </p>
 
       <div className="space-y-3">
@@ -109,6 +132,14 @@ export function SondertilgungSimulator({
             <p className="text-xs text-gray-500 pt-1 border-t border-green-100">
               Die monatliche Rate bleibt dabei unverändert – die Sondertilgung verkürzt die Laufzeit, statt die Rate zu senken.
             </p>
+            <button
+              type="button"
+              onClick={applyNow}
+              disabled={applying}
+              className="w-full bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+            >
+              {applying ? 'Wird erfasst...' : `Jetzt genau so erfassen (${euro(hypotheticalAmount)} heute, ${formatDate(iso(new Date()))})`}
+            </button>
           </div>
         )}
       </div>
