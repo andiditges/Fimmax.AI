@@ -1,9 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { suggestUsageDuration } from '@/lib/afa'
 import { BUNDESLAND_LIST, calcGrunderwerbsteuer, matchBundesland } from '@/lib/grunderwerbsteuer'
+import { findGemeindeForAddress, MIETRECHT_STATUS_LABEL } from '@/lib/mietrecht'
 import { Card } from '@/components/ui/card'
 import { AddressAutocomplete } from '@/components/address-autocomplete'
 import { Bundesland, Property } from '@/lib/types'
@@ -30,6 +31,8 @@ export function PropertyForm({ property }: { property?: Property }) {
     is_self_managed: property?.is_self_managed ?? true,
   })
   const [deleteConfirm, setDeleteConfirm] = useState('')
+
+  const gemeindeMatch = useMemo(() => findGemeindeForAddress(form.address), [form.address])
 
   function onBuildYearBlur() {
     const year = parseInt(form.build_year)
@@ -182,6 +185,12 @@ export function PropertyForm({ property }: { property?: Property }) {
                 if (matched) onBundeslandChange(matched)
               }}
             />
+            {gemeindeMatch && (
+              <p className="text-xs text-amber-700 mt-1.5 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-2">
+                {gemeindeMatch.name} gilt als Gebiet mit angespanntem Wohnungsmarkt: {MIETRECHT_STATUS_LABEL[gemeindeMatch.status]}.
+                Relevant für Mieterhöhungen – siehe Kappungsgrenzen-Countdown unter "Mieterhöhung" nach dem Anlegen von Mietern.
+              </p>
+            )}
           </div>
 
           <div>

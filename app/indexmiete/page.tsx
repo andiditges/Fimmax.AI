@@ -3,8 +3,10 @@ import { requireUser } from '@/lib/supabase/get-user'
 import { VpiReadingsForm } from '@/components/vpi/vpi-readings-form'
 import { IndexmieteOverview } from '@/components/vpi/indexmiete-overview'
 import { StaffelmieteOverview } from '@/components/vpi/staffelmiete-overview'
+import { Section558Overview } from '@/components/vpi/section558-overview'
 import { currentAgreement, isStaffelSchedule } from '@/lib/rent-schedule'
 import { latestVpiReading } from '@/lib/vpi'
+import { findGemeindeForAddress, kappungsgrenzePercent, calcSection558Status } from '@/lib/mietrecht'
 import { Property, RentalAgreement, Tenant, VpiReading } from '@/lib/types'
 
 export default async function IndexmietePage() {
@@ -47,12 +49,30 @@ export default async function IndexmietePage() {
     })
     .filter((x): x is { tenant: Tenant; property: Property; agreements: RentalAgreement[] } => x !== null)
 
+  const plain558Items = tenantList
+    .map(t => {
+      if (t.move_out_date) return null
+      const agreements = agreementList.filter(a => a.tenant_id === t.id)
+      if (agreements.length === 0) return null
+      const active = currentAgreement(agreements)
+      if (!active || active.is_index_rent) return null
+      if (isStaffelSchedule(agreements)) return null
+      const property = propertyById[t.property_id]
+      if (!property) return null
+      const gemeinde = findGemeindeForAddress(property.address)
+      const status = calcSection558Status(agreements, kappungsgrenzePercent(gemeinde))
+      if (!status) return null
+      return { tenant: t, property, gemeinde, status }
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+
   return (
     <div className="space-y-8 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Indexmiete &amp; Staffelmiete</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Mieterhöhung</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Aktuelle Erhöhungsmöglichkeit nach § 557b BGB für Mietverhältnisse mit Indexmiete (auf Basis des Verbraucherpreisindex/VPI) sowie Überblick über bereits vereinbarte Staffelmieten nach § 557a BGB.
+          Aktuelle Erhöhungsmöglichkeit nach § 557b BGB für Mietverhältnisse mit Indexmiete (auf Basis des Verbraucherpreisindex/VPI), Überblick über bereits vereinbarte Staffelmieten nach § 557a BGB,
+          sowie Kappungsgrenzen-Countdown nach § 558 BGB für alle übrigen (fest vereinbarten) Mietverhältnisse.
         </p>
       </div>
 
@@ -66,6 +86,15 @@ export default async function IndexmietePage() {
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-3">Mietverhältnisse mit Staffelmiete ({staffelItems.length})</h2>
         <StaffelmieteOverview items={staffelItems} />
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold text-gray-800 mb-3">Feste Miete – Kappungsgrenzen-Countdown ({plain558Items.length})</h2>
+        <p className="text-xs text-gray-400 -mt-2 mb-3">
+          Für Mietverhältnisse ohne Staffel- oder Indexvereinbarung: wann eine Mieterhöhung nach § 558 BGB (Anpassung an die ortsübliche Vergleichsmiete) frühestens verlangt werden darf,
+          und wie viel von der Kappungsgrenze (20% bzw. 15% in Gebieten mit angespanntem Wohnungsmarkt) in den letzten 3 Jahren bereits ausgeschöpft ist.
+        </p>
+        <Section558Overview items={plain558Items} />
       </div>
     </div>
   )
