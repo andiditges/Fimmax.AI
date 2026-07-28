@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
-import { calcBereitstellungszinsen, suggestInitialRepaymentRate } from '@/lib/amortization'
+import { annuityFromInitialRepaymentRate, calcBereitstellungszinsen, suggestInitialRepaymentRate } from '@/lib/amortization'
 import { propertyLabel, euro } from '@/lib/format'
 import { PaymentFrequency, DayCountConvention } from '@/lib/types'
 
@@ -33,6 +33,9 @@ export default function NewLoan() {
     bereitstellungsfreie_monate: '',
   })
 
+  const [rateMode, setRateMode] = useState<'eur' | 'percent'>('eur')
+  const [repaymentRatePercent, setRepaymentRatePercent] = useState('')
+
   useState(() => {
     supabase.from('properties').select('id, address, unit, unit_label, purchase_price, incidental_costs').then(({ data }) => {
       setProperties(data ?? [])
@@ -41,9 +44,14 @@ export default function NewLoan() {
 
   const principal = parseFloat(form.principal)
   const rate = parseFloat(form.nominal_interest_rate)
-  const annuity = parseFloat(form.annuity_amount)
+  const repaymentPct = parseFloat(repaymentRatePercent)
+  const computedAnnuity =
+    !isNaN(principal) && !isNaN(rate) && !isNaN(repaymentPct) && principal > 0
+      ? annuityFromInitialRepaymentRate(principal, rate, repaymentPct, form.payment_frequency)
+      : null
+  const annuity = rateMode === 'percent' ? computedAnnuity ?? NaN : parseFloat(form.annuity_amount)
   const suggestedRate =
-    !isNaN(principal) && !isNaN(rate) && !isNaN(annuity) && principal > 0
+    rateMode === 'eur' && !isNaN(principal) && !isNaN(rate) && !isNaN(annuity) && principal > 0
       ? suggestInitialRepaymentRate(principal, rate, annuity, form.payment_frequency)
       : null
 
@@ -65,6 +73,9 @@ export default function NewLoan() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.property_id) return alert('Bitte eine Immobilie auswählen')
+    if (rateMode === 'percent' && (computedAnnuity == null || isNaN(computedAnnuity))) {
+      return alert('Bitte Darlehenssumme, Sollzins und Tilgungsrate ausfüllen, damit die Rate berechnet werden kann')
+    }
     setLoading(true)
 
     const name = form.name || (form.lender ? `${form.lender} Kredit` : 'Kredit')
@@ -79,7 +90,7 @@ export default function NewLoan() {
       nominal_interest_rate: parseFloat(form.nominal_interest_rate),
       disbursement_date: form.disbursement_date,
       initial_fixed_period_years: form.initial_fixed_period_years ? parseInt(form.initial_fixed_period_years) : null,
-      annuity_amount: parseFloat(form.annuity_amount),
+      annuity_amount: rateMode === 'percent' ? computedAnnuity! : parseFloat(form.annuity_amount),
       payment_frequency: form.payment_frequency,
       day_count_convention: form.day_count_convention,
       planned_renovation_amount: renovationAmount,
@@ -201,11 +212,44 @@ export default function NewLoan() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Rate je Zahlung (€) *</label>
-              <p className="text-xs text-gray-400 mb-1">Laut Tilgungsplan der Bank</p>
-              <input type="number" step="0.01" value={form.annuity_amount}
-                onChange={e => setForm(f => ({ ...f, annuity_amount: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">Rate je Zahlung</label>
+                <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setRateMode('eur')}
+                    className={`px-2.5 py-1 transition-colors ${rateMode === 'eur' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                  >
+                    €
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRateMode('percent')}
+                    className={`px-2.5 py-1 border-l border-gray-200 transition-colors ${rateMode === 'percent' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                  >
+                    %
+                  </button>
+                </div>
+              </div>
+              {rateMode === 'eur' ? (
+                <>
+                  <p className="text-xs text-gray-400 mb-1">Laut Tilgungsplan der Bank</p>
+                  <input type="number" step="0.01" value={form.annuity_amount}
+                    onChange={e => setForm(f => ({ ...f, annuity_amount: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-400 mb-1">Anfängliche Tilgungsrate p.a., steht im Vertrag – die Rate in € wird daraus berechnet</p>
+                  <div className="relative">
+                    <input type="number" step="0.01" value={repaymentRatePercent}
+                      onChange={e => setRepaymentRatePercent(e.target.value)}
+                      placeholder="z.B. 2"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+                  </div>
+                </>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Zahlungsrhythmus</label>
@@ -218,6 +262,14 @@ export default function NewLoan() {
               </select>
             </div>
           </div>
+
+          {rateMode === 'percent' && (
+            <p className="text-sm text-gray-500 bg-gray-50 rounded-xl px-3 py-2 -mt-2">
+              {computedAnnuity !== null
+                ? <>Rechnerische Rate je Zahlung: <strong>{euro(computedAnnuity)}</strong></>
+                : 'Für die Berechnung Darlehenssumme, Sollzins und Tilgungsrate ausfüllen.'}
+            </p>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Zinsmethode</label>

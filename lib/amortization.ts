@@ -441,6 +441,22 @@ export function suggestInitialRepaymentRate(
 }
 
 /**
+ * Umkehrung von suggestInitialRepaymentRate: leitet die Rate je Zahlung aus
+ * einer gewünschten anfänglichen Tilgungsrate ab (Sollzins + Tilgungsrate,
+ * gleichmäßig auf die Zahlungsperioden verteilt) - für Nutzer, die die
+ * Tilgungsrate laut Vertrag kennen statt der Rate in Euro.
+ */
+export function annuityFromInitialRepaymentRate(
+  principal: number,
+  nominalInterestRate: number,
+  initialRepaymentRate: number,
+  frequency: PaymentFrequency = 'monatlich'
+): number {
+  if (principal <= 0) return 0
+  return principal * (nominalInterestRate + initialRepaymentRate) / 100 / periodsPerYear(frequency)
+}
+
+/**
  * Bereitstellungszinsen: ab Ende der "bereitstellungsfreien Zeit" nach
  * Vertragsschluss berechnen Banken bis zur tatsächlichen Auszahlung Zinsen
  * auf den noch nicht abgerufenen Darlehensbetrag (relevant v.a. bei
