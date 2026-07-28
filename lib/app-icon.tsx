@@ -4,9 +4,8 @@
 // anders als der volle Schriftzug "Fimmax.AI".
 export function AppIconElement({ size }: { size: number }) {
   const fontSize = Math.round(size * 0.46)
-  const iWidth = fontSize * 0.3
-  const mmWidth = fontSize * 1.05
   const roofHeight = fontSize * 0.16
+  const textStyle = { display: 'flex', fontSize, fontWeight: 700, fontFamily: 'sans-serif', lineHeight: 1 } as const
 
   return (
     <div
@@ -21,13 +20,19 @@ export function AppIconElement({ size }: { size: number }) {
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-        <div style={{ display: 'flex', width: iWidth + mmWidth, height: roofHeight }}>
-          <div style={{ display: 'flex', width: iWidth }} />
-          <svg width={mmWidth} height={roofHeight} viewBox="0 0 100 13.4" style={{ display: 'flex' }}>
-            <path d="M0,13.4 L50,0 L100,13.4" fill="none" stroke="#8f3a1a" strokeWidth="7" strokeLinecap="round" />
-          </svg>
+        {/* Breite von "i" und "mm" wird über unsichtbaren Text derselben
+            Schriftgröße gemessen statt geschätzt, damit das Dach exakt über
+            beide "m" sitzt, egal welche Zeichenbreiten die Render-Engine nutzt. */}
+        <div style={{ display: 'flex', flexDirection: 'row', height: roofHeight, overflow: 'hidden' }}>
+          <div style={{ ...textStyle, opacity: 0 }}>i</div>
+          <div style={{ position: 'relative', display: 'flex' }}>
+            <div style={{ ...textStyle, opacity: 0 }}>mm</div>
+            <svg style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: roofHeight }} viewBox="0 0 100 13.4">
+              <path d="M0,13.4 L50,0 L100,13.4" fill="none" stroke="#8f3a1a" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </div>
         </div>
-        <div style={{ display: 'flex', fontSize, fontWeight: 700, color: '#1d4ed8', fontFamily: 'sans-serif', lineHeight: 1, marginTop: fontSize * 0.03 }}>
+        <div style={{ ...textStyle, color: '#8f3a1a', marginTop: fontSize * 0.03 }}>
           imm
         </div>
       </div>
