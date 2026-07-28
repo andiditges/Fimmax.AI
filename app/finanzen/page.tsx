@@ -4,6 +4,7 @@ import { requireUser } from '@/lib/supabase/get-user'
 import { Card, CardTitle } from '@/components/ui/card'
 import { TilgungRing, LtvRing } from '@/components/properties/tilgung-ring'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
+import { CapexChart } from '@/components/charts/capex-chart'
 import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
 import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus, principalPaidInYear, getNextPeriodDailyRateBreakdown, getMonthlyPrincipalAt, iso } from '@/lib/amortization'
@@ -43,6 +44,21 @@ export default async function Finanzen() {
   const reserveList = (reservesData ?? []) as PropertyReserve[]
   const operatingCostList = (operatingCostsData ?? []) as OperatingCost[]
   const vpiReadingList = (vpiReadingsData ?? []) as VpiReading[]
+
+  // CapEx-Trend: Renovierungs-/Sanierungsbelege (is_renovation) über alle
+  // Objekte hinweg, je Steuerjahr summiert - zeigt auf einen Blick, wie viel
+  // über die Jahre insgesamt investiert wurde, statt es sich aus den
+  // einzelnen Objekt-Belegsituationen zusammensuchen zu müssen.
+  const capexByYear = recs
+    .filter(r => r.is_renovation)
+    .reduce((acc, r) => {
+      acc[r.tax_year] = (acc[r.tax_year] ?? 0) + r.amount
+      return acc
+    }, {} as Record<number, number>)
+  const capexData = Object.entries(capexByYear)
+    .map(([year, amount]) => ({ year: parseInt(year), amount }))
+    .sort((a, b) => a.year - b.year)
+  const totalCapex = capexData.reduce((s, d) => s + d.amount, 0)
 
   const { data: specialPayments } = loanList.length
     ? await supabase.from('loan_special_payments').select('*').in('loan_id', loanList.map(l => l.id))
@@ -421,6 +437,20 @@ export default async function Finanzen() {
           <DailyTilgungChart data={dailyRateOverTime} />
           <p className="text-xs text-gray-400 mt-2">
             Bei fester Annuität sinkt der Zinsanteil pro Tag über die Zeit, während die Tilgung pro Tag entsprechend wächst.
+          </p>
+        </Card>
+      )}
+
+      {/* CapEx-Trend */}
+      {capexData.length > 0 && (
+        <Card>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle>CapEx-Trend – Renovierung/Sanierung nach Jahr</CardTitle>
+            <span className="text-sm text-gray-500">Gesamt: <strong className="text-gray-900">{euro(totalCapex)}</strong></span>
+          </div>
+          <CapexChart data={capexData} />
+          <p className="text-xs text-gray-400 mt-2">
+            Summe der als Renovierung/Sanierung markierten Belege je Steuerjahr, über alle Objekte hinweg.
           </p>
         </Card>
       )}
