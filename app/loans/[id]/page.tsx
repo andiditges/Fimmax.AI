@@ -130,7 +130,7 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
             ))}
           </div>
         )}
-        <SpecialPaymentForm loanId={l.id} />
+        <SpecialPaymentForm loan={l} existingPayments={sp} />
       </Card>
 
       <Card>

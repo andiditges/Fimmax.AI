@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardTitle } from '@/components/ui/card'
-import { getLoanStatus, simulateSpecialPayment, iso } from '@/lib/amortization'
+import { getLoanStatus, simulateSpecialPayment, specialPaymentAllowanceRemaining, iso } from '@/lib/amortization'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
 import { Loan, LoanSpecialPayment, Property } from '@/lib/types'
 
@@ -22,6 +22,7 @@ export function SondertilgungSimulator({
   const [mode, setMode] = useState<'euro' | 'prozent'>('euro')
   const [value, setValue] = useState('')
   const [applying, setApplying] = useState(false)
+  const [confirmOverLimit, setConfirmOverLimit] = useState(false)
 
   const loan = loans.find(l => l.id === loanId)
   const existingSpecialPayments = useMemo(
@@ -45,8 +46,19 @@ export function SondertilgungSimulator({
     return simulateSpecialPayment(loan, existingSpecialPayments, hypotheticalAmount)
   }, [loan, existingSpecialPayments, hypotheticalAmount])
 
+  // Kontingent bezieht sich auf das Kalenderjahr von "heute" und muss bereits
+  // erfasste Sondertilgungen desselben Jahres mit einrechnen.
+  const overLimitBy = useMemo(() => {
+    if (!loan || loan.special_payment_limit_percent == null || hypotheticalAmount <= 0) return 0
+    const remaining = specialPaymentAllowanceRemaining(loan, existingSpecialPayments, new Date())
+    if (remaining === null) return 0
+    return Math.max(0, hypotheticalAmount - remaining)
+  }, [loan, existingSpecialPayments, hypotheticalAmount])
+  const isOverLimit = overLimitBy > 0.01
+
   async function applyNow() {
     if (!loan || hypotheticalAmount <= 0) return
+    if (isOverLimit && !confirmOverLimit) return
     setApplying(true)
     const supabase = createClient()
     const { error } = await supabase.from('loan_special_payments').insert({
@@ -57,6 +69,7 @@ export function SondertilgungSimulator({
     })
     if (!error) {
       setValue('')
+      setConfirmOverLimit(false)
       router.refresh()
     } else {
       alert('Fehler: ' + error.message)
@@ -96,7 +109,7 @@ export function SondertilgungSimulator({
               type="number"
               step="0.01"
               value={value}
-              onChange={e => setValue(e.target.value)}
+              onChange={e => { setValue(e.target.value); setConfirmOverLimit(false) }}
               placeholder={mode === 'prozent' ? 'z.B. 5' : 'z.B. 10000'}
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -132,10 +145,26 @@ export function SondertilgungSimulator({
             <p className="text-xs text-gray-500 pt-1 border-t border-green-100">
               Die monatliche Rate bleibt dabei unverändert – die Sondertilgung verkürzt die Laufzeit, statt die Rate zu senken.
             </p>
+
+            {isOverLimit && loan && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+                <p className="text-xs text-amber-800">
+                  Diese Sondertilgung liegt {euro(overLimitBy)} über dem für {new Date().getFullYear()} vereinbarten kostenlosen Kontingent
+                  ({loan.special_payment_limit_percent}% p.a. der Darlehenssumme) – zusammen mit ggf. bereits erfassten Sondertilgungen desselben Jahres.
+                  Die Bank kann für den übersteigenden Teil eine Vorfälligkeitsentschädigung verlangen.
+                </p>
+                <label className="flex items-center gap-2 text-xs text-amber-800">
+                  <input type="checkbox" checked={confirmOverLimit} onChange={e => setConfirmOverLimit(e.target.checked)}
+                    className="w-3.5 h-3.5 rounded border-amber-300 text-amber-600" />
+                  Trotzdem in dieser Höhe erfassen
+                </label>
+              </div>
+            )}
+
             <button
               type="button"
               onClick={applyNow}
-              disabled={applying}
+              disabled={applying || (isOverLimit && !confirmOverLimit)}
               className="w-full bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
             >
               {applying ? 'Wird erfasst...' : `Jetzt genau so erfassen (${euro(hypotheticalAmount)} heute, ${formatDate(iso(new Date()))})`}
