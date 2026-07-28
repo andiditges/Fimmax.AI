@@ -61,6 +61,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
     condition_heating: property?.condition_heating ?? '',
   })
   const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null)
   const [incidentalCostsMode, setIncidentalCostsMode] = useState<'eur' | 'percent' | 'items'>(
     incidentalCostItems && incidentalCostItems.length > 0 ? 'items' : 'eur'
   )
@@ -254,7 +255,8 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
       }
     }
 
-    router.push(property ? `/properties/${property.id}` : '/')
+    if (property) router.push(`/properties/${property.id}`)
+    else setCreatedPropertyId(savedProperty.id)
   }
 
   async function onDelete() {
@@ -291,6 +293,35 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
       />
     </div>
   )
+
+  if (createdPropertyId) {
+    return (
+      <div className="max-w-xl">
+        <Card className="text-center py-10">
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Immobilie angelegt</h1>
+          <p className="text-sm text-gray-500 mb-6">
+            Möchtest du direkt das passende Darlehen dazu erfassen? Das geht auch später jederzeit über die Objektseite.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => router.push(`/loans/new?property=${createdPropertyId}`)}
+              className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-colors"
+            >
+              Jetzt Darlehen anlegen
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+            >
+              Später – zum Dashboard
+            </button>
+          </div>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-xl">
