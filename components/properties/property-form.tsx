@@ -8,6 +8,7 @@ import { findGemeindeForAddress, MIETRECHT_STATUS_LABEL } from '@/lib/mietrecht'
 import { GRUNDERWERBSTEUER_RATES } from '@/lib/grunderwerbsteuer'
 import { Card } from '@/components/ui/card'
 import { AddressAutocomplete } from '@/components/address-autocomplete'
+import { euro } from '@/lib/format'
 import { Bundesland, Property, PropertyConditionGrade, PROPERTY_CONDITION_GRADE_LABELS } from '@/lib/types'
 
 const CONDITION_FIELDS: { key: 'condition_windows' | 'condition_electrical' | 'condition_bathroom' | 'condition_heating'; label: string }[] = [
@@ -51,6 +52,8 @@ export function PropertyForm({ property }: { property?: Property }) {
     condition_heating: property?.condition_heating ?? '',
   })
   const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [incidentalCostsMode, setIncidentalCostsMode] = useState<'eur' | 'percent'>('eur')
+  const [incidentalCostsPercent, setIncidentalCostsPercent] = useState('')
 
   const gemeindeMatch = useMemo(() => findGemeindeForAddress(form.address), [form.address])
 
@@ -102,8 +105,21 @@ export function PropertyForm({ property }: { property?: Property }) {
       if (!isNaN(land)) next.building_value = String(round2(price - land))
       else if (!isNaN(building)) next.land_value = String(round2(price - building))
       if (f.bundesland) next.grunderwerbsteuer = String(calcGrunderwerbsteuer(grunderwerbsteuerBase(price, movable), f.bundesland))
+      if (incidentalCostsMode === 'percent') {
+        const pct = parseFloat(incidentalCostsPercent)
+        if (!isNaN(pct)) next.incidental_costs = String(round2(price * pct / 100))
+      }
       return next
     })
+  }
+
+  function onIncidentalCostsPercentChange(value: string) {
+    setIncidentalCostsPercent(value)
+    const price = parseFloat(form.purchase_price)
+    const pct = parseFloat(value)
+    if (!isNaN(price) && !isNaN(pct)) {
+      setForm(f => ({ ...f, incidental_costs: String(round2(price * pct / 100)) }))
+    }
   }
 
   function onMovableBlur() {
@@ -266,8 +282,56 @@ export function PropertyForm({ property }: { property?: Property }) {
             />
           </div>
 
-          {field('Kaufnebenkosten (€)', 'incidental_costs', 'number',
-            'Notar, Grundbuch/Amtsgericht, Makler, Grundschuldbestellung, Nutzungsdauergutachten u.ä. – ohne Grunderwerbsteuer (die hat ihr eigenes Feld oben) und ohne Renovierung (kommt als Beleg mit is_renovation-Flag). Fließt in die Eigenkapital-Berechnung im Finanz-Cockpit ein.')}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">Kaufnebenkosten</label>
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIncidentalCostsMode('eur')}
+                  className={`px-2.5 py-1 transition-colors ${incidentalCostsMode === 'eur' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                >
+                  €
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIncidentalCostsMode('percent')}
+                  className={`px-2.5 py-1 border-l border-gray-200 transition-colors ${incidentalCostsMode === 'percent' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                >
+                  %
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mb-1">
+              Notar, Grundbuch/Amtsgericht, Makler, Grundschuldbestellung, Nutzungsdauergutachten u.ä. – ohne Grunderwerbsteuer (die hat ihr eigenes Feld oben) und ohne Renovierung (kommt als Beleg mit is_renovation-Flag). Fließt in die Eigenkapital-Berechnung im Finanz-Cockpit ein.
+            </p>
+            {incidentalCostsMode === 'eur' ? (
+              <input
+                type="number"
+                step="0.01"
+                value={form.incidental_costs}
+                onChange={e => setForm(f => ({ ...f, incidental_costs: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={incidentalCostsPercent}
+                    onChange={e => onIncidentalCostsPercentChange(e.target.value)}
+                    placeholder="z.B. 8"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+                </div>
+                <span className="text-sm text-gray-500 whitespace-nowrap">
+                  = {form.incidental_costs && !isNaN(parseFloat(form.incidental_costs)) ? euro(parseFloat(form.incidental_costs)) : '–'}
+                </span>
+              </div>
+            )}
+          </div>
 
           {field('Aktueller Marktwert (€)', 'current_value', 'number',
             'Optional – dein geschätzter aktueller Marktwert, z.B. laut Gutachten oder Vergleichswerten. Fließt ins Finanz-Cockpit (Immobilienwert, Eigenkapital) ein. Leer lassen, um stattdessen den Kaufpreis zu verwenden.')}
