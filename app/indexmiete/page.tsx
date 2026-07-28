@@ -4,6 +4,7 @@ import { VpiReadingsForm } from '@/components/vpi/vpi-readings-form'
 import { IndexmieteOverview } from '@/components/vpi/indexmiete-overview'
 import { StaffelmieteOverview } from '@/components/vpi/staffelmiete-overview'
 import { Section558Overview } from '@/components/vpi/section558-overview'
+import { ComparableRentTable } from '@/components/vpi/comparable-rent-table'
 import { currentAgreement, isStaffelSchedule } from '@/lib/rent-schedule'
 import { latestVpiReading } from '@/lib/vpi'
 import { findGemeindeForAddress, kappungsgrenzePercent, calcSection558Status } from '@/lib/mietrecht'
@@ -66,6 +67,18 @@ export default async function IndexmietePage() {
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
 
+  const comparableRentItems = tenantList
+    .filter(t => !t.move_out_date)
+    .map(t => {
+      const property = propertyById[t.property_id]
+      if (!property) return null
+      const agreements = agreementList.filter(a => a.tenant_id === t.id)
+      const active = currentAgreement(agreements)
+      const currentRent = active?.rent_amount ?? t.rent_base
+      return { tenant: t, property, currentRent }
+    })
+    .filter((x): x is { tenant: Tenant; property: Property; currentRent: number } => x !== null)
+
   return (
     <div className="space-y-8 max-w-3xl">
       <div>
@@ -74,6 +87,14 @@ export default async function IndexmietePage() {
           Aktuelle Erhöhungsmöglichkeit nach § 557b BGB für Mietverhältnisse mit Indexmiete (auf Basis des Verbraucherpreisindex/VPI), Überblick über bereits vereinbarte Staffelmieten nach § 557a BGB,
           sowie Kappungsgrenzen-Countdown nach § 558 BGB für alle übrigen (fest vereinbarten) Mietverhältnisse.
         </p>
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold text-gray-800 mb-3">Miete vs. Vergleichsmiete – Portfolio-Übersicht ({comparableRentItems.length})</h2>
+        <p className="text-xs text-gray-400 -mt-2 mb-3">
+          Alle aktiven Mietverhältnisse im Vergleich zur beim jeweiligen Objekt hinterlegten ortsüblichen Vergleichsmiete (€/m²) – zeigt auf einen Blick, wo Erhöhungspotential besteht oder die Miete bereits über dem Vergleichswert liegt.
+        </p>
+        <ComparableRentTable items={comparableRentItems} />
       </div>
 
       <VpiReadingsForm readings={readingList} />
