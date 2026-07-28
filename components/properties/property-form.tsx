@@ -5,9 +5,17 @@ import { createClient } from '@/lib/supabase/client'
 import { suggestUsageDuration } from '@/lib/afa'
 import { BUNDESLAND_LIST, calcGrunderwerbsteuer, matchBundesland } from '@/lib/grunderwerbsteuer'
 import { findGemeindeForAddress, MIETRECHT_STATUS_LABEL } from '@/lib/mietrecht'
+import { GRUNDERWERBSTEUER_RATES } from '@/lib/grunderwerbsteuer'
 import { Card } from '@/components/ui/card'
 import { AddressAutocomplete } from '@/components/address-autocomplete'
-import { Bundesland, Property } from '@/lib/types'
+import { Bundesland, Property, PropertyConditionGrade, PROPERTY_CONDITION_GRADE_LABELS } from '@/lib/types'
+
+const CONDITION_FIELDS: { key: 'condition_windows' | 'condition_electrical' | 'condition_bathroom' | 'condition_heating'; label: string }[] = [
+  { key: 'condition_windows', label: 'Fenster' },
+  { key: 'condition_electrical', label: 'Elektro' },
+  { key: 'condition_bathroom', label: 'Sanitär / Bad' },
+  { key: 'condition_heating', label: 'Heizung' },
+]
 
 export function PropertyForm({ property }: { property?: Property }) {
   const router = useRouter()
@@ -29,6 +37,18 @@ export function PropertyForm({ property }: { property?: Property }) {
     build_year: property ? String(property.build_year) : '',
     usage_duration: property ? String(property.usage_duration) : '',
     is_self_managed: property?.is_self_managed ?? true,
+    living_area_sqm: property?.living_area_sqm != null ? String(property.living_area_sqm) : '',
+    comparable_rent_min: property?.comparable_rent_min != null ? String(property.comparable_rent_min) : '',
+    comparable_rent_max: property?.comparable_rent_max != null ? String(property.comparable_rent_max) : '',
+    comparable_rent_source: property?.comparable_rent_source ?? '',
+    comparable_rent_as_of: property?.comparable_rent_as_of ?? '',
+    renovation_note: property?.renovation_note ?? '',
+  })
+  const [conditions, setConditions] = useState<Record<string, PropertyConditionGrade | ''>>({
+    condition_windows: property?.condition_windows ?? '',
+    condition_electrical: property?.condition_electrical ?? '',
+    condition_bathroom: property?.condition_bathroom ?? '',
+    condition_heating: property?.condition_heating ?? '',
   })
   const [deleteConfirm, setDeleteConfirm] = useState('')
 
@@ -130,6 +150,16 @@ export function PropertyForm({ property }: { property?: Property }) {
       movable_items_value: form.movable_items ? parseFloat(form.movable_items) : null,
       grunderwerbsteuer: form.grunderwerbsteuer ? parseFloat(form.grunderwerbsteuer) : null,
       incidental_costs: form.incidental_costs ? parseFloat(form.incidental_costs) : 0,
+      living_area_sqm: form.living_area_sqm ? parseFloat(form.living_area_sqm) : null,
+      comparable_rent_min: form.comparable_rent_min ? parseFloat(form.comparable_rent_min) : null,
+      comparable_rent_max: form.comparable_rent_max ? parseFloat(form.comparable_rent_max) : null,
+      comparable_rent_source: form.comparable_rent_source || null,
+      comparable_rent_as_of: form.comparable_rent_as_of || null,
+      renovation_note: form.renovation_note || null,
+      condition_windows: conditions.condition_windows || null,
+      condition_electrical: conditions.condition_electrical || null,
+      condition_bathroom: conditions.condition_bathroom || null,
+      condition_heating: conditions.condition_heating || null,
     }
 
     const { error } = property
@@ -148,6 +178,11 @@ export function PropertyForm({ property }: { property?: Property }) {
     else { alert('Fehler: ' + error.message); setLoading(false) }
   }
 
+  const OPTIONAL_FIELDS: (keyof typeof form)[] = [
+    'unit', 'unit_label', 'current_value', 'movable_items', 'incidental_costs',
+    'living_area_sqm', 'comparable_rent_min', 'comparable_rent_max', 'comparable_rent_source', 'comparable_rent_as_of', 'renovation_note',
+  ]
+
   const field = (label: string, key: keyof typeof form, type = 'text', hint?: string) => (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
@@ -165,7 +200,7 @@ export function PropertyForm({ property }: { property?: Property }) {
             : undefined
         }
         className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        required={key !== 'unit' && key !== 'unit_label' && key !== 'current_value' && key !== 'movable_items' && key !== 'incidental_costs'}
+        required={OPTIONAL_FIELDS.indexOf(key) === -1}
       />
     </div>
   )
@@ -220,7 +255,7 @@ export function PropertyForm({ property }: { property?: Property }) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Grunderwerbsteuer (€)</label>
             <p className="text-xs text-gray-400 mb-1">
-              Automatisch berechnet aus (Kaufpreis − Einrichtungsgegenstände) × Satz des gewählten Bundeslands (Stand 2026). Kann bei Bedarf angepasst werden, z.B. bei Befreiungen.
+              Automatisch berechnet aus (Kaufpreis − Einrichtungsgegenstände) × {form.bundesland ? `${GRUNDERWERBSTEUER_RATES[form.bundesland as Bundesland]}%` : 'Satz'} ({form.bundesland || 'Bundesland wählen'}, Stand 2026) – zum Abgleich mit dem Steuerbescheid. Kann bei Bedarf angepasst werden, z.B. bei Befreiungen.
             </p>
             <input
               type="number"
@@ -276,6 +311,55 @@ export function PropertyForm({ property }: { property?: Property }) {
               className="w-4 h-4 rounded border-gray-300 text-blue-600"
             />
             <label htmlFor="self_managed" className="text-sm text-gray-700">Selbst verwaltet (keine Hausverwaltung)</label>
+          </div>
+
+          <div className="border-t border-gray-100 pt-5 space-y-5">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-800 mb-1">Zustand & Vergleichsmiete</h2>
+              <p className="text-xs text-gray-400">
+                Alles optional. Hilft dir, deine Miete selbst gegen die ortsübliche Vergleichsmiete einzuordnen –
+                die App berechnet hier bewusst nichts automatisch (kein bundesweiter Mietspiegel verfügbar).
+              </p>
+            </div>
+
+            {field('Wohnfläche (m²)', 'living_area_sqm', 'number', 'Für die €/m²-Einordnung unten')}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Zustand je Gewerk</label>
+              <div className="grid grid-cols-2 gap-3">
+                {CONDITION_FIELDS.map(c => (
+                  <div key={c.key}>
+                    <label className="block text-xs text-gray-500 mb-1">{c.label}</label>
+                    <select
+                      value={conditions[c.key]}
+                      onChange={e => setConditions(v => ({ ...v, [c.key]: e.target.value as PropertyConditionGrade | '' }))}
+                      className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">–</option>
+                      {(Object.keys(PROPERTY_CONDITION_GRADE_LABELS) as PropertyConditionGrade[]).map(g => (
+                        <option key={g} value={g}>{PROPERTY_CONDITION_GRADE_LABELS[g]}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {field('Sanierungsnotiz', 'renovation_note', 'text', 'Optional – z.B. "Bad 2023 komplett neu", "Fenster noch original von 1985"')}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ortsübliche Vergleichsmiete (€/m², netto kalt)</label>
+              <p className="text-xs text-gray-400 mb-1">
+                Selbst recherchiert, z.B. aus dem Mietspiegel deiner Gemeinde (falls vorhanden) oder Vergleichsobjekten. Ohne Gewähr, ersetzt keine Rechtsberatung.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {field('von', 'comparable_rent_min', 'number')}
+                {field('bis', 'comparable_rent_max', 'number')}
+              </div>
+            </div>
+
+            {field('Quelle', 'comparable_rent_source', 'text', 'z.B. "Mietspiegel Mönchengladbach 2025" oder "3 Vergleichsobjekte ImmoScout"')}
+            {field('Stand', 'comparable_rent_as_of', 'date')}
           </div>
 
           <button

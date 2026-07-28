@@ -57,7 +57,25 @@ export interface Property {
   risk_summary: string | null
   risk_factors: RiskFactor[] | null
   risk_assessed_at: string | null
+  living_area_sqm: number | null
+  comparable_rent_min: number | null
+  comparable_rent_max: number | null
+  comparable_rent_source: string | null
+  comparable_rent_as_of: string | null
+  condition_windows: PropertyConditionGrade | null
+  condition_electrical: PropertyConditionGrade | null
+  condition_bathroom: PropertyConditionGrade | null
+  condition_heating: PropertyConditionGrade | null
+  renovation_note: string | null
   created_at: string
+}
+
+export type PropertyConditionGrade = 'alt' | 'teilmodernisiert' | 'neuwertig'
+
+export const PROPERTY_CONDITION_GRADE_LABELS: Record<PropertyConditionGrade, string> = {
+  alt: 'alt / unsaniert',
+  teilmodernisiert: 'teilmodernisiert',
+  neuwertig: 'neuwertig / neu saniert',
 }
 
 export interface RiskFactor {

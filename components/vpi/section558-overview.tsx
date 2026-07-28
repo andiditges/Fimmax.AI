@@ -35,6 +35,12 @@ function Section558Row({ item }: { item: Item }) {
   const alreadyPossible = new Date(status.next_request_possible_date) <= now
   const kappungsgrenzeAusgeschoepft = status.kappungsgrenze_remaining_percent !== null && status.kappungsgrenze_remaining_percent <= 0.5
 
+  const maxRentAtCap = status.kappungsgrenze_remaining_percent !== null
+    ? status.current_rent * (1 + status.kappungsgrenze_remaining_percent / 100)
+    : null
+  const maxRentPerSqm = maxRentAtCap != null && property.living_area_sqm ? maxRentAtCap / property.living_area_sqm : null
+  const exceedsComparableRent = maxRentPerSqm != null && property.comparable_rent_max != null && maxRentPerSqm > property.comparable_rent_max
+
   return (
     <Card>
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -86,6 +92,20 @@ function Section558Row({ item }: { item: Item }) {
       {gemeinde?.status !== 'kappungsgrenze' && gemeinde && (
         <p className="text-xs text-amber-700 mt-2">
           {gemeinde.name} gilt zusätzlich als Mietpreisbremse-Gebiet – relevant bei Neuvermietung (max. 10% über ortsüblicher Vergleichsmiete), nicht bei laufenden Mietverhältnissen.
+        </p>
+      )}
+
+      {exceedsComparableRent ? (
+        <p className="text-xs text-red-600 font-medium mt-2">
+          Achtung: Die Kappungsgrenze allein erlaubt hier mehr, als laut deiner hinterlegten Vergleichsmiete-Obergrenze ({euro(property.comparable_rent_max ?? 0)}/m²) zulässig wäre.
+          Die Kappungsgrenze ist nur eine zusätzliche Obergrenze – die ortsübliche Vergleichsmiete darfst du bei § 558-Erhöhungen nie übersteigen.
+        </p>
+      ) : (
+        <p className="text-xs text-amber-700 mt-2">
+          Wichtig: Die Kappungsgrenze ist nur eine zusätzliche Obergrenze. Unabhängig davon darf eine § 558-Erhöhung die ortsübliche Vergleichsmiete nie übersteigen –
+          {property.comparable_rent_max != null
+            ? ' das prüft diese Übersicht anhand deiner hinterlegten Vergleichsmiete mit.'
+            : ' das musst du selbst gegen den Mietspiegel/Vergleichsobjekte prüfen (unter "Bearbeiten" beim Objekt hinterlegbar), sonst droht bei zu hoher Miete eine Mietpreisüberhöhung (§ 5 WiStrG).'}
         </p>
       )}
 

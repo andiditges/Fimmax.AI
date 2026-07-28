@@ -7,6 +7,7 @@ import { ThresholdBadge, ThresholdBar } from '@/components/threshold-badge'
 import { ReminderRow } from '@/components/reminders/reminder-row'
 import { TaxExportButton } from '@/components/tax-export-button'
 import { PropertyReserves } from '@/components/properties/property-reserves'
+import { TilgungRing } from '@/components/properties/tilgung-ring'
 import { RiskOverview } from '@/components/tipps/risk-overview'
 import { ReceiptBrowser } from '@/components/receipts/receipt-browser'
 import { Ehegattenschaukel } from '@/components/properties/ehegattenschaukel'
@@ -15,9 +16,9 @@ import { calc15Threshold } from '@/lib/threshold15'
 import { getLoanStatus } from '@/lib/amortization'
 import { buildTaxExportRow } from '@/lib/tax-export'
 import { generateRentSchedule, currentRentAmount, currentAgreement } from '@/lib/rent-schedule'
-import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
+import { sumInstandhaltungsruecklage, isUtilityBillableTenant } from '@/lib/operating-costs'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
-import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, Receipt, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost } from '@/lib/types'
+import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, Receipt, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost, PROPERTY_CONDITION_GRADE_LABELS, PropertyConditionGrade } from '@/lib/types'
 
 const HOA_STATUS_COLORS: Record<HoaResolutionStatus, string> = {
   offen: 'bg-gray-100 text-gray-700',
@@ -81,6 +82,9 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
     loan: l,
     status: getLoanStatus(l, (allSpecialPayments ?? []).filter(sp => sp.loan_id === l.id)),
   }))
+  const totalLoanPrincipal = propertyLoans.reduce((s, l) => s + l.principal, 0)
+  const totalLoanRemaining = loanStatuses.reduce((s, { status }) => s + status.remaining_balance, 0)
+  const totalTilgungPercent = totalLoanPrincipal > 0 ? ((totalLoanPrincipal - totalLoanRemaining) / totalLoanPrincipal) * 100 : 0
 
   const threshold = calc15Threshold(p, recs)
   const annualAfa = calcAnnualAfa(p)
@@ -97,6 +101,19 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
     )
     return sum + schedule.reduce((s, e) => s + e.amount, 0)
   }, 0)
+
+  // Für den Vergleichsmieten-Abgleich: Kaltmiete ohne Garage/Stellplatz-Mieter,
+  // da Vergleichsmieten sich auf die Wohnfläche beziehen.
+  const currentColdRent = tenantList
+    .filter(t => !t.move_out_date && isUtilityBillableTenant(t))
+    .reduce((sum, t) => sum + (currentRentAmount(agreementsByTenant[t.id] ?? []) ?? 0), 0)
+  const currentRentPerSqm = p.living_area_sqm ? currentColdRent / p.living_area_sqm : null
+  const conditionEntries: [string, PropertyConditionGrade][] = [
+    ['Fenster', p.condition_windows],
+    ['Elektro', p.condition_electrical],
+    ['Sanitär / Bad', p.condition_bathroom],
+    ['Heizung', p.condition_heating],
+  ].filter((c): c is [string, PropertyConditionGrade] => c[1] !== null)
 
   const byCategory = CATEGORY_LABELS
   const categoryTotals = Object.keys(byCategory).map(cat => ({
@@ -116,7 +133,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
           <Link href="/properties" className="text-sm text-gray-400 hover:text-gray-600 mb-1 block">← Immobilien</Link>
           <h1 className="text-2xl font-bold text-gray-900">{propertyLabel(p)}</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Baujahr {p.build_year} · AfA {p.afa_rate}% · {p.is_self_managed ? 'Selbst verwaltet' : 'Fremd verwaltet'}
+            Baujahr {p.build_year} · AfA {p.afa_rate}% · {p.is_self_managed ? 'Selbst verwaltet' : 'Fremd verwaltet'} · Besitzübergang {formatDate(p.purchase_date)}
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -158,6 +175,59 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
           <Link href={`/properties/${id}/nebenkosten`} className="text-sm text-blue-600 hover:underline whitespace-nowrap">Öffnen →</Link>
         </div>
       </Card>
+
+      {/* Zustand & Vergleichsmiete */}
+      {(p.living_area_sqm || conditionEntries.length > 0 || p.comparable_rent_min || p.renovation_note) && (
+        <Card>
+          <CardTitle>Zustand & Vergleichsmiete</CardTitle>
+          <div className="mt-2 space-y-2 text-sm">
+            {p.living_area_sqm && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Wohnfläche</span>
+                <span className="font-medium text-gray-900">{p.living_area_sqm} m²</span>
+              </div>
+            )}
+            {conditionEntries.length > 0 && (
+              <div className="flex justify-between flex-wrap gap-x-4">
+                <span className="text-gray-500">Zustand</span>
+                <span className="font-medium text-gray-900 text-right">
+                  {conditionEntries.map(([label, grade]) => `${label}: ${PROPERTY_CONDITION_GRADE_LABELS[grade]}`).join(' · ')}
+                </span>
+              </div>
+            )}
+            {p.renovation_note && (
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-500">Notiz</span>
+                <span className="font-medium text-gray-900 text-right">{p.renovation_note}</span>
+              </div>
+            )}
+            {currentRentPerSqm != null && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Aktuelle Kaltmiete</span>
+                <span className="font-medium text-gray-900">{euro(currentColdRent)} ({currentRentPerSqm.toFixed(2)} €/m²)</span>
+              </div>
+            )}
+            {(p.comparable_rent_min || p.comparable_rent_max) && (
+              <div className="flex justify-between border-t pt-2">
+                <span className="text-gray-500">Ortsübliche Vergleichsmiete</span>
+                <span className="font-medium text-gray-900">
+                  {euro(p.comparable_rent_min ?? p.comparable_rent_max ?? 0)}–{euro(p.comparable_rent_max ?? p.comparable_rent_min ?? 0)} /m²
+                </span>
+              </div>
+            )}
+            {currentRentPerSqm != null && p.comparable_rent_max != null && currentRentPerSqm > p.comparable_rent_max && (
+              <p className="text-xs text-red-600 font-medium">
+                Deine Kaltmiete pro m² liegt über der von dir hinterlegten Vergleichsmiete-Obergrenze – bei einer weiteren Erhöhung Vorsicht wegen § 5 WiStrG (Mietpreisüberhöhung).
+              </p>
+            )}
+            {(p.comparable_rent_source || p.comparable_rent_as_of) && (
+              <p className="text-xs text-gray-400">
+                Quelle: {p.comparable_rent_source || '–'}{p.comparable_rent_as_of ? ` · Stand ${formatDate(p.comparable_rent_as_of)}` : ''}
+              </p>
+            )}
+          </div>
+        </Card>
+      )}
 
       {/* Ehegattenschaukel */}
       <Ehegattenschaukel property={p} />
@@ -233,6 +303,17 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
           <Card className="text-center py-8 text-gray-400">Noch keine Kredite hinterlegt</Card>
         ) : (
           <div className="space-y-2">
+            {totalLoanPrincipal > 0 && (
+              <Card className="flex items-center gap-4">
+                <TilgungRing percent={totalTilgungPercent} />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Bereits getilgt (alle Kredite dieses Objekts)</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {euro(totalLoanPrincipal - totalLoanRemaining)} von ursprünglich {euro(totalLoanPrincipal)} Kreditsumme
+                  </p>
+                </div>
+              </Card>
+            )}
             {loanStatuses.map(({ loan, status }) => (
               <Link key={loan.id} href={`/loans/${loan.id}`}>
                 <Card className="hover:shadow-md transition-shadow cursor-pointer py-3">
