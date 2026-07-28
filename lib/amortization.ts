@@ -441,6 +441,26 @@ export function suggestInitialRepaymentRate(
 }
 
 /**
+ * Bereitstellungszinsen: ab Ende der "bereitstellungsfreien Zeit" nach
+ * Vertragsschluss berechnen Banken bis zur tatsächlichen Auszahlung Zinsen
+ * auf den noch nicht abgerufenen Darlehensbetrag (relevant v.a. bei
+ * Bauzeit/Kaufabwicklung mit verzögerter Auszahlung). Geht vereinfachend von
+ * einer einmaligen Vollauszahlung aus (wie der Rest des Kredit-Modells hier),
+ * nicht von tranchenweiser Auszahlung. Gibt null zurück, wenn Vertragsdatum
+ * oder Zinssatz fehlen - 0, wenn die Auszahlung noch innerhalb der
+ * bereitstellungsfreien Zeit liegt.
+ */
+export function calcBereitstellungszinsen(
+  loan: Pick<Loan, 'contract_date' | 'bereitstellungszins_rate' | 'bereitstellungsfreie_monate' | 'disbursement_date' | 'principal'>
+): number | null {
+  if (!loan.contract_date || loan.bereitstellungszins_rate == null) return null
+  const freizeitEnde = addMonths(new Date(loan.contract_date), loan.bereitstellungsfreie_monate ?? 0)
+  const months = differenceInCalendarMonths(new Date(loan.disbursement_date), freizeitEnde)
+  if (months <= 0) return 0
+  return Math.round(loan.principal * (loan.bereitstellungszins_rate / 100 / 12) * months * 100) / 100
+}
+
+/**
  * Aggregiert die Restschuld über alle Kredite hinweg zu einer einzigen
  * Zeitreihe, indem die Vereinigungsmenge aller Zahlungs-/Sondertilgungs-
  * Termine gebildet und pro Termin über alle Kredite summiert wird.

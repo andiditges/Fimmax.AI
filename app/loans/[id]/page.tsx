@@ -7,7 +7,7 @@ import { SpecialPaymentForm } from '@/components/loans/special-payment-form'
 import { DayCountEdit } from '@/components/loans/day-count-edit'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { TilgungZinsChart } from '@/components/charts/tilgung-zins-chart'
-import { generateAmortizationSchedule, getLoanStatus, specialPaymentAllowanceRemaining } from '@/lib/amortization'
+import { calcBereitstellungszinsen, generateAmortizationSchedule, getLoanStatus, specialPaymentAllowanceRemaining } from '@/lib/amortization'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
 import { Loan, LoanSpecialPayment, Property } from '@/lib/types'
 
@@ -31,6 +31,7 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
   const schedule = generateAmortizationSchedule(l, sp)
   const status = getLoanStatus(l, sp)
   const allowanceRemaining = specialPaymentAllowanceRemaining(l, sp)
+  const bereitstellungszinsen = calcBereitstellungszinsen(l)
 
   const chartData = schedule.entries.map(e => ({ date: e.date, remaining_balance: e.remaining_balance }))
   chartData.unshift({ date: l.disbursement_date, remaining_balance: l.principal })
@@ -63,6 +64,11 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
         )}
         {l.interest_only_months && (
           <p className="text-sm text-gray-500 mt-1">{l.interest_only_months} Monate tilgungsfrei ab Auszahlung</p>
+        )}
+        {bereitstellungszinsen !== null && bereitstellungszinsen > 0 && (
+          <p className="text-sm text-amber-700 mt-1">
+            {euro(bereitstellungszinsen)} Bereitstellungszinsen bis zur Auszahlung ({l.bereitstellungszins_rate}% p.a. nach {l.bereitstellungsfreie_monate ?? 0} Monaten bereitstellungsfreier Zeit)
+          </p>
         )}
         <DayCountEdit loanId={l.id} current={l.day_count_convention} />
       </div>

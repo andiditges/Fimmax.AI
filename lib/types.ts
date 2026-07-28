@@ -310,6 +310,9 @@ export interface Loan {
   planned_renovation_amount: number | null
   interest_only_months: number | null
   special_payment_limit_percent: number | null
+  contract_date: string | null
+  bereitstellungszins_rate: number | null
+  bereitstellungsfreie_monate: number | null
   created_at: string
 }
 

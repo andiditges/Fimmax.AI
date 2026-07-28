@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
-import { suggestInitialRepaymentRate } from '@/lib/amortization'
+import { calcBereitstellungszinsen, suggestInitialRepaymentRate } from '@/lib/amortization'
+import { euro } from '@/lib/format'
 import { PaymentFrequency, DayCountConvention } from '@/lib/types'
 
 export default function EditLoan() {
@@ -25,6 +26,9 @@ export default function EditLoan() {
     renovation_amount: '',
     interest_only_months: '',
     special_payment_limit_percent: '',
+    contract_date: '',
+    bereitstellungszins_rate: '',
+    bereitstellungsfreie_monate: '',
   })
 
   useEffect(() => {
@@ -43,6 +47,9 @@ export default function EditLoan() {
         renovation_amount: data.planned_renovation_amount != null ? String(data.planned_renovation_amount) : '',
         interest_only_months: data.interest_only_months != null ? String(data.interest_only_months) : '',
         special_payment_limit_percent: data.special_payment_limit_percent != null ? String(data.special_payment_limit_percent) : '',
+        contract_date: data.contract_date ?? '',
+        bereitstellungszins_rate: data.bereitstellungszins_rate != null ? String(data.bereitstellungszins_rate) : '',
+        bereitstellungsfreie_monate: data.bereitstellungsfreie_monate != null ? String(data.bereitstellungsfreie_monate) : '',
       })
       setLoaded(true)
     })
@@ -54,6 +61,17 @@ export default function EditLoan() {
   const suggestedRate =
     !isNaN(principal) && !isNaN(rate) && !isNaN(annuity) && principal > 0
       ? suggestInitialRepaymentRate(principal, rate, annuity, form.payment_frequency)
+      : null
+
+  const bereitstellungszinsen =
+    !isNaN(principal) && principal > 0 && form.contract_date && form.disbursement_date && form.bereitstellungszins_rate
+      ? calcBereitstellungszinsen({
+          principal,
+          contract_date: form.contract_date,
+          disbursement_date: form.disbursement_date,
+          bereitstellungszins_rate: parseFloat(form.bereitstellungszins_rate),
+          bereitstellungsfreie_monate: form.bereitstellungsfreie_monate ? parseInt(form.bereitstellungsfreie_monate) : null,
+        })
       : null
 
   async function onSubmit(e: React.FormEvent) {
@@ -73,6 +91,9 @@ export default function EditLoan() {
       planned_renovation_amount: form.renovation_amount ? parseFloat(form.renovation_amount) : null,
       interest_only_months: form.interest_only_months ? parseInt(form.interest_only_months) : null,
       special_payment_limit_percent: form.special_payment_limit_percent ? parseFloat(form.special_payment_limit_percent) : null,
+      contract_date: form.contract_date || null,
+      bereitstellungszins_rate: form.bereitstellungszins_rate ? parseFloat(form.bereitstellungszins_rate) : null,
+      bereitstellungsfreie_monate: form.bereitstellungsfreie_monate ? parseInt(form.bereitstellungsfreie_monate) : null,
     }).eq('id', params.id)
 
     if (error) { alert('Fehler: ' + error.message); setLoading(false); return }
@@ -181,6 +202,44 @@ export default function EditLoan() {
             <input type="number" step="0.01" value={form.special_payment_limit_percent}
               onChange={e => setForm(f => ({ ...f, special_payment_limit_percent: e.target.value }))}
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+
+          <div className="border-t border-gray-100 pt-5 space-y-5">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-800 mb-1">Bereitstellungszinsen</h2>
+              <p className="text-xs text-gray-400">
+                Optional – falls zwischen Vertragsabschluss und Auszahlung Zinsen auf den noch nicht abgerufenen Betrag anfielen (üblich bei Bauzeit/verzögerter Auszahlung). Steht im Darlehensvertrag unter "bereitstellungsfreie Zeit" und "Bereitstellungszins".
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Vertragsdatum</label>
+              <input type="date" value={form.contract_date}
+                onChange={e => setForm(f => ({ ...f, contract_date: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bereitstellungsfreie Zeit (Monate)</label>
+                <input type="number" value={form.bereitstellungsfreie_monate}
+                  onChange={e => setForm(f => ({ ...f, bereitstellungsfreie_monate: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bereitstellungszins p.a. (%)</label>
+                <input type="number" step="0.01" value={form.bereitstellungszins_rate}
+                  onChange={e => setForm(f => ({ ...f, bereitstellungszins_rate: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            </div>
+
+            {bereitstellungszinsen !== null && (
+              <p className="text-sm text-gray-500 bg-gray-50 rounded-xl px-3 py-2">
+                Rechnerische Bereitstellungszinsen: <strong>{euro(bereitstellungszinsen)}</strong>
+                {bereitstellungszinsen === 0 && ' (Auszahlung lag innerhalb der bereitstellungsfreien Zeit)'}
+              </p>
+            )}
           </div>
 
           {suggestedRate !== null && (
