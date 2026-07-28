@@ -10,7 +10,11 @@ const geist = Geist({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Fimmax.AI',
   description: 'KI-gestütztes Finanz-Cockpit für Vermieter',
-  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    title: 'Fimmax',
+    statusBarStyle: 'default',
+  },
 }
 
 export const viewport: Viewport = {

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/supabase/get-user'
 import { Card, CardTitle } from '@/components/ui/card'
+import { TilgungRing } from '@/components/properties/tilgung-ring'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
@@ -209,15 +210,26 @@ export default async function Finanzen() {
         <p className="text-gray-500 text-sm mt-1">Portfolio-Übersicht über alle Immobilien und Kredite</p>
       </div>
 
-      <Card className="bg-blue-50 border-blue-100">
-        <CardTitle>Nettovermögen</CardTitle>
-        <p className="text-xl md:text-3xl font-bold text-blue-700 break-words">{euro(netWorth.net_worth)}</p>
-        <p className="text-sm text-gray-500 mt-1">
-          Immobilien-Eigenkapital {euro(netWorth.total_property_equity)} + sonstige Anlagen {euro(netWorth.total_assets)}
-          {netWorth.total_reserves > 0 && <> + Rücklagen {euro(netWorth.total_reserves)}</>}
-          {netWorth.monthly_savings_rate > 0 && <> · {euro(netWorth.monthly_savings_rate)} Sparrate/Monat</>}
-        </p>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-blue-50 border-blue-100 md:col-span-2">
+          <CardTitle>Nettovermögen</CardTitle>
+          <p className="text-xl md:text-3xl font-bold text-blue-700 break-words">{euro(netWorth.net_worth)}</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Immobilien-Eigenkapital {euro(netWorth.total_property_equity)} + sonstige Anlagen {euro(netWorth.total_assets)}
+            {netWorth.total_reserves > 0 && <> + Rücklagen {euro(netWorth.total_reserves)}</>}
+            {netWorth.monthly_savings_rate > 0 && <> · {euro(netWorth.monthly_savings_rate)} Sparrate/Monat</>}
+          </p>
+        </Card>
+        {totalOriginalPrincipal > 0 && (
+          <Card className="flex items-center justify-center gap-4">
+            <TilgungRing percent={(totalPrincipalPaid / totalOriginalPrincipal) * 100} />
+            <div>
+              <p className="text-sm font-medium text-gray-900">Gesamt-Tilgung</p>
+              <p className="text-xs text-gray-400 mt-0.5">alle Immobilien</p>
+            </div>
+          </Card>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
