@@ -7,7 +7,7 @@ import { ThresholdBadge, ThresholdBar } from '@/components/threshold-badge'
 import { ReminderRow } from '@/components/reminders/reminder-row'
 import { TaxExportButton } from '@/components/tax-export-button'
 import { PropertyReserves } from '@/components/properties/property-reserves'
-import { TilgungRing } from '@/components/properties/tilgung-ring'
+import { TilgungRing, LtvRing } from '@/components/properties/tilgung-ring'
 import { RiskOverview } from '@/components/tipps/risk-overview'
 import { ReceiptBrowser } from '@/components/receipts/receipt-browser'
 import { Ehegattenschaukel } from '@/components/properties/ehegattenschaukel'
@@ -17,7 +17,7 @@ import { getLoanStatus } from '@/lib/amortization'
 import { buildTaxExportRow } from '@/lib/tax-export'
 import { generateRentSchedule, currentRentAmount, currentAgreement } from '@/lib/rent-schedule'
 import { sumInstandhaltungsruecklage, isUtilityBillableTenant } from '@/lib/operating-costs'
-import { euro, formatDate, propertyLabel } from '@/lib/format'
+import { euro, formatDate, propertyLabel, propertyValue } from '@/lib/format'
 import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, Receipt, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost, PROPERTY_CONDITION_GRADE_LABELS, PropertyConditionGrade } from '@/lib/types'
 
 const HOA_STATUS_COLORS: Record<HoaResolutionStatus, string> = {
@@ -85,6 +85,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
   const totalLoanPrincipal = propertyLoans.reduce((s, l) => s + l.principal, 0)
   const totalLoanRemaining = loanStatuses.reduce((s, { status }) => s + status.remaining_balance, 0)
   const totalTilgungPercent = totalLoanPrincipal > 0 ? ((totalLoanPrincipal - totalLoanRemaining) / totalLoanPrincipal) * 100 : 0
+  const ltvPercent = propertyValue(p) > 0 ? (totalLoanRemaining / propertyValue(p)) * 100 : 0
 
   const threshold = calc15Threshold(p, recs)
   const annualAfa = calcAnnualAfa(p)
@@ -304,13 +305,24 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
         ) : (
           <div className="space-y-2">
             {totalLoanPrincipal > 0 && (
-              <Card className="flex items-center gap-4">
-                <TilgungRing percent={totalTilgungPercent} />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Bereits getilgt (alle Kredite dieses Objekts)</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {euro(totalLoanPrincipal - totalLoanRemaining)} von ursprünglich {euro(totalLoanPrincipal)} Kreditsumme
-                  </p>
+              <Card className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex items-center gap-4">
+                  <TilgungRing percent={totalTilgungPercent} />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Bereits getilgt</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {euro(totalLoanPrincipal - totalLoanRemaining)} von ursprünglich {euro(totalLoanPrincipal)} Kreditsumme
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 sm:border-l sm:border-gray-100 sm:pl-4">
+                  <LtvRing percent={ltvPercent} />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Beleihungsauslauf (LTV)</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {euro(totalLoanRemaining)} Restschuld / {euro(propertyValue(p))} Wert
+                    </p>
+                  </div>
                 </div>
               </Card>
             )}

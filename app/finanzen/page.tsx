@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/supabase/get-user'
 import { Card, CardTitle } from '@/components/ui/card'
-import { TilgungRing } from '@/components/properties/tilgung-ring'
+import { TilgungRing, LtvRing } from '@/components/properties/tilgung-ring'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
@@ -210,7 +210,7 @@ export default async function Finanzen() {
         <p className="text-gray-500 text-sm mt-1">Portfolio-Übersicht über alle Immobilien und Kredite</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-blue-50 border-blue-100 md:col-span-2">
           <CardTitle>Nettovermögen</CardTitle>
           <p className="text-xl md:text-3xl font-bold text-blue-700 break-words">{euro(netWorth.net_worth)}</p>
@@ -226,6 +226,15 @@ export default async function Finanzen() {
             <div>
               <p className="text-sm font-medium text-gray-900">Gesamt-Tilgung</p>
               <p className="text-xs text-gray-400 mt-0.5">alle Immobilien</p>
+            </div>
+          </Card>
+        )}
+        {portfolio.total_property_value > 0 && (
+          <Card className="flex items-center justify-center gap-4">
+            <LtvRing percent={(portfolio.total_debt / portfolio.total_property_value) * 100} />
+            <div>
+              <p className="text-sm font-medium text-gray-900">Beleihungsauslauf</p>
+              <p className="text-xs text-gray-400 mt-0.5">Restschuld / Wert</p>
             </div>
           </Card>
         )}
