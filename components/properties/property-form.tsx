@@ -62,6 +62,9 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
   })
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null)
+  const isWizard = !property
+  const STEP_TITLES = ['Adresse & Objekt', 'Kaufpreis & Nebenkosten', 'Abschreibung (AfA)', 'Zustand & Vergleichsmiete']
+  const [step, setStep] = useState(1)
   const [incidentalCostsMode, setIncidentalCostsMode] = useState<'eur' | 'percent' | 'items'>(
     incidentalCostItems && incidentalCostItems.length > 0 ? 'items' : 'eur'
   )
@@ -185,6 +188,33 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
         : f.grunderwerbsteuer
       return { ...f, bundesland, grunderwerbsteuer }
     })
+  }
+
+  function validateStep(n: number): string | null {
+    if (n === 1) {
+      if (!form.address.trim()) return 'Bitte eine Adresse eingeben.'
+      if (!form.purchase_date) return 'Bitte das Besitzübergangsdatum eingeben.'
+    }
+    if (n === 2) {
+      if (!form.purchase_price || isNaN(parseFloat(form.purchase_price))) return 'Bitte den Kaufpreis eingeben.'
+    }
+    if (n === 3) {
+      if (!form.build_year || isNaN(parseInt(form.build_year))) return 'Bitte das Baujahr eingeben.'
+      if (!form.usage_duration || isNaN(parseInt(form.usage_duration))) return 'Bitte die Restnutzungsdauer eingeben.'
+      if (!form.land_value || isNaN(parseFloat(form.land_value))) return 'Bitte den Grundstücksanteil eingeben.'
+      if (!form.building_value || isNaN(parseFloat(form.building_value))) return 'Bitte den Gebäudeanteil eingeben.'
+    }
+    return null
+  }
+
+  function goNext() {
+    const err = validateStep(step)
+    if (err) { alert(err); return }
+    setStep(s => Math.min(STEP_TITLES.length, s + 1))
+  }
+
+  function goBack() {
+    setStep(s => Math.max(1, s - 1))
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -327,7 +357,23 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
     <div className="max-w-xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">{property ? 'Immobilie bearbeiten' : 'Neue Immobilie'}</h1>
       <Card>
-        <form onSubmit={onSubmit} className="space-y-5">
+        {isWizard && (
+          <div className="mb-5">
+            <div className="flex items-center justify-between text-xs text-gray-400 mb-1.5">
+              <span>Schritt {step} von {STEP_TITLES.length}</span>
+              <span>{STEP_TITLES[step - 1]}</span>
+            </div>
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-blue-600 rounded-full transition-all" style={{ width: `${(step / STEP_TITLES.length) * 100}%` }} />
+            </div>
+          </div>
+        )}
+        <form
+          onSubmit={onSubmit}
+          onKeyDown={e => { if (isWizard && step < STEP_TITLES.length && e.key === 'Enter') e.preventDefault() }}
+          className="space-y-5"
+        >
+          {(!isWizard || step === 1) && (<>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
             <AddressAutocomplete
@@ -365,6 +411,9 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
 
           {field('Besitzübergang (Lasten-Nutzen-Wechsel)', 'purchase_date', 'date',
             'Steht im Kaufvertrag, meist unter "Besitzübergang" oder "Übergabe" – NICHT der Notartermin, oft aber nahe am Tag der vollständigen Kaufpreiszahlung. Dieser Tag zählt für AfA und die 15%-Grenze.')}
+          </>)}
+
+          {(!isWizard || step === 2) && (<>
           {field('Kaufpreis gesamt (€)', 'purchase_price', 'number', 'Reiner Kaufpreis laut notariellem Kaufvertrag, ohne Nebenkosten')}
 
           {field('davon entfallend auf Einrichtungsgegenstände (€)', 'movable_items', 'number',
@@ -492,7 +541,9 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
 
           {field('Aktueller Marktwert (€)', 'current_value', 'number',
             'Optional – dein geschätzter aktueller Marktwert, z.B. laut Gutachten oder Vergleichswerten. Fließt ins Finanz-Cockpit (Immobilienwert, Eigenkapital) ein. Leer lassen, um stattdessen den Kaufpreis zu verwenden.')}
+          </>)}
 
+          {(!isWizard || step === 3) && (<>
           {field('davon Gebäudeanteil – AfA-Basis (€)', 'building_value', 'number',
             'Automatisch berechnet: Kaufpreis minus Grundstücksanteil. Kaufnebenkosten kommen später automatisch über hochgeladene Belege dazu. Kann bei Bedarf überschrieben werden.')}
 
@@ -533,8 +584,10 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
             />
             <label htmlFor="self_managed" className="text-sm text-gray-700">Selbst verwaltet (keine Hausverwaltung)</label>
           </div>
+          </>)}
 
-          <div className="border-t border-gray-100 pt-5 space-y-5">
+          {(!isWizard || step === 4) && (<>
+          <div className={isWizard ? 'space-y-5' : 'border-t border-gray-100 pt-5 space-y-5'}>
             <div>
               <h2 className="text-sm font-semibold text-gray-800 mb-1">Zustand & Vergleichsmiete</h2>
               <p className="text-xs text-gray-400">
@@ -582,14 +635,46 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
             {field('Quelle', 'comparable_rent_source', 'text', 'z.B. "Mietspiegel Mönchengladbach 2025" oder "3 Vergleichsobjekte ImmoScout"')}
             {field('Stand', 'comparable_rent_as_of', 'date')}
           </div>
+          </>)}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Wird gespeichert...' : property ? 'Änderungen speichern' : 'Immobilie anlegen'}
-          </button>
+          {isWizard ? (
+            <div className="flex gap-3">
+              {step > 1 && (
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="px-5 py-3 rounded-xl font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  Zurück
+                </button>
+              )}
+              {step < STEP_TITLES.length ? (
+                <button
+                  type="button"
+                  onClick={goNext}
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Weiter
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Wird gespeichert...' : 'Immobilie anlegen'}
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              {loading ? 'Wird gespeichert...' : 'Änderungen speichern'}
+            </button>
+          )}
         </form>
       </Card>
 
