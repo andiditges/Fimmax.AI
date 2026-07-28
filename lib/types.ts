@@ -78,6 +78,26 @@ export const PROPERTY_CONDITION_GRADE_LABELS: Record<PropertyConditionGrade, str
   neuwertig: 'neuwertig / neu saniert',
 }
 
+export type IncidentalCostCategory = 'notar' | 'grundbuch' | 'makler' | 'grundschuld' | 'gutachten' | 'sonstiges'
+
+export const INCIDENTAL_COST_CATEGORY_LABELS: Record<IncidentalCostCategory, string> = {
+  notar: 'Notar',
+  grundbuch: 'Grundbuch / Amtsgericht',
+  makler: 'Makler',
+  grundschuld: 'Grundschuldbestellung',
+  gutachten: 'Gutachten (z.B. Restnutzungsdauer)',
+  sonstiges: 'Sonstiges',
+}
+
+export interface IncidentalCostItem {
+  id: string
+  property_id: string
+  category: IncidentalCostCategory
+  amount: number
+  note: string | null
+  created_at: string
+}
+
 export interface RiskFactor {
   label: string
   direction: 'positiv' | 'negativ' | 'neutral'

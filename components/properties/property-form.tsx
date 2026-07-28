@@ -9,7 +9,10 @@ import { GRUNDERWERBSTEUER_RATES } from '@/lib/grunderwerbsteuer'
 import { Card } from '@/components/ui/card'
 import { AddressAutocomplete } from '@/components/address-autocomplete'
 import { euro } from '@/lib/format'
-import { Bundesland, Property, PropertyConditionGrade, PROPERTY_CONDITION_GRADE_LABELS } from '@/lib/types'
+import {
+  Bundesland, IncidentalCostCategory, IncidentalCostItem, INCIDENTAL_COST_CATEGORY_LABELS,
+  Property, PropertyConditionGrade, PROPERTY_CONDITION_GRADE_LABELS,
+} from '@/lib/types'
 
 const CONDITION_FIELDS: { key: 'condition_windows' | 'condition_electrical' | 'condition_bathroom' | 'condition_heating'; label: string }[] = [
   { key: 'condition_windows', label: 'Fenster' },
@@ -18,7 +21,13 @@ const CONDITION_FIELDS: { key: 'condition_windows' | 'condition_electrical' | 'c
   { key: 'condition_heating', label: 'Heizung' },
 ]
 
-export function PropertyForm({ property }: { property?: Property }) {
+interface ItemRow {
+  category: IncidentalCostCategory
+  amount: string
+  note: string
+}
+
+export function PropertyForm({ property, incidentalCostItems }: { property?: Property; incidentalCostItems?: IncidentalCostItem[] }) {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
@@ -52,8 +61,39 @@ export function PropertyForm({ property }: { property?: Property }) {
     condition_heating: property?.condition_heating ?? '',
   })
   const [deleteConfirm, setDeleteConfirm] = useState('')
-  const [incidentalCostsMode, setIncidentalCostsMode] = useState<'eur' | 'percent'>('eur')
+  const [incidentalCostsMode, setIncidentalCostsMode] = useState<'eur' | 'percent' | 'items'>(
+    incidentalCostItems && incidentalCostItems.length > 0 ? 'items' : 'eur'
+  )
   const [incidentalCostsPercent, setIncidentalCostsPercent] = useState('')
+  const [itemRows, setItemRows] = useState<ItemRow[]>(
+    incidentalCostItems && incidentalCostItems.length > 0
+      ? incidentalCostItems.map(i => ({ category: i.category, amount: String(i.amount), note: i.note ?? '' }))
+      : [{ category: 'notar', amount: '', note: '' }]
+  )
+
+  function itemRowsSum(rows: ItemRow[]) {
+    return round2(rows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0))
+  }
+
+  function updateItemRows(updater: (rows: ItemRow[]) => ItemRow[]) {
+    setItemRows(rows => {
+      const next = updater(rows)
+      setForm(f => ({ ...f, incidental_costs: String(itemRowsSum(next)) }))
+      return next
+    })
+  }
+
+  function addItemRow() {
+    updateItemRows(rows => [...rows, { category: 'sonstiges', amount: '', note: '' }])
+  }
+
+  function removeItemRow(index: number) {
+    updateItemRows(rows => rows.filter((_, i) => i !== index))
+  }
+
+  function updateItemRow(index: number, patch: Partial<ItemRow>) {
+    updateItemRows(rows => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)))
+  }
 
   const gemeindeMatch = useMemo(() => findGemeindeForAddress(form.address), [form.address])
 
@@ -178,12 +218,43 @@ export function PropertyForm({ property }: { property?: Property }) {
       condition_heating: conditions.condition_heating || null,
     }
 
-    const { error } = property
-      ? await supabase.from('properties').update(payload).eq('id', property.id)
-      : await supabase.from('properties').insert(payload)
+    const { data: savedProperty, error } = property
+      ? await supabase.from('properties').update(payload).eq('id', property.id).select('id').single()
+      : await supabase.from('properties').insert(payload).select('id').single()
 
-    if (!error) router.push(property ? `/properties/${property.id}` : '/')
-    else { alert('Fehler: ' + error.message); setLoading(false) }
+    if (error || !savedProperty) {
+      alert('Fehler: ' + error?.message)
+      setLoading(false)
+      return
+    }
+
+    const { error: deleteItemsError } = await supabase.from('incidental_cost_items').delete().eq('property_id', savedProperty.id)
+    if (deleteItemsError) {
+      alert('Fehler beim Speichern der Kaufnebenkosten-Posten: ' + deleteItemsError.message)
+      setLoading(false)
+      return
+    }
+
+    if (incidentalCostsMode === 'items') {
+      const itemsPayload = itemRows
+        .filter(r => r.amount && !isNaN(parseFloat(r.amount)))
+        .map(r => ({
+          property_id: savedProperty.id,
+          category: r.category,
+          amount: parseFloat(r.amount),
+          note: r.note || null,
+        }))
+      if (itemsPayload.length > 0) {
+        const { error: insertItemsError } = await supabase.from('incidental_cost_items').insert(itemsPayload)
+        if (insertItemsError) {
+          alert('Fehler beim Speichern der Kaufnebenkosten-Posten: ' + insertItemsError.message)
+          setLoading(false)
+          return
+        }
+      }
+    }
+
+    router.push(property ? `/properties/${property.id}` : '/')
   }
 
   async function onDelete() {
@@ -300,6 +371,13 @@ export function PropertyForm({ property }: { property?: Property }) {
                 >
                   %
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setIncidentalCostsMode('items')}
+                  className={`px-2.5 py-1 border-l border-gray-200 transition-colors ${incidentalCostsMode === 'items' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                >
+                  Posten
+                </button>
               </div>
             </div>
             <p className="text-xs text-gray-400 mb-1">
@@ -313,7 +391,7 @@ export function PropertyForm({ property }: { property?: Property }) {
                 onChange={e => setForm(f => ({ ...f, incidental_costs: e.target.value }))}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            ) : (
+            ) : incidentalCostsMode === 'percent' ? (
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <input
@@ -329,6 +407,54 @@ export function PropertyForm({ property }: { property?: Property }) {
                 <span className="text-sm text-gray-500 whitespace-nowrap">
                   = {form.incidental_costs && !isNaN(parseFloat(form.incidental_costs)) ? euro(parseFloat(form.incidental_costs)) : '–'}
                 </span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {itemRows.map((row, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <select
+                      value={row.category}
+                      onChange={e => updateItemRow(i, { category: e.target.value as IncidentalCostCategory })}
+                      className="border border-gray-200 rounded-xl px-2.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
+                    >
+                      {(Object.keys(INCIDENTAL_COST_CATEGORY_LABELS) as IncidentalCostCategory[]).map(c => (
+                        <option key={c} value={c}>{INCIDENTAL_COST_CATEGORY_LABELS[c]}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      value={row.note}
+                      onChange={e => updateItemRow(i, { note: e.target.value })}
+                      placeholder="Notiz (optional)"
+                      className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0"
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={row.amount}
+                      onChange={e => updateItemRow(i, { amount: e.target.value })}
+                      placeholder="€"
+                      className="w-24 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeItemRow(i)}
+                      disabled={itemRows.length === 1}
+                      className="text-gray-400 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed px-1 shrink-0"
+                      aria-label="Posten entfernen"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between pt-1">
+                  <button type="button" onClick={addItemRow} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    + Posten hinzufügen
+                  </button>
+                  <span className="text-sm text-gray-500">
+                    Summe: <strong className="text-gray-900">{euro(itemRowsSum(itemRows))}</strong>
+                  </span>
+                </div>
               </div>
             )}
           </div>
