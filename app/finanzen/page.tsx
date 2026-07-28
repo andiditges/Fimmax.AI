@@ -89,11 +89,23 @@ export default async function Finanzen() {
 
   const loanSchedules = loanList.map(l => {
     const schedule = generateAmortizationSchedule(l, specialPaymentsByLoan[l.id] ?? [])
-    return { loan: l, entries: schedule.entries, payoffDate: schedule.payoff_date }
+    return { loan: l, entries: schedule.entries, payoffDate: schedule.payoff_date, balanceAtFixedPeriodEnd: schedule.balance_at_fixed_period_end }
   })
   const payoffOverview = loanSchedules
     .map(({ loan, payoffDate }) => ({ loan, payoffDate }))
     .sort((a, b) => (a.payoffDate ?? '9999').localeCompare(b.payoffDate ?? '9999'))
+
+  // Zinsbindungs-Übersicht: über alle Kredite hinweg, statt nur einzeln je
+  // Kredit-Detailseite sichtbar - damit Anschlussfinanzierungs-Planung nicht
+  // im Klein-Klein der einzelnen Kredite untergeht.
+  const zinsbindungOverview = loanSchedules
+    .filter((s): s is typeof s & { loan: Loan & { initial_fixed_period_years: number } } => s.loan.initial_fixed_period_years != null)
+    .map(({ loan, balanceAtFixedPeriodEnd }) => {
+      const end = new Date(loan.disbursement_date)
+      end.setFullYear(end.getFullYear() + loan.initial_fixed_period_years)
+      return { loan, endDate: iso(end), remainingBalance: balanceAtFixedPeriodEnd }
+    })
+    .sort((a, b) => a.endDate.localeCompare(b.endDate))
 
   const thisYear = new Date().getFullYear()
   const principalLastYear = loanSchedules.reduce((s, { entries }) => s + principalPaidInYear(entries, thisYear - 1), 0)
@@ -498,6 +510,37 @@ export default async function Finanzen() {
                 </div>
               ))}
             </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Zinsbindungs-Übersicht */}
+      {zinsbindungOverview.length > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">Zinsbindungs-Übersicht</h2>
+          <Card>
+            <div className="space-y-2">
+              {zinsbindungOverview.map(({ loan, endDate, remainingBalance }) => {
+                const monthsUntil = (new Date(endDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
+                const soon = monthsUntil >= 0 && monthsUntil <= 24
+                const past = monthsUntil < 0
+                return (
+                  <div key={loan.id} className="flex justify-between items-center gap-3 text-sm">
+                    <span className="text-gray-600">
+                      {loan.name} · {propertyById[loan.property_id] ? propertyLabel(propertyById[loan.property_id]) : ''}
+                      {remainingBalance != null && <span className="text-xs text-gray-400"> · Restschuld dann ca. {euro(remainingBalance)}</span>}
+                    </span>
+                    <span className={`whitespace-nowrap font-medium ${past ? 'text-gray-400' : soon ? 'text-amber-700' : 'text-gray-900'}`}>
+                      {formatDate(endDate)}
+                      {soon && !past && ' · bald'}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-xs text-gray-400 mt-3 pt-2 border-t border-gray-100">
+              Frühestens 24 Monate vor Ablauf lohnt sich meist ein Vergleich für die Anschlussfinanzierung (Forward-Darlehen).
+            </p>
           </Card>
         </div>
       )}
