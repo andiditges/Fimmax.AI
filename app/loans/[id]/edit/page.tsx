@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { annuityFromInitialRepaymentRate, calcBereitstellungszinsen, suggestInitialRepaymentRate } from '@/lib/amortization'
 import { euro } from '@/lib/format'
-import { PaymentFrequency, DayCountConvention } from '@/lib/types'
+import { ASSET_CATEGORY_LABELS, AssetCategory, PaymentFrequency, DayCountConvention } from '@/lib/types'
 
 export default function EditLoan() {
   const router = useRouter()
@@ -13,6 +13,7 @@ export default function EditLoan() {
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [assets, setAssets] = useState<{ id: string; name: string | null; category: string; institution: string | null }[]>([])
   const [form, setForm] = useState({
     name: '',
     lender: '',
@@ -29,9 +30,13 @@ export default function EditLoan() {
     contract_date: '',
     bereitstellungszins_rate: '',
     bereitstellungsfreie_monate: '',
+    funded_by_asset_id: '',
   })
 
   useEffect(() => {
+    supabase.from('assets').select('id, name, category, institution').then(({ data }) => {
+      setAssets(data ?? [])
+    })
     supabase.from('loans').select('*').eq('id', params.id).single().then(({ data }) => {
       if (!data) return
       setForm({
@@ -50,6 +55,7 @@ export default function EditLoan() {
         contract_date: data.contract_date ?? '',
         bereitstellungszins_rate: data.bereitstellungszins_rate != null ? String(data.bereitstellungszins_rate) : '',
         bereitstellungsfreie_monate: data.bereitstellungsfreie_monate != null ? String(data.bereitstellungsfreie_monate) : '',
+        funded_by_asset_id: data.funded_by_asset_id ?? '',
       })
       setLoaded(true)
     })
@@ -105,6 +111,7 @@ export default function EditLoan() {
       contract_date: form.contract_date || null,
       bereitstellungszins_rate: form.bereitstellungszins_rate ? parseFloat(form.bereitstellungszins_rate) : null,
       bereitstellungsfreie_monate: form.bereitstellungsfreie_monate ? parseInt(form.bereitstellungsfreie_monate) : null,
+      funded_by_asset_id: form.funded_by_asset_id || null,
     }).eq('id', params.id)
 
     if (error) { alert('Fehler: ' + error.message); setLoading(false); return }
@@ -298,6 +305,25 @@ export default function EditLoan() {
             <p className="text-sm text-gray-500 bg-gray-50 rounded-xl px-3 py-2">
               Rechnerische anfängliche Tilgungsrate: <strong>{suggestedRate.toFixed(2)}%</strong> p.a.
             </p>
+          )}
+
+          {assets.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Wird finanziert durch Vermögenswert</label>
+              <p className="text-xs text-gray-400 mb-1">
+                Optional – z.B. bei einer geplanten Anschlussfinanzierung über einen Bausparvertrag. Zeigt auf der Kredit-Detailseite, ob der hochgerechnete Stand des Vermögenswerts bis zum Auszahlungsdatum ausreicht.
+              </p>
+              <select value={form.funded_by_asset_id}
+                onChange={e => setForm(f => ({ ...f, funded_by_asset_id: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">– keiner –</option>
+                {assets.map(a => (
+                  <option key={a.id} value={a.id}>
+                    {a.name || ASSET_CATEGORY_LABELS[a.category as AssetCategory]}{a.institution ? ` · ${a.institution}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
 
           <div className="flex gap-3">

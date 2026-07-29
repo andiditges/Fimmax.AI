@@ -9,7 +9,7 @@ import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
 import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus, principalPaidInYear, getNextPeriodDailyRateBreakdown, getMonthlyPrincipalAt, iso } from '@/lib/amortization'
 import { totalEquityInvested, calcEquityBreakEven } from '@/lib/equity-breakeven'
-import { aggregateNetWorth } from '@/lib/net-worth'
+import { aggregateNetWorth, projectedAssetValue } from '@/lib/net-worth'
 import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
 import { sumReserveCurrentValue, sumMonthlyReserveFromRent } from '@/lib/reserves'
 import { currentAgreement } from '@/lib/rent-schedule'
@@ -115,7 +115,7 @@ export default async function Finanzen() {
       cat,
       label: ASSET_CATEGORY_LABELS[cat],
       items: assets.filter(a => a.category === cat),
-      total: assets.filter(a => a.category === cat).reduce((s, a) => s + a.current_value, 0),
+      total: assets.filter(a => a.category === cat).reduce((s, a) => s + projectedAssetValue(a), 0),
     }))
     .filter(c => c.items.length > 0)
 
@@ -588,8 +588,13 @@ export default async function Finanzen() {
                 <div className="space-y-1.5">
                   {c.items.map(a => (
                     <Link key={a.id} href={`/assets/${a.id}/edit`} className="flex justify-between text-sm text-gray-600 hover:text-blue-700">
-                      <span>{a.name || c.label}{a.institution ? ` · ${a.institution}` : ''}</span>
-                      <span>{euro(a.current_value)}</span>
+                      <span>
+                        {a.name || c.label}{a.institution ? ` · ${a.institution}` : ''}
+                        {a.monthly_contribution > 0 && projectedAssetValue(a) !== a.current_value && (
+                          <span className="text-xs text-gray-400"> (hochgerechnet ab {formatDate(a.valuation_date)})</span>
+                        )}
+                      </span>
+                      <span>{euro(projectedAssetValue(a))}</span>
                     </Link>
                   ))}
                 </div>

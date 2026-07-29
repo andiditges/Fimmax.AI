@@ -8,8 +8,9 @@ import { DayCountEdit } from '@/components/loans/day-count-edit'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { TilgungZinsChart } from '@/components/charts/tilgung-zins-chart'
 import { calcBereitstellungszinsen, generateAmortizationSchedule, getLoanStatus, getMonthlyPrincipalAt, specialPaymentAllowanceRemaining, suggestInitialRepaymentRate } from '@/lib/amortization'
+import { checkAssetFunding } from '@/lib/net-worth'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
-import { Loan, LoanSpecialPayment, Property } from '@/lib/types'
+import { Asset, Loan, LoanSpecialPayment, Property } from '@/lib/types'
 
 export default async function LoanDetail({ params }: { params: Promise<{ id: string }> }) {
   await requireUser()
@@ -19,14 +20,19 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
   const { data: loan } = await supabase.from('loans').select('*').eq('id', id).single()
   if (!loan) notFound()
 
-  const [{ data: specialPayments }, { data: property }] = await Promise.all([
+  const [{ data: specialPayments }, { data: property }, { data: fundingAsset }] = await Promise.all([
     supabase.from('loan_special_payments').select('*').eq('loan_id', id).order('payment_date'),
     supabase.from('properties').select('*').eq('id', loan.property_id).single(),
+    loan.funded_by_asset_id
+      ? supabase.from('assets').select('*').eq('id', loan.funded_by_asset_id).single()
+      : Promise.resolve({ data: null }),
   ])
 
   const l = loan as Loan
   const sp = (specialPayments ?? []) as LoanSpecialPayment[]
   const p = property as Property
+  const asset = fundingAsset as Asset | null
+  const fundingCheck = asset ? checkAssetFunding(asset, l.principal, new Date(l.disbursement_date)) : null
 
   const schedule = generateAmortizationSchedule(l, sp)
   const status = getLoanStatus(l, sp)
@@ -128,6 +134,24 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
             Zinsbindung endet nach {l.initial_fixed_period_years} Jahren am{' '}
             <strong>{formatDate(addYearsIso(l.disbursement_date, l.initial_fixed_period_years))}</strong>
             {' '}– Restschuld zu diesem Zeitpunkt voraussichtlich <strong>{euro(schedule.balance_at_fixed_period_end)}</strong>.
+          </p>
+        </Card>
+      )}
+
+      {asset && fundingCheck && (
+        <Card className={fundingCheck.sufficient ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100'}>
+          <CardTitle>Finanzierung durch {asset.name || 'Vermögenswert'}{asset.institution ? ` (${asset.institution})` : ''}</CardTitle>
+          <p className="text-sm text-gray-700 mt-1">
+            Hochgerechneter Stand am Auszahlungsdatum ({formatDate(l.disbursement_date)}): <strong>{euro(fundingCheck.projected_value)}</strong>
+            {' '}· benötigt für diesen Kredit: <strong>{euro(fundingCheck.required_amount)}</strong>
+          </p>
+          <p className={`text-sm mt-1 font-medium ${fundingCheck.sufficient ? 'text-green-700' : 'text-amber-700'}`}>
+            {fundingCheck.sufficient
+              ? '✓ Voraussichtlich ausreichend.'
+              : `Voraussichtlich noch ${euro(fundingCheck.shortfall)} zu wenig – Sparrate erhöhen oder Auszahlungsdatum prüfen.`}
+          </p>
+          <p className="text-xs text-gray-400 mt-2">
+            Hochrechnung auf Basis der monatlichen Sparrate des Vermögenswerts, angewendet zu jedem 01.01. – rein rechnerisch, ersetzt keine Beratung durch deine Bausparkasse/Bank.
           </p>
         </Card>
       )}

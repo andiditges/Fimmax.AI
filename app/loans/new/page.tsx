@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { annuityFromInitialRepaymentRate, calcBereitstellungszinsen, suggestInitialRepaymentRate } from '@/lib/amortization'
 import { propertyLabel, euro } from '@/lib/format'
-import { PaymentFrequency, DayCountConvention } from '@/lib/types'
+import { ASSET_CATEGORY_LABELS, AssetCategory, PaymentFrequency, DayCountConvention } from '@/lib/types'
 
 export default function NewLoan() {
   const router = useRouter()
@@ -13,6 +13,7 @@ export default function NewLoan() {
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
   const [properties, setProperties] = useState<{ id: string; address: string; unit: string | null; unit_label: string | null; purchase_price: number; incidental_costs: number }[]>([])
+  const [assets, setAssets] = useState<{ id: string; name: string | null; category: string; institution: string | null }[]>([])
   const [form, setForm] = useState({
     property_id: searchParams.get('property') ?? '',
     name: '',
@@ -31,6 +32,7 @@ export default function NewLoan() {
     contract_date: '',
     bereitstellungszins_rate: '',
     bereitstellungsfreie_monate: '',
+    funded_by_asset_id: '',
   })
 
   const [rateMode, setRateMode] = useState<'eur' | 'percent'>('eur')
@@ -39,6 +41,9 @@ export default function NewLoan() {
   useState(() => {
     supabase.from('properties').select('id, address, unit, unit_label, purchase_price, incidental_costs').then(({ data }) => {
       setProperties(data ?? [])
+    })
+    supabase.from('assets').select('id, name, category, institution').then(({ data }) => {
+      setAssets(data ?? [])
     })
   })
 
@@ -99,6 +104,7 @@ export default function NewLoan() {
       contract_date: form.contract_date || null,
       bereitstellungszins_rate: form.bereitstellungszins_rate ? parseFloat(form.bereitstellungszins_rate) : null,
       bereitstellungsfreie_monate: form.bereitstellungsfreie_monate ? parseInt(form.bereitstellungsfreie_monate) : null,
+      funded_by_asset_id: form.funded_by_asset_id || null,
     })
     if (error) { alert('Fehler: ' + error.message); setLoading(false); return }
 
@@ -332,6 +338,25 @@ export default function NewLoan() {
             <p className="text-sm text-gray-500 bg-gray-50 rounded-xl px-3 py-2">
               Rechnerische anfängliche Tilgungsrate: <strong>{suggestedRate.toFixed(2)}%</strong> p.a.
             </p>
+          )}
+
+          {assets.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Wird finanziert durch Vermögenswert</label>
+              <p className="text-xs text-gray-400 mb-1">
+                Optional – z.B. bei einer geplanten Anschlussfinanzierung über einen Bausparvertrag. Zeigt auf der Kredit-Detailseite, ob der hochgerechnete Stand des Vermögenswerts bis zum Auszahlungsdatum ausreicht.
+              </p>
+              <select value={form.funded_by_asset_id}
+                onChange={e => setForm(f => ({ ...f, funded_by_asset_id: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">– keiner –</option>
+                {assets.map(a => (
+                  <option key={a.id} value={a.id}>
+                    {a.name || ASSET_CATEGORY_LABELS[a.category as AssetCategory]}{a.institution ? ` · ${a.institution}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
 
           <button type="submit" disabled={loading}
