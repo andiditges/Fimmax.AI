@@ -180,10 +180,28 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
         Ohne Gewähr, rein rechnerisch, ersetzt keine Rechtsberatung – die Erhöhung muss dem Mieter aktiv in Textform erklärt werden.
       </p>
 
-      {status.eligible && !applying && (
-        <button onClick={() => setApplying(true)} className="text-sm text-blue-600 hover:underline mt-2">
-          + Erhöhung erfassen
-        </button>
+      {status.eligible && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+          {!applying && (
+            <button onClick={() => setApplying(true)} className="text-sm text-blue-600 hover:underline">
+              + Erhöhung erfassen
+            </button>
+          )}
+          <a
+            href={`/api/mieterhoehung/pdf?tenantId=${item.tenant.id}&agreementId=${item.agreement.id}`}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Erhöhungsschreiben (PDF)
+          </a>
+          <a
+            href="https://www.letterxpress.de/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
+          >
+            Bei letterxpress per Post versenden ↗
+          </a>
+        </div>
       )}
 
       {applying && (
