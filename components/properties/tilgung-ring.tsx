@@ -3,7 +3,7 @@
 // nebeneinander (Portfolio-Übersicht je Immobilie) kompakter wirken - analog
 // zu gängigen Loan-to-Value-Dashboards.
 export function Ring({
-  percent, size = 96, label, color = '#2563eb', trackColor = '#dbeafe', ariaLabel, detail,
+  percent, size = 96, label, color = '#2563eb', trackColor = '#dbeafe', ariaLabel, detail, decimals = 0,
 }: {
   percent: number
   size?: number
@@ -12,6 +12,7 @@ export function Ring({
   trackColor?: string
   ariaLabel: string
   detail?: string
+  decimals?: number
 }) {
   const clamped = Math.max(0, Math.min(100, percent))
   const strokeWidth = Math.round(size * 0.14)
@@ -48,7 +49,7 @@ export function Ring({
         </svg>
       </div>
       <div className="flex flex-col items-center text-center w-full -mt-1">
-        <span className="font-bold text-gray-900" style={{ fontSize: size * 0.24 }}>{clamped.toFixed(0)}%</span>
+        <span className="font-bold text-gray-900" style={{ fontSize: size * (decimals > 0 ? 0.19 : 0.24) }}>{clamped.toFixed(decimals)}%</span>
         <span className="text-gray-400 truncate max-w-full" style={{ fontSize: size * 0.1 }}>{label}</span>
         {detail && <span className="text-gray-400 truncate max-w-full" style={{ fontSize: size * 0.085 }}>{detail}</span>}
       </div>
@@ -64,7 +65,8 @@ export function TilgungRing({ percent, size = 96 }: { percent: number; size?: nu
       label="getilgt"
       color="#2563eb"
       trackColor="#dbeafe"
-      ariaLabel={`${Math.max(0, Math.min(100, percent)).toFixed(0)} Prozent des ursprünglichen Kreditvolumens getilgt`}
+      decimals={2}
+      ariaLabel={`${Math.max(0, Math.min(100, percent)).toFixed(2)} Prozent des ursprünglichen Kreditvolumens getilgt`}
     />
   )
 }

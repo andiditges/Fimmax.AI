@@ -293,7 +293,8 @@ export default async function Finanzen() {
                       detail={`${euro(principal - remaining)} / ${euro(principal)}`}
                       color="#2563eb"
                       trackColor="#dbeafe"
-                      ariaLabel={`${propertyLabel(p)}: ${tilgungPercent.toFixed(0)} Prozent getilgt`}
+                      decimals={2}
+                      ariaLabel={`${propertyLabel(p)}: ${tilgungPercent.toFixed(2)} Prozent getilgt`}
                     />
                   ))}
                 </div>
