@@ -46,6 +46,16 @@ export default function Haftungsausschluss() {
         </p>
       </Card>
 
+      <Card>
+        <CardTitle>Zu unserem Slogan</CardTitle>
+        <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+          "Fimmax.AI gibt dir deine Zeit zurück" ist bildlich und umgangssprachlich gemeint. Niemand
+          kann dir tatsächlich verlorene Zeit zurückgeben – gemeint ist, dass administrative Arbeit
+          (Belege, Abgleich, Suchen) durch Fimmax.AI reduziert wird, wodurch dir rechnerisch mehr Zeit
+          für andere Dinge bleibt.
+        </p>
+      </Card>
+
       <Card className="bg-amber-50 border-amber-100">
         <CardTitle>Haftungsausschluss</CardTitle>
         <p className="text-sm text-gray-700 mt-2 leading-relaxed">
