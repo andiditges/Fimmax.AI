@@ -16,30 +16,38 @@ export function Ring({
   const clamped = Math.max(0, Math.min(100, percent))
   const strokeWidth = Math.round(size * 0.14)
   const radius = (size - strokeWidth) / 2
-  const cy = size / 2
+  const circumference = 2 * Math.PI * radius
+  const half = circumference / 2
+  const fillLength = half * (clamped / 100)
   const arcHeight = size / 2 + strokeWidth / 2
-  // Halbkreis von links nach rechts über die Oberseite (large-arc-flag=1,
-  // sweep-flag=1), pathLength=100 normiert die Bogenlänge auf Prozentwerte,
-  // unabhängig vom tatsächlichen Radius.
-  const arcPath = `M ${strokeWidth / 2} ${cy} A ${radius} ${radius} 0 1 1 ${size - strokeWidth / 2} ${cy}`
-
+  // Halbkreis-Trick über einen Vollkreis statt eines echten Halbkreis-Bogens:
+  // eine SVG-Arc mit exakt 180° ist ein Grenzfall, bei dem large-arc-flag
+  // nicht mehr eindeutig ist und pathLength/dasharray in der Praxis falsche
+  // Füllstände erzeugen kann. Ein Vollkreis mit bekannter Circumference ist
+  // robust - dashoffset=half verankert den sichtbaren Bereich am linken
+  // Punkt, dasharray begrenzt seine Länge, und der Container zeigt per
+  // overflow:hidden nur die obere Hälfte (linker Punkt → oben → rechter
+  // Punkt liegt geometrisch exakt in dieser oberen Hälfte).
   return (
     <div className="inline-flex flex-col items-center shrink-0" style={{ width: size }} role="img" aria-label={ariaLabel}>
-      <svg width={size} height={arcHeight} viewBox={`0 0 ${size} ${arcHeight}`}>
-        <path d={arcPath} fill="none" stroke={trackColor} strokeWidth={strokeWidth} strokeLinecap="round" />
-        <path
-          d={arcPath}
-          fill="none"
-          stroke={color}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          pathLength={100}
-          strokeDasharray={100}
-          strokeDashoffset={100 - clamped}
-          style={{ transition: 'stroke-dashoffset 0.3s ease, stroke 0.3s ease' }}
-        />
-      </svg>
-      <div className="flex flex-col items-center text-center -mt-1">
+      <div style={{ width: size, height: arcHeight, overflow: 'hidden' }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          <circle
+            cx={size / 2} cy={size / 2} r={radius}
+            fill="none" stroke={trackColor} strokeWidth={strokeWidth}
+            strokeDasharray={`${half} ${circumference - half}`}
+            strokeDashoffset={half}
+          />
+          <circle
+            cx={size / 2} cy={size / 2} r={radius}
+            fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
+            strokeDasharray={`${fillLength} ${circumference - fillLength}`}
+            strokeDashoffset={half}
+            style={{ transition: 'stroke-dasharray 0.3s ease, stroke 0.3s ease' }}
+          />
+        </svg>
+      </div>
+      <div className="flex flex-col items-center text-center w-full -mt-1">
         <span className="font-bold text-gray-900" style={{ fontSize: size * 0.24 }}>{clamped.toFixed(0)}%</span>
         <span className="text-gray-400 truncate max-w-full" style={{ fontSize: size * 0.1 }}>{label}</span>
         {detail && <span className="text-gray-400 truncate max-w-full" style={{ fontSize: size * 0.085 }}>{detail}</span>}
