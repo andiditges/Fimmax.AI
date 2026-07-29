@@ -1,7 +1,9 @@
-// Radialer Meter (Energiekreis-Optik): Füllung = Akzentfarbe, Track = hellere
-// Stufe derselben Farbe (gleicher Rahmen wie ein linearer Meter, nur radial).
+// Halbkreis-Meter (Gauge-Optik): Füllung = Akzentfarbe, Track = hellere Stufe
+// derselben Farbe. Als Halbkreis statt Vollkreis, damit mehrere Gauges
+// nebeneinander (Portfolio-Übersicht je Immobilie) kompakter wirken - analog
+// zu gängigen Loan-to-Value-Dashboards.
 export function Ring({
-  percent, size = 96, label, color = '#2563eb', trackColor = '#dbeafe', ariaLabel,
+  percent, size = 96, label, color = '#2563eb', trackColor = '#dbeafe', ariaLabel, detail,
 }: {
   percent: number
   size?: number
@@ -9,38 +11,38 @@ export function Ring({
   color?: string
   trackColor?: string
   ariaLabel: string
+  detail?: string
 }) {
   const clamped = Math.max(0, Math.min(100, percent))
-  const strokeWidth = Math.round(size * 0.1)
+  const strokeWidth = Math.round(size * 0.14)
   const radius = (size - strokeWidth) / 2
-  const circumference = 2 * Math.PI * radius
-  const offset = circumference * (1 - clamped / 100)
+  const cy = size / 2
+  const arcHeight = size / 2 + strokeWidth / 2
+  // Halbkreis von links nach rechts über die Oberseite (large-arc-flag=1,
+  // sweep-flag=1), pathLength=100 normiert die Bogenlänge auf Prozentwerte,
+  // unabhängig vom tatsächlichen Radius.
+  const arcPath = `M ${strokeWidth / 2} ${cy} A ${radius} ${radius} 0 1 1 ${size - strokeWidth / 2} ${cy}`
 
   return (
-    <div
-      className="relative inline-flex items-center justify-center shrink-0"
-      style={{ width: size, height: size }}
-      role="img"
-      aria-label={ariaLabel}
-    >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={trackColor} strokeWidth={strokeWidth} />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
+    <div className="inline-flex flex-col items-center shrink-0" style={{ width: size }} role="img" aria-label={ariaLabel}>
+      <svg width={size} height={arcHeight} viewBox={`0 0 ${size} ${arcHeight}`}>
+        <path d={arcPath} fill="none" stroke={trackColor} strokeWidth={strokeWidth} strokeLinecap="round" />
+        <path
+          d={arcPath}
           fill="none"
           stroke={color}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
+          pathLength={100}
+          strokeDasharray={100}
+          strokeDashoffset={100 - clamped}
           style={{ transition: 'stroke-dashoffset 0.3s ease, stroke 0.3s ease' }}
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-bold text-gray-900" style={{ fontSize: size * 0.22 }}>{clamped.toFixed(0)}%</span>
-        <span className="text-gray-400" style={{ fontSize: size * 0.09 }}>{label}</span>
+      <div className="flex flex-col items-center text-center -mt-1">
+        <span className="font-bold text-gray-900" style={{ fontSize: size * 0.24 }}>{clamped.toFixed(0)}%</span>
+        <span className="text-gray-400 truncate max-w-full" style={{ fontSize: size * 0.1 }}>{label}</span>
+        {detail && <span className="text-gray-400 truncate max-w-full" style={{ fontSize: size * 0.085 }}>{detail}</span>}
       </div>
     </div>
   )

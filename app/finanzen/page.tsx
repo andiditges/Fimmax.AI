@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/supabase/get-user'
 import { Card, CardTitle } from '@/components/ui/card'
-import { TilgungRing, LtvRing } from '@/components/properties/tilgung-ring'
+import { Ring, TilgungRing, LtvRing, ltvColor } from '@/components/properties/tilgung-ring'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { CapexChart } from '@/components/charts/capex-chart'
 import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
@@ -14,7 +14,7 @@ import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
 import { sumReserveCurrentValue, sumMonthlyReserveFromRent } from '@/lib/reserves'
 import { currentAgreement } from '@/lib/rent-schedule'
 import { latestVpiReading, calcIndexmieteStatus } from '@/lib/vpi'
-import { euro, formatDate, propertyLabel, percent } from '@/lib/format'
+import { euro, formatDate, propertyLabel, propertyValue, percent } from '@/lib/format'
 import { ASSET_CATEGORY_LABELS, Asset, AssetCategory, Property, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Receipt, PropertyReserve, OperatingCost, RESERVE_CATEGORY_LABELS, VpiReading } from '@/lib/types'
 
 export default async function Finanzen() {
@@ -80,6 +80,27 @@ export default async function Finanzen() {
   const netWorth = aggregateNetWorth(assets, portfolio.total_equity, totalReserves)
 
   const propertyById = Object.fromEntries(props.map(p => [p.id, p]))
+
+  // Tilgung & LTV je Immobilie (statt nur als Portfolio-Gesamtwert oben) -
+  // damit auf einen Blick sichtbar ist, welche Objekte am weitesten getilgt
+  // bzw. am höchsten beliehen sind, ohne jede Objektseite einzeln zu öffnen.
+  const propertyFinance = props
+    .map(p => {
+      const pLoans = loanList.filter(l => l.property_id === p.id)
+      if (pLoans.length === 0) return null
+      const principal = pLoans.reduce((s, l) => s + l.principal, 0)
+      const remaining = pLoans.reduce((s, l) => s + getLoanStatus(l, specialPaymentsByLoan[l.id] ?? []).remaining_balance, 0)
+      const value = propertyValue(p)
+      return {
+        property: p,
+        principal,
+        remaining,
+        value,
+        tilgungPercent: principal > 0 ? ((principal - remaining) / principal) * 100 : 0,
+        ltvPercent: value > 0 ? (remaining / value) * 100 : 0,
+      }
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
 
   const reservesByProperty = props
     .map(p => ({
@@ -249,21 +270,73 @@ export default async function Finanzen() {
           </p>
         </Card>
         {totalOriginalPrincipal > 0 && (
-          <Card className="flex items-center justify-center gap-4">
-            <TilgungRing percent={(totalPrincipalPaid / totalOriginalPrincipal) * 100} />
-            <div>
-              <p className="text-sm font-medium text-gray-900">Gesamt-Tilgung</p>
-              <p className="text-xs text-gray-400 mt-0.5">alle Immobilien</p>
-            </div>
+          <Card>
+            <details className="group">
+              <summary className="flex items-center gap-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                <TilgungRing percent={(totalPrincipalPaid / totalOriginalPrincipal) * 100} />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">Gesamt-Tilgung</p>
+                  <p className="text-xs text-gray-400 mt-0.5">alle Immobilien</p>
+                </div>
+                {propertyFinance.length > 0 && (
+                  <span className="text-gray-300 text-xs shrink-0 transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
+                )}
+              </summary>
+              {propertyFinance.length > 0 && (
+                <div className="flex gap-5 overflow-x-auto mt-4 pt-4 border-t border-gray-100">
+                  {propertyFinance.map(({ property: p, tilgungPercent, principal, remaining }) => (
+                    <Ring
+                      key={p.id}
+                      size={84}
+                      percent={tilgungPercent}
+                      label={propertyLabel(p)}
+                      detail={`${euro(principal - remaining)} / ${euro(principal)}`}
+                      color="#2563eb"
+                      trackColor="#dbeafe"
+                      ariaLabel={`${propertyLabel(p)}: ${tilgungPercent.toFixed(0)} Prozent getilgt`}
+                    />
+                  ))}
+                </div>
+              )}
+            </details>
           </Card>
         )}
         {portfolio.total_property_value > 0 && (
-          <Card className="flex items-center justify-center gap-4">
-            <LtvRing percent={(portfolio.total_debt / portfolio.total_property_value) * 100} />
-            <div>
-              <p className="text-sm font-medium text-gray-900">Beleihungsauslauf</p>
-              <p className="text-xs text-gray-400 mt-0.5">Restschuld / Wert</p>
-            </div>
+          <Card>
+            <details className="group">
+              <summary className="flex items-center gap-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                <LtvRing percent={(portfolio.total_debt / portfolio.total_property_value) * 100} />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">Beleihungsauslauf</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Restschuld / Wert</p>
+                </div>
+                {propertyFinance.length > 0 && (
+                  <span className="text-gray-300 text-xs shrink-0 transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
+                )}
+              </summary>
+              <p className="text-xs text-gray-400 mt-3">
+                LTV = Loan-to-Value: Restschuld im Verhältnis zum aktuellen Immobilienwert. Je niedriger, desto weniger ist die Immobilie noch belastet.
+              </p>
+              {propertyFinance.length > 0 && (
+                <div className="flex gap-5 overflow-x-auto mt-3 pt-4 border-t border-gray-100">
+                  {propertyFinance.map(({ property: p, ltvPercent, remaining, value }) => {
+                    const { color, trackColor } = ltvColor(ltvPercent)
+                    return (
+                      <Ring
+                        key={p.id}
+                        size={84}
+                        percent={ltvPercent}
+                        label={propertyLabel(p)}
+                        detail={`${euro(remaining)} / ${euro(value)}`}
+                        color={color}
+                        trackColor={trackColor}
+                        ariaLabel={`${propertyLabel(p)}: Beleihungsauslauf ${ltvPercent.toFixed(0)} Prozent`}
+                      />
+                    )
+                  })}
+                </div>
+              )}
+            </details>
           </Card>
         )}
       </div>
