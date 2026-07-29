@@ -23,16 +23,27 @@ export async function getLandlordNews(): Promise<NewsItem[]> {
     const xml = await res.text()
 
     const items = xml.match(/<item>[\s\S]*?<\/item>/g) ?? []
-    return items.slice(0, 8).map(item => {
-      const rawTitle = extractTag(item, 'title') ?? ''
-      const [titlePart, sourcePart] = rawTitle.split(/ - (?!.*-)/)
-      return {
-        title: decodeEntities(titlePart ?? rawTitle),
-        link: extractTag(item, 'link') ?? '#',
-        source: sourcePart ? decodeEntities(sourcePart) : null,
-        pub_date: extractTag(item, 'pubDate'),
-      }
-    })
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
+    return items
+      .map(item => {
+        const rawTitle = extractTag(item, 'title') ?? ''
+        const [titlePart, sourcePart] = rawTitle.split(/ - (?!.*-)/)
+        return {
+          title: decodeEntities(titlePart ?? rawTitle),
+          link: extractTag(item, 'link') ?? '#',
+          source: sourcePart ? decodeEntities(sourcePart) : null,
+          pub_date: extractTag(item, 'pubDate'),
+        }
+      })
+      // Ältere Meldungen sind für einen tagesaktuellen Newsfeed nicht mehr
+      // relevant - Einträge ohne verwertbares Datum werden sicherheitshalber
+      // behalten statt verworfen.
+      .filter(item => {
+        if (!item.pub_date) return true
+        const parsed = Date.parse(item.pub_date)
+        return isNaN(parsed) || parsed >= thirtyDaysAgo
+      })
+      .slice(0, 8)
   } catch {
     return []
   }
