@@ -18,7 +18,10 @@ export function ReceiptBrowser({
   const [query, setQuery] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
+  const [showArchived, setShowArchived] = useState(false)
   const [openingId, setOpeningId] = useState<string | null>(null)
+
+  const archivedCount = useMemo(() => receipts.filter(r => r.archived).length, [receipts])
 
   const propertyById = useMemo(
     () => Object.fromEntries((properties ?? []).map(p => [p.id, p])),
@@ -29,6 +32,7 @@ export function ReceiptBrowser({
     const q = query.trim().toLowerCase()
     return receipts
       .filter(r => {
+        if (r.archived && !showArchived) return false
         if (from && r.receipt_date < from) return false
         if (to && r.receipt_date > to) return false
         if (!q) return true
@@ -75,6 +79,14 @@ export function ReceiptBrowser({
         />
       </div>
 
+      {archivedCount > 0 && (
+        <label className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+          <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)}
+            className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600" />
+          Archivierte Belege einblenden ({archivedCount})
+        </label>
+      )}
+
       {filtered.length === 0 ? (
         <p className="text-sm text-gray-400 py-6 text-center">Keine Belege gefunden.</p>
       ) : (
@@ -91,6 +103,7 @@ export function ReceiptBrowser({
                 <p className="text-xs text-gray-400 mt-0.5">
                   {new Date(r.receipt_date).toLocaleDateString('de-DE')} · {CATEGORY_LABELS[r.category]}
                   {r.is_renovation && ' · Renovierung'}
+                  {r.archived && ' · archiviert'}
                 </p>
               </div>
               <span className="font-semibold text-gray-900 whitespace-nowrap">{euro(r.amount)}</span>

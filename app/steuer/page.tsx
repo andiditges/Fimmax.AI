@@ -5,6 +5,7 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { ThresholdBadge } from '@/components/threshold-badge'
 import { TaxExportButton } from '@/components/tax-export-button'
 import { ReceiptBrowser } from '@/components/receipts/receipt-browser'
+import { ArchiveYearButton } from '@/components/receipts/archive-year-button'
 import { calc15Threshold } from '@/lib/threshold15'
 import { buildTaxExportRow } from '@/lib/tax-export'
 import { sumRentForYear } from '@/lib/rent-schedule'
@@ -55,6 +56,9 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
     }
   })
 
+  const yearReceipts = recs.filter(r => r.tax_year === year)
+  const yearArchivedCount = yearReceipts.filter(r => r.archived).length
+
   const totalEinnahmen = rows.reduce((s, r) => s + r.taxRow.einnahmen, 0)
   const totalAusgaben = rows.reduce((s, r) => s + r.yearExpenses, 0)
   const totalWerbungskosten = rows.reduce((s, r) => s + r.taxRow.werbungskosten_gesamt, 0)
@@ -84,6 +88,12 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
           ))}
         </div>
       </div>
+
+      {yearReceipts.length > 0 && (
+        <div className="flex justify-end">
+          <ArchiveYearButton year={year} receiptCount={yearReceipts.length} archivedCount={yearArchivedCount} />
+        </div>
+      )}
 
       {/* Portfolio-KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">

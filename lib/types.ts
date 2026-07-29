@@ -129,6 +129,7 @@ export interface Receipt {
   is_renovation: boolean
   ai_confidence: number | null
   tax_year: number
+  archived: boolean
   created_at: string
 }
 
