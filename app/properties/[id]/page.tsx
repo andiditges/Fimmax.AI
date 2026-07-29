@@ -11,7 +11,7 @@ import { TilgungRing, LtvRing } from '@/components/properties/tilgung-ring'
 import { RiskOverview } from '@/components/tipps/risk-overview'
 import { ReceiptBrowser } from '@/components/receipts/receipt-browser'
 import { Ehegattenschaukel } from '@/components/properties/ehegattenschaukel'
-import { calcAnnualAfa } from '@/lib/afa'
+import { calcAnnualAfa, shouldRecommendNutzungsdauergutachten } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
 import { getLoanStatus } from '@/lib/amortization'
 import { buildTaxExportRow } from '@/lib/tax-export'
@@ -232,6 +232,20 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
 
       {/* Ehegattenschaukel */}
       <Ehegattenschaukel property={p} />
+
+      {shouldRecommendNutzungsdauergutachten(p) && (
+        <Card className="bg-blue-50 border-blue-100">
+          <CardTitle>Nutzungsdauergutachten empfohlen</CardTitle>
+          <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+            {p.build_year < 2000
+              ? `Baujahr ${p.build_year} liegt deutlich vor dem gesetzlichen Standard-Zeitraum – `
+              : 'Mehrere als "alt" erfasste Ausstattungsmerkmale legen nahe, dass '}
+            die tatsächliche Restnutzungsdauer des Gebäudes wahrscheinlich kürzer ist als die aktuell hinterlegten {p.usage_duration} Jahre.
+            Ein Kurzgutachten zur Restnutzungsdauer (Nutzungsdauergutachten) kann das gegenüber dem Finanzamt nachweisen und dadurch die jährliche AfA erhöhen –
+            Kosten liegen meist bei 500–1.500 €, oft schon nach 1–2 Jahren höherer AfA amortisiert. Bitte mit einem Steuerberater oder Gutachter final klären.
+          </p>
+        </Card>
+      )}
 
       {/* Standortrisiko */}
       <div>

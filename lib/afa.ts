@@ -20,6 +20,21 @@ export function calcCumulativeAfa(property: Property, asOfYear: number): number 
   return Math.min(calcAnnualAfa(property) * years, property.building_value)
 }
 
+// Ein Nutzungsdauergutachten (Kurzgutachten zur Restnutzungsdauer) kann eine
+// kürzere als die gesetzlich unterstellte Restnutzungsdauer nachweisen und so
+// die jährliche AfA erhöhen - lohnt sich tendenziell bei älteren Gebäuden
+// (Baujahr vor 2000, da der gesetzliche Standardwert dann oft noch 40-50
+// Jahre Restnutzungsdauer unterstellt, obwohl das Gebäude schon deutlich
+// älter ist) oder wenn mehrere Ausstattungsmerkmale als "alt" markiert sind
+// (Indiz für tatsächlich kürzere Restnutzungsdauer als der Standardwert).
+export function shouldRecommendNutzungsdauergutachten(
+  property: Pick<Property, 'build_year' | 'condition_windows' | 'condition_electrical' | 'condition_bathroom' | 'condition_heating'>
+): boolean {
+  if (property.build_year < 2000) return true
+  const conditions = [property.condition_windows, property.condition_electrical, property.condition_bathroom, property.condition_heating]
+  return conditions.filter(c => c === 'alt').length >= 2
+}
+
 export interface EhegattenschaukelPotential {
   current_annual_afa: number
   potential_annual_afa: number
