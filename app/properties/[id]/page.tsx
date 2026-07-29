@@ -82,8 +82,12 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
     loan: l,
     status: getLoanStatus(l, (allSpecialPayments ?? []).filter(sp => sp.loan_id === l.id)),
   }))
-  const totalLoanPrincipal = propertyLoans.reduce((s, l) => s + l.principal, 0)
-  const totalLoanRemaining = loanStatuses.reduce((s, { status }) => s + status.remaining_balance, 0)
+  // Noch nicht ausgezahlte Kredite (z.B. eine geplante Anschlussfinanzierung)
+  // zählen bei Tilgungsquote/LTV bewusst nicht mit - sonst würde ihr voller
+  // principal die Quote verfälschen, obwohl noch keine Schuld besteht.
+  const activeLoanStatuses = loanStatuses.filter(({ loan }) => new Date(loan.disbursement_date) <= new Date())
+  const totalLoanPrincipal = activeLoanStatuses.reduce((s, { loan }) => s + loan.principal, 0)
+  const totalLoanRemaining = activeLoanStatuses.reduce((s, { status }) => s + status.remaining_balance, 0)
   const totalTilgungPercent = totalLoanPrincipal > 0 ? ((totalLoanPrincipal - totalLoanRemaining) / totalLoanPrincipal) * 100 : 0
   const ltvPercent = propertyValue(p) > 0 ? (totalLoanRemaining / propertyValue(p)) * 100 : 0
 

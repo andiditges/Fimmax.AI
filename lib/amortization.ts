@@ -59,7 +59,14 @@ export function iso(d: Date): string {
   return d.toISOString().slice(0, 10)
 }
 
-function balanceAtDate(entries: AmortizationEntry[], principal: number, date: Date): number {
+// Vor der Auszahlung besteht noch keine Restschuld - ohne diese Prüfung
+// würde die Schleife unten beim ersten (immer erst nach Auszahlung
+// liegenden) Eintrag sofort abbrechen und fälschlich den vollen principal
+// als "aktuelle" Restschuld zurückgeben, obwohl der Kredit noch gar nicht
+// aktiv ist (z.B. eine geplante, aber noch nicht ausgezahlte
+// Anschlussfinanzierung).
+function balanceAtDate(entries: AmortizationEntry[], principal: number, date: Date, disbursementDate: string): number {
+  if (date < new Date(disbursementDate)) return 0
   let result = principal
   for (const e of entries) {
     if (new Date(e.date) > date) break
@@ -187,7 +194,7 @@ export function generateAmortizationSchedule(
   let balanceAtFixedPeriodEnd: number | null = null
   if (loan.initial_fixed_period_years) {
     const fixedEnd = addYears(new Date(loan.disbursement_date), loan.initial_fixed_period_years)
-    balanceAtFixedPeriodEnd = balanceAtDate(entries, loan.principal, fixedEnd)
+    balanceAtFixedPeriodEnd = balanceAtDate(entries, loan.principal, fixedEnd, loan.disbursement_date)
   }
 
   return {
@@ -239,7 +246,7 @@ export function calcRestschuldOnDate(
   onDate: Date
 ): number {
   const { entries } = generateAmortizationSchedule(loan, specialPayments)
-  return balanceAtDate(entries, loan.principal, onDate)
+  return balanceAtDate(entries, loan.principal, onDate, loan.disbursement_date)
 }
 
 export function getLoanStatus(
@@ -247,8 +254,23 @@ export function getLoanStatus(
   specialPayments: LoanSpecialPayment[],
   asOfDate: Date = new Date()
 ): LoanStatus {
+  // Noch nicht ausgezahlte Kredite (z.B. eine geplante Anschlussfinanzierung
+  // mit zukünftigem Auszahlungsdatum) zählen "heute" noch nicht als
+  // Restschuld/Tilgung mit - sie sind noch inaktiv und werden erst zum
+  // Auszahlungsdatum wirksam.
+  if (new Date(loan.disbursement_date) > asOfDate) {
+    return {
+      as_of_date: iso(asOfDate),
+      remaining_balance: 0,
+      cumulative_interest_paid: 0,
+      cumulative_principal_paid: 0,
+      next_payment_date: loan.disbursement_date,
+      current_annuity_amount: loan.annuity_amount,
+    }
+  }
+
   const { entries } = generateAmortizationSchedule(loan, specialPayments)
-  const remainingBalance = balanceAtDate(entries, loan.principal, asOfDate)
+  const remainingBalance = balanceAtDate(entries, loan.principal, asOfDate, loan.disbursement_date)
 
   const cumulativeInterestPaid = entries
     .filter(e => new Date(e.date) <= asOfDate)
@@ -502,7 +524,7 @@ export function aggregateDebtOverTime(
   return dates.map(date => {
     const d = new Date(date)
     const total = schedules.reduce(
-      (sum, { loan, result }) => sum + balanceAtDate(result.entries, loan.principal, d),
+      (sum, { loan, result }) => sum + balanceAtDate(result.entries, loan.principal, d, loan.disbursement_date),
       0
     )
     return { date, remaining_balance: total }
@@ -545,8 +567,13 @@ export function aggregatePortfolioFinancials(
   // unregelmäßig anfallen und ein Einzelmonat sonst irreführend wäre.
   const monthlyOperatingCostRunrate = trailingReceipts.reduce((s, r) => s + r.amount, 0) / 12
 
+  // Noch nicht ausgezahlte Kredite (Auszahlungsdatum in der Zukunft) zahlen
+  // noch keine Rate - sonst würde z.B. eine geplante Anschlussfinanzierung
+  // schon Jahre vor Auszahlung die aktuelle Kreditrate/den Cashflow verzerren.
   const monthlyDebtService = loans.reduce(
-    (s, l, i) => s + loanStatuses[i].current_annuity_amount * (periodsPerYear(l.payment_frequency) / 12),
+    (s, l, i) => new Date(l.disbursement_date) > asOfDate
+      ? s
+      : s + loanStatuses[i].current_annuity_amount * (periodsPerYear(l.payment_frequency) / 12),
     0
   )
 
@@ -612,6 +639,6 @@ export function simulateSpecialPayment(
     new_total_interest: newTotalInterest,
     months_saved: Math.max(0, monthsSaved),
     interest_saved_total: Math.max(0, baselineTotalInterest - newTotalInterest),
-    new_remaining_balance: balanceAtDate(withPayment.entries, loan.principal, asOfDate),
+    new_remaining_balance: balanceAtDate(withPayment.entries, loan.principal, asOfDate, loan.disbursement_date),
   }
 }

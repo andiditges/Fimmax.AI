@@ -86,7 +86,10 @@ export default async function Finanzen() {
   // bzw. am höchsten beliehen sind, ohne jede Objektseite einzeln zu öffnen.
   const propertyFinance = props
     .map(p => {
-      const pLoans = loanList.filter(l => l.property_id === p.id)
+      // Noch nicht ausgezahlte Kredite (z.B. eine geplante Anschlussfinanzierung)
+      // zählen hier bewusst nicht mit - sonst würde ihr voller principal die
+      // Tilgungs-/LTV-Quote verfälschen, obwohl noch keine Schuld besteht.
+      const pLoans = loanList.filter(l => l.property_id === p.id && new Date(l.disbursement_date) <= new Date())
       if (pLoans.length === 0) return null
       const principal = pLoans.reduce((s, l) => s + l.principal, 0)
       const remaining = pLoans.reduce((s, l) => s + getLoanStatus(l, specialPaymentsByLoan[l.id] ?? []).remaining_balance, 0)
@@ -251,6 +254,24 @@ export default async function Finanzen() {
   const tilgungCagr = tilgungCagrData.length > 0
     ? tilgungCagrData.reduce((s, d) => s + d.cagr * d.weight, 0) / tilgungCagrData.reduce((s, d) => s + d.weight, 0)
     : null
+
+  // Lebenszyklus je Kredit: geplant (Auszahlung liegt noch in der Zukunft,
+  // z.B. eine geplante Anschlussfinanzierung) / aktiv / archiviert (bereits
+  // vollständig getilgt) - damit die normale Kredite-Liste nicht mit
+  // inaktiven bzw. abgeschlossenen Krediten überladen wird.
+  const activeLoans: Loan[] = []
+  const futureLoans: Loan[] = []
+  const archivedLoans: Loan[] = []
+  for (const l of loanList) {
+    const schedule = loanSchedules.find(s => s.loan.id === l.id)
+    if (new Date(l.disbursement_date) > now) {
+      futureLoans.push(l)
+    } else if (schedule?.payoffDate && new Date(schedule.payoffDate) <= now) {
+      archivedLoans.push(l)
+    } else {
+      activeLoans.push(l)
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -657,21 +678,21 @@ export default async function Finanzen() {
       {/* Sondertilgungs-Simulator */}
       <SondertilgungSimulator loans={loanList} specialPaymentsByLoan={specialPaymentsByLoan} properties={props} />
 
-      <div>
+      <div id="kredite">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-800">Kredite ({loanList.length})</h2>
+          <h2 className="text-lg font-semibold text-gray-800">Kredite ({activeLoans.length})</h2>
           <Link href="/loans/new" className="text-sm text-blue-600 hover:underline">+ Kredit erfassen</Link>
         </div>
-        {loanList.length === 0 ? (
+        {activeLoans.length === 0 ? (
           <Card className="text-center py-12 text-gray-400">
-            <p className="mb-4">Noch keine Kredite hinterlegt.</p>
+            <p className="mb-4">Noch keine aktiven Kredite hinterlegt.</p>
             <Link href="/loans/new" className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors">
               Ersten Kredit anlegen
             </Link>
           </Card>
         ) : (
           <div className="space-y-2">
-            {loanList.map(l => {
+            {activeLoans.map(l => {
               const status = getLoanStatus(l, specialPaymentsByLoan[l.id] ?? [])
               return (
                 <Link key={l.id} href={`/loans/${l.id}`}>
@@ -690,6 +711,61 @@ export default async function Finanzen() {
               )
             })}
           </div>
+        )}
+
+        {futureLoans.length > 0 && (
+          <div className="mt-4">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Geplant / noch nicht aktiv ({futureLoans.length})</p>
+            <div className="space-y-2">
+              {futureLoans.map(l => (
+                <Link key={l.id} href={`/loans/${l.id}`}>
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer bg-gray-50">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-700 truncate">{l.name}</p>
+                        <p className="text-sm text-gray-400 mt-0.5">
+                          {propertyById[l.property_id] ? propertyLabel(propertyById[l.property_id]) : ''} · {l.nominal_interest_rate}% · {euro(l.annuity_amount)} / {l.payment_frequency}
+                        </p>
+                      </div>
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 whitespace-nowrap">
+                        Aktiv ab {formatDate(l.disbursement_date)}
+                      </span>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {archivedLoans.length > 0 && (
+          <details className="group mt-4">
+            <summary className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+              Archiv – vollständig getilgt ({archivedLoans.length}) <span className="transition-transform inline-block group-open:rotate-180">▾</span>
+            </summary>
+            <div className="space-y-2 mt-2">
+              {archivedLoans.map(l => {
+                const schedule = loanSchedules.find(s => s.loan.id === l.id)
+                return (
+                  <Link key={l.id} href={`/loans/${l.id}`}>
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer opacity-70">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-700 truncate">{l.name}</p>
+                          <p className="text-sm text-gray-400 mt-0.5">
+                            {propertyById[l.property_id] ? propertyLabel(propertyById[l.property_id]) : ''} · {euro(l.principal)} ursprünglich
+                          </p>
+                        </div>
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 whitespace-nowrap">
+                          Getilgt {schedule?.payoffDate ? formatDate(schedule.payoffDate) : ''}
+                        </span>
+                      </div>
+                    </Card>
+                  </Link>
+                )
+              })}
+            </div>
+          </details>
         )}
       </div>
     </div>
