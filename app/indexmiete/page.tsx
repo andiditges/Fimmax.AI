@@ -5,9 +5,11 @@ import { IndexmieteOverview } from '@/components/vpi/indexmiete-overview'
 import { StaffelmieteOverview } from '@/components/vpi/staffelmiete-overview'
 import { Section558Overview } from '@/components/vpi/section558-overview'
 import { ComparableRentTable } from '@/components/vpi/comparable-rent-table'
+import { GenerateRemindersButton } from '@/components/reminders/generate-reminders-button'
 import { currentAgreement, isStaffelSchedule } from '@/lib/rent-schedule'
 import { latestVpiReading } from '@/lib/vpi'
 import { findGemeindeForAddress, kappungsgrenzePercent, calcSection558Status } from '@/lib/mietrecht'
+import { suggestIndexmieteReminders, suggestStaffelReminders } from '@/lib/reminder-suggestions'
 import { Property, RentalAgreement, Tenant, VpiReading } from '@/lib/types'
 
 export default async function IndexmietePage() {
@@ -67,6 +69,14 @@ export default async function IndexmietePage() {
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
 
+  // Geplanter Sammel-Erhöhungstermin für alle Indexmiete-Mietverhältnisse:
+  // unabhängig davon, ob die 12-Monats-Frist schon jetzt, ab September oder
+  // erst kurz vorher erreicht wird, sollen die Schreiben gebündelt Anfang
+  // November für den 01.01. des Folgejahres verschickt werden.
+  const targetIncreaseDate = '2027-01-01'
+  const indexReminderSuggestions = suggestIndexmieteReminders(indexItems, targetIncreaseDate, '2026-11-01')
+  const staffelReminderSuggestions = suggestStaffelReminders(staffelItems, new Date(), 1)
+
   const comparableRentItems = tenantList
     .filter(t => !t.move_out_date)
     .map(t => {
@@ -100,12 +110,24 @@ export default async function IndexmietePage() {
       <VpiReadingsForm readings={readingList} />
 
       <div>
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">Mietverhältnisse mit Indexmiete ({indexItems.length})</h2>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+          <h2 className="text-lg font-semibold text-gray-800">Mietverhältnisse mit Indexmiete ({indexItems.length})</h2>
+          <GenerateRemindersButton
+            label={`Erinnerungen für 01.11.2026 anlegen (${indexReminderSuggestions.length})`}
+            suggestions={indexReminderSuggestions}
+          />
+        </div>
         <IndexmieteOverview items={indexItems} latestReading={latest} />
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">Mietverhältnisse mit Staffelmiete ({staffelItems.length})</h2>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+          <h2 className="text-lg font-semibold text-gray-800">Mietverhältnisse mit Staffelmiete ({staffelItems.length})</h2>
+          <GenerateRemindersButton
+            label={`Erinnerungen für anstehende Stufen anlegen (${staffelReminderSuggestions.length})`}
+            suggestions={staffelReminderSuggestions}
+          />
+        </div>
         <StaffelmieteOverview items={staffelItems} />
       </div>
 
