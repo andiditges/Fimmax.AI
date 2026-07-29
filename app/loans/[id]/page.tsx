@@ -7,7 +7,7 @@ import { SpecialPaymentForm } from '@/components/loans/special-payment-form'
 import { DayCountEdit } from '@/components/loans/day-count-edit'
 import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { TilgungZinsChart } from '@/components/charts/tilgung-zins-chart'
-import { calcBereitstellungszinsen, generateAmortizationSchedule, getLoanStatus, specialPaymentAllowanceRemaining } from '@/lib/amortization'
+import { calcBereitstellungszinsen, generateAmortizationSchedule, getLoanStatus, getMonthlyPrincipalAt, specialPaymentAllowanceRemaining, suggestInitialRepaymentRate } from '@/lib/amortization'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
 import { Loan, LoanSpecialPayment, Property } from '@/lib/types'
 
@@ -32,6 +32,15 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
   const status = getLoanStatus(l, sp)
   const allowanceRemaining = specialPaymentAllowanceRemaining(l, sp)
   const bereitstellungszinsen = calcBereitstellungszinsen(l)
+
+  // Anfängliche Tilgungsrate: rein rechnerisch aus Rate/Zins/Kreditsumme
+  // abgeleitet (kein eigenes DB-Feld nötig, siehe suggestInitialRepaymentRate).
+  // Aktuelle Tilgungsrate: dieselbe Rechnung, aber mit dem Tilgungsanteil der
+  // gerade laufenden Periode statt der allerersten - bei fester Annuität und
+  // sinkendem Zinsanteil steigt sie darum im Zeitverlauf monatlich.
+  const initialRepaymentRate = suggestInitialRepaymentRate(l.principal, l.nominal_interest_rate, l.annuity_amount, l.payment_frequency)
+  const currentMonthlyPrincipal = getMonthlyPrincipalAt(l, sp, new Date())
+  const currentRepaymentRate = l.principal > 0 ? (currentMonthlyPrincipal * 12 / l.principal) * 100 : 0
 
   const chartData = schedule.entries.map(e => ({ date: e.date, remaining_balance: e.remaining_balance }))
   chartData.unshift({ date: l.disbursement_date, remaining_balance: l.principal })
@@ -97,6 +106,19 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
         <Card>
           <CardTitle className="min-h-10">Tilgung kumuliert</CardTitle>
           <p className="text-lg md:text-2xl font-bold text-green-600 break-words">{euro(status.cumulative_principal_paid)}</p>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Card>
+          <CardTitle className="min-h-10">Anfängliche Tilgungsrate</CardTitle>
+          <p className="text-lg md:text-2xl font-bold text-gray-900 break-words">{initialRepaymentRate.toFixed(2)}% p.a.</p>
+          <p className="text-xs text-gray-400 mt-1">Rechnerisch aus Rate je Zahlung, Sollzins und Kreditsumme bei Auszahlung.</p>
+        </Card>
+        <Card>
+          <CardTitle className="min-h-10">Aktuelle Tilgungsrate</CardTitle>
+          <p className="text-lg md:text-2xl font-bold text-blue-600 break-words">{currentRepaymentRate.toFixed(2)}% p.a.</p>
+          <p className="text-xs text-gray-400 mt-1">Steigt bei fester Rate je Zahlung monatlich, da der Zinsanteil mit sinkender Restschuld schrumpft.</p>
         </Card>
       </div>
 
