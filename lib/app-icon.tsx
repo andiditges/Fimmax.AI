@@ -5,13 +5,10 @@
 export function AppIconElement({ size }: { size: number }) {
   const fontSize = Math.round(size * 0.46)
   const roofHeight = fontSize * 0.16
-  const roofDrawHeight = fontSize * 0.13
-  // Wie tief das Dach über die reservierte Dach-Zeile hinaus nach unten in die
-  // "imm"-Zeile hineinreicht, damit die Spitze unter den Punkt des "i" rutscht.
-  // "i" und Dach überlappen sich horizontal nicht (Dach sitzt nur über "mm"),
-  // ein vertikales Hineinreichen in die Textzeile ist daher unproblematisch,
-  // solange die Basis oberhalb der "mm"-Balken (x-Höhe) bleibt.
-  const roofDepth = fontSize * 0.28
+  // Unverändertes Dach (gleiche Höhe/Breite/Form wie ursprünglich), nur um
+  // roofOffset nach unten verschoben, damit die Spitze unter den Punkt des
+  // "i" rutscht, ohne die "mm" darunter zu berühren.
+  const roofOffset = fontSize * 0.3
   const textStyle = { display: 'flex', fontSize, fontWeight: 700, fontFamily: 'sans-serif', lineHeight: 1 } as const
 
   return (
@@ -34,12 +31,12 @@ export function AppIconElement({ size }: { size: number }) {
           <div style={{ ...textStyle, opacity: 0 }}>i</div>
           <div style={{ position: 'relative', display: 'flex' }}>
             <div style={{ ...textStyle, opacity: 0 }}>mm</div>
-            {/* overflow:visible auf der Dach-Zeile + top über roofHeight hinaus,
-                damit das Dach in die "imm"-Zeile hineinreichen kann, ohne deren
-                Position zu verschieben (die Zeilenhöhe roofHeight bleibt für
-                die Flex-Berechnung unverändert). */}
+            {/* overflow:visible auf der Dach-Zeile, damit das per roofOffset
+                verschobene Dach nicht abgeschnitten wird - die Zeilenhöhe
+                roofHeight bleibt für die Flex-Berechnung unverändert, die
+                Position von "imm" darunter verschiebt sich also nicht. */}
             <svg
-              style={{ position: 'absolute', left: 0, top: roofHeight - roofDrawHeight + roofDepth, width: '100%', height: roofDrawHeight }}
+              style={{ position: 'absolute', left: 0, top: roofOffset, width: '100%', height: roofHeight }}
               viewBox="0 0 100 13.4"
             >
               <path d="M0,13.4 L50,0 L100,13.4" fill="none" stroke="#8f3a1a" strokeWidth="2" strokeLinecap="round" />
