@@ -6,10 +6,12 @@ import { StaffelmieteOverview } from '@/components/vpi/staffelmiete-overview'
 import { Section558Overview } from '@/components/vpi/section558-overview'
 import { ComparableRentTable } from '@/components/vpi/comparable-rent-table'
 import { GenerateRemindersButton } from '@/components/reminders/generate-reminders-button'
-import { currentAgreement, isStaffelSchedule } from '@/lib/rent-schedule'
-import { latestVpiReading } from '@/lib/vpi'
+import { Card, CardTitle } from '@/components/ui/card'
+import { currentAgreement, isStaffelSchedule, nextAgreementStep } from '@/lib/rent-schedule'
+import { calcIndexmieteStatus, latestVpiReading } from '@/lib/vpi'
 import { findGemeindeForAddress, kappungsgrenzePercent, calcSection558Status } from '@/lib/mietrecht'
 import { suggestIndexmieteReminders, suggestStaffelReminders } from '@/lib/reminder-suggestions'
+import { euro } from '@/lib/format'
 import { Property, RentalAgreement, Tenant, VpiReading } from '@/lib/types'
 
 export default async function IndexmietePage() {
@@ -77,6 +79,29 @@ export default async function IndexmietePage() {
   const indexReminderSuggestions = suggestIndexmieteReminders(indexItems, targetIncreaseDate, '2026-11-01')
   const staffelReminderSuggestions = suggestStaffelReminders(staffelItems, new Date(), 1)
 
+  // Portfolio-Gesamtsumme über beide Mechanismen: Indexmiete trägt sowohl
+  // zur "heute bereits möglich"- als auch zur "inkl. zukünftig"-Summe bei,
+  // Staffelmiete nur zu Letzterer - die nächste Stufe tritt automatisch zum
+  // vereinbarten Termin in Kraft, ist also keine "heute mögliche" Erhöhung,
+  // die der Vermieter selbst auslösen müsste.
+  let totalToday = 0
+  let totalInclFuture = 0
+  if (latest) {
+    for (const item of indexItems) {
+      const status = calcIndexmieteStatus(item.agreement, latest)
+      if (!status) continue
+      const delta = status.possible_new_rent - status.current_rent
+      totalInclFuture += delta
+      if (status.eligible) totalToday += delta
+    }
+  }
+  for (const item of staffelItems) {
+    const active = currentAgreement(item.agreements)
+    const next = nextAgreementStep(item.agreements)
+    if (!active || !next) continue
+    totalInclFuture += next.rent_amount - active.rent_amount
+  }
+
   const comparableRentItems = tenantList
     .filter(t => !t.move_out_date)
     .map(t => {
@@ -130,6 +155,23 @@ export default async function IndexmietePage() {
         </div>
         <StaffelmieteOverview items={staffelItems} />
       </div>
+
+      {totalInclFuture > 0 && (
+        <Card className="bg-blue-50 border-blue-100">
+          <CardTitle>Mögliche Mieterhöhung insgesamt (Indexmiete + Staffelmiete)</CardTitle>
+          <div className="flex items-center justify-between flex-wrap gap-2 mt-2">
+            <p className="text-sm font-medium text-gray-700">Bereits heute möglich (Indexmiete)</p>
+            <p className="font-semibold text-green-700">+{euro(totalToday)} / Monat</p>
+          </div>
+          <div className="flex items-center justify-between flex-wrap gap-2 mt-1">
+            <p className="text-sm font-medium text-gray-700">Inkl. zukünftig möglicher Erhöhungen (Index + Staffel)</p>
+            <p className="font-semibold text-blue-700">+{euro(totalInclFuture)} / Monat</p>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            Staffelmiete-Stufen treten automatisch zum vereinbarten Termin in Kraft und zählen daher nur zur "inkl. zukünftig"-Summe, nicht zu "bereits heute möglich".
+          </p>
+        </Card>
+      )}
 
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-3">Feste Miete – Kappungsgrenzen-Countdown ({plain558Items.length})</h2>

@@ -31,33 +31,14 @@ export function IndexmieteOverview({ items, latestReading }: { items: Item[]; la
     )
   }
 
-  let totalToday = 0
-  let totalInclFuture = 0
-  for (const item of items) {
-    const status = calcIndexmieteStatus(item.agreement, latestReading)
-    if (!status) continue
-    const delta = status.possible_new_rent - status.current_rent
-    totalInclFuture += delta
-    if (status.eligible) totalToday += delta
-  }
-
+  // Portfolio-Gesamtsumme (Index- + Staffelmiete zusammen) wird auf der
+  // Seite (app/indexmiete/page.tsx) berechnet und dort als eigene Karte
+  // gezeigt, statt hier nur für Indexmiete isoliert.
   return (
     <div className="space-y-3">
       {items.map(item => (
         <IndexmieteRow key={item.tenant.id} item={item} latestReading={latestReading} />
       ))}
-      {totalInclFuture > 0 && (
-        <Card className="bg-blue-50 border-blue-100">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <p className="text-sm font-medium text-gray-700">Gesamtsumme heute bereits möglich</p>
-            <p className="font-semibold text-green-700">+{euro(totalToday)} / Monat</p>
-          </div>
-          <div className="flex items-center justify-between flex-wrap gap-2 mt-1">
-            <p className="text-sm font-medium text-gray-700">Gesamtsumme inkl. zukünftig möglicher Erhöhungen</p>
-            <p className="font-semibold text-blue-700">+{euro(totalInclFuture)} / Monat</p>
-          </div>
-        </Card>
-      )}
     </div>
   )
 }
