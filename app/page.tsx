@@ -105,10 +105,12 @@ export default async function Dashboard() {
                 <Link href="/finanzen" className="text-sm text-blue-600 hover:underline">Portfolio-Übersicht →</Link>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Card>
-                  <CardTitle className="min-h-10">Restschulden (aktuell)</CardTitle>
-                  <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(portfolio.total_debt)}</p>
-                </Card>
+                <Link href="/finanzen#kredite">
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <CardTitle className="min-h-10">Restschulden (aktuell)</CardTitle>
+                    <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(portfolio.total_debt)}</p>
+                  </Card>
+                </Link>
                 <Card>
                   <CardTitle className="min-h-10">Kreditrate / Monat</CardTitle>
                   <p className="text-lg md:text-2xl font-bold text-gray-900 break-words">{euro(portfolio.monthly_debt_service)}</p>
