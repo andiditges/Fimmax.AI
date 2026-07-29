@@ -8,9 +8,10 @@ import { ReceiptBrowser } from '@/components/receipts/receipt-browser'
 import { ArchiveYearButton } from '@/components/receipts/archive-year-button'
 import { calc15Threshold } from '@/lib/threshold15'
 import { buildTaxExportRow } from '@/lib/tax-export'
+import { generateAmortizationSchedule, interestPaidInYear } from '@/lib/amortization'
 import { sumRentForYear } from '@/lib/rent-schedule'
 import { euro, propertyLabel } from '@/lib/format'
-import { Property, Receipt, Tenant, RentalAgreement, RentAdjustment } from '@/lib/types'
+import { Property, Receipt, Tenant, RentalAgreement, RentAdjustment, Loan, LoanSpecialPayment } from '@/lib/types'
 
 export default async function SteuerUebersicht({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
   await requireUser()
@@ -20,12 +21,13 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
   const year = yearParam ? parseInt(yearParam) : thisYear - 1
   const yearOptions = [thisYear, thisYear - 1, thisYear - 2]
 
-  const [{ data: properties }, { data: receipts }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }] = await Promise.all([
+  const [{ data: properties }, { data: receipts }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: loans }] = await Promise.all([
     supabase.from('properties').select('*').order('created_at'),
     supabase.from('receipts').select('*'),
     supabase.from('tenants').select('*'),
     supabase.from('rental_agreements').select('*'),
     supabase.from('rent_adjustments').select('*'),
+    supabase.from('loans').select('*'),
   ])
 
   const props = (properties ?? []) as Property[]
@@ -33,6 +35,12 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
   const tenantList = (tenants ?? []) as Tenant[]
   const agreementList = (rentalAgreements ?? []) as RentalAgreement[]
   const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
+  const loanList = (loans ?? []) as Loan[]
+
+  const { data: specialPayments } = loanList.length
+    ? await supabase.from('loan_special_payments').select('*').in('loan_id', loanList.map(l => l.id))
+    : { data: [] as LoanSpecialPayment[] }
+  const specialPaymentList = (specialPayments ?? []) as LoanSpecialPayment[]
 
   const agreementsByTenant = agreementList.reduce((acc, a) => {
     if (a.tenant_id) (acc[a.tenant_id] ??= []).push(a)
@@ -46,13 +54,22 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
   const rows = props.map(p => {
     const propTenants = tenantList.filter(t => t.property_id === p.id)
     const yearIncome = sumRentForYear(propTenants, agreementsByTenant, adjustmentsByTenant, year)
-    const yearExpenses = recs.filter(r => r.property_id === p.id && r.tax_year === year).reduce((s, r) => s + r.amount, 0)
+    const propReceipts = recs.filter(r => r.property_id === p.id)
+    const yearExpenses = propReceipts.filter(r => r.tax_year === year).reduce((s, r) => s + r.amount, 0)
+    const propLoans = loanList.filter(l => l.property_id === p.id)
+    const loanInterest = propLoans.reduce((s, l) => {
+      const sp = specialPaymentList.filter(x => x.loan_id === l.id)
+      return s + interestPaidInYear(generateAmortizationSchedule(l, sp).entries, year)
+    }, 0)
     return {
       property: p,
-      threshold: calc15Threshold(p, recs.filter(r => r.property_id === p.id)),
-      taxRow: buildTaxExportRow(p, year, recs, yearIncome),
+      threshold: calc15Threshold(p, propReceipts),
+      // Beleg-Liste bewusst auf dieses Objekt beschränkt (vorher versehentlich
+      // die ungefilterte Portfolio-Liste) - sonst flossen fremde Objekte in
+      // Werbungskosten/Ergebnis dieses Objekts mit ein.
+      taxRow: buildTaxExportRow(p, year, propReceipts, yearIncome, loanInterest),
       yearExpenses,
-      receiptCount: recs.filter(r => r.property_id === p.id && r.tax_year === year).length,
+      receiptCount: propReceipts.filter(r => r.tax_year === year).length,
     }
   })
 

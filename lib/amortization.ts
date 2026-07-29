@@ -220,6 +220,16 @@ export function principalPaidInYear(entries: AmortizationEntry[], year: number):
     .reduce((s, e) => s + e.scheduled_principal, 0)
 }
 
+// Analog zu principalPaidInYear, aber für die tatsächlich angefallenen
+// Zinsen - Grundlage für die Werbungskosten in der Steuerauswertung, statt
+// dort ausschließlich auf manuell erfasste "Zinsen"-Belege angewiesen zu sein.
+export function interestPaidInYear(entries: AmortizationEntry[], year: number): number {
+  const yearPrefix = String(year)
+  return entries
+    .filter(e => e.date.slice(0, 4) === yearPrefix)
+    .reduce((s, e) => s + e.interest_accrued, 0)
+}
+
 /**
  * Verbleibendes kostenloses Sondertilgungskontingent für das Kalenderjahr von
  * asOfDate (z.B. die üblichen 5% der urspr. Darlehenssumme p.a. ohne

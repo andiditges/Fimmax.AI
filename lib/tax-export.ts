@@ -16,15 +16,26 @@ export interface TaxExportRow {
   ergebnis: number
 }
 
-export function buildTaxExportRow(property: Property, year: number, receipts: Receipt[], incomeTotal: number): TaxExportRow {
+export function buildTaxExportRow(
+  property: Property,
+  year: number,
+  receipts: Receipt[],
+  incomeTotal: number,
+  loanInterest: number = 0
+): TaxExportRow {
   const yearRecs = receipts.filter(r => r.tax_year === year)
   const kosten_nach_kategorie = {} as Record<ReceiptCategory, number>
   for (const cat of Object.keys(CATEGORY_LABELS) as ReceiptCategory[]) {
     kosten_nach_kategorie[cat] = yearRecs.filter(r => r.category === cat).reduce((s, r) => s + r.amount, 0)
   }
+  // Kreditzinsen kommen aus dem tatsächlichen Tilgungsplan (siehe
+  // interestPaidInYear), nicht ausschließlich aus manuell erfassten
+  // "Zinsen"-Belegen - sonst fehlten die Zinsen hier komplett, solange kein
+  // entsprechender Beleg (z.B. Jahreszinsbescheinigung der Bank) erfasst ist.
+  kosten_nach_kategorie.zinsen += loanInterest
   const afa = calcAnnualAfa(property)
   const belegeSumme = yearRecs.reduce((s, r) => s + r.amount, 0)
-  const werbungskosten_gesamt = belegeSumme + afa
+  const werbungskosten_gesamt = belegeSumme + afa + loanInterest
 
   return {
     objekt: propertyLabel(property),

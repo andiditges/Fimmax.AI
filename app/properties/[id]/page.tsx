@@ -13,7 +13,7 @@ import { ReceiptBrowser } from '@/components/receipts/receipt-browser'
 import { Ehegattenschaukel } from '@/components/properties/ehegattenschaukel'
 import { calcAnnualAfa, shouldRecommendNutzungsdauergutachten } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
-import { getLoanStatus } from '@/lib/amortization'
+import { getLoanStatus, generateAmortizationSchedule, interestPaidInYear } from '@/lib/amortization'
 import { buildTaxExportRow } from '@/lib/tax-export'
 import { generateRentSchedule, currentRentAmount, currentAgreement } from '@/lib/rent-schedule'
 import { sumInstandhaltungsruecklage, isUtilityBillableTenant } from '@/lib/operating-costs'
@@ -127,7 +127,11 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
     total: yearRecs.filter(r => r.category === cat).reduce((s, r) => s + r.amount, 0),
   })).filter(c => c.total > 0)
 
-  const taxExportRow = buildTaxExportRow(p, currentYear, recs, yearIncome)
+  const loanInterestThisYear = propertyLoans.reduce((s, l) => {
+    const sp = (allSpecialPayments ?? []).filter(x => x.loan_id === l.id)
+    return s + interestPaidInYear(generateAmortizationSchedule(l, sp).entries, currentYear)
+  }, 0)
+  const taxExportRow = buildTaxExportRow(p, currentYear, recs, yearIncome, loanInterestThisYear)
   const openReminders = reminderList.filter(r => r.status !== 'erledigt')
   const receiptYears = [...new Set(recs.map(r => r.tax_year))].sort((a, b) => b - a)
 
