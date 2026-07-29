@@ -30,10 +30,10 @@ export default function Warum() {
         <p>
           Kaufvertrag hier. Darlehensvertrag dort. Die Handwerkerrechnung im Mailpostfach, die
           Nebenkostenabrechnung im Papierordner, die Mietverträge auf dem Laptop, die Zahlen in einer
-          Excel, die niemand außer mir versteht. Jedes Jahr aufs Neue Tage – Tage – für Steuer, Belege,
-          Abgleich, Suchen. Zeit, die ich nicht mit meiner Frau verbringe. Zeit, die ich nicht mit meinen
+          Excel, die niemand außer mir versteht. Jedes Jahr aufs Neue Tage – Tage! – für Steuer, Belege,
+          Abgleich, Suchen. Tage, die ich nicht mit meiner Frau verbringe. Tage, die ich nicht mit meinen
           zwei kleinen Kindern verbringe – die in genau den Jahren sind, die man kein zweites Mal
-          bekommt. Zeit, die nicht in die nächste Immobilie fließt.
+          bekommt. Tage, die nicht in die nächste Immobilie fließen.
         </p>
         <p>
           Ich wollte Ordnung. Ordnung, die mich keine Stunden kostet. Alle Dokumente an einem Platz.
