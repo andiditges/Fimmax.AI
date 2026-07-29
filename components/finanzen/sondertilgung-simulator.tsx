@@ -21,6 +21,7 @@ export function SondertilgungSimulator({
   const [loanId, setLoanId] = useState(loans[0]?.id ?? '')
   const [mode, setMode] = useState<'euro' | 'prozent'>('euro')
   const [value, setValue] = useState('')
+  const [paymentDate, setPaymentDate] = useState(() => iso(new Date()))
   const [applying, setApplying] = useState(false)
   const [confirmOverLimit, setConfirmOverLimit] = useState(false)
 
@@ -42,28 +43,30 @@ export function SondertilgungSimulator({
   }, [value, mode, remainingBalance])
 
   const simulation = useMemo(() => {
-    if (!loan || hypotheticalAmount <= 0) return null
-    return simulateSpecialPayment(loan, existingSpecialPayments, hypotheticalAmount)
-  }, [loan, existingSpecialPayments, hypotheticalAmount])
+    if (!loan || hypotheticalAmount <= 0 || !paymentDate) return null
+    return simulateSpecialPayment(loan, existingSpecialPayments, hypotheticalAmount, new Date(paymentDate))
+  }, [loan, existingSpecialPayments, hypotheticalAmount, paymentDate])
 
-  // Kontingent bezieht sich auf das Kalenderjahr von "heute" und muss bereits
-  // erfasste Sondertilgungen desselben Jahres mit einrechnen.
+  // Kontingent bezieht sich auf das Kalenderjahr des gewählten Datums (nicht
+  // zwingend "heute" - z.B. eine bereits per Terminüberweisung geplante,
+  // aber noch nicht ausgeführte Sondertilgung) und muss bereits erfasste
+  // Sondertilgungen desselben Jahres mit einrechnen.
   const overLimitBy = useMemo(() => {
-    if (!loan || loan.special_payment_limit_percent == null || hypotheticalAmount <= 0) return 0
-    const remaining = specialPaymentAllowanceRemaining(loan, existingSpecialPayments, new Date())
+    if (!loan || loan.special_payment_limit_percent == null || hypotheticalAmount <= 0 || !paymentDate) return 0
+    const remaining = specialPaymentAllowanceRemaining(loan, existingSpecialPayments, new Date(paymentDate))
     if (remaining === null) return 0
     return Math.max(0, hypotheticalAmount - remaining)
-  }, [loan, existingSpecialPayments, hypotheticalAmount])
+  }, [loan, existingSpecialPayments, hypotheticalAmount, paymentDate])
   const isOverLimit = overLimitBy > 0.01
 
   async function applyNow() {
-    if (!loan || hypotheticalAmount <= 0) return
+    if (!loan || hypotheticalAmount <= 0 || !paymentDate) return
     if (isOverLimit && !confirmOverLimit) return
     setApplying(true)
     const supabase = createClient()
     const { error } = await supabase.from('loan_special_payments').insert({
       loan_id: loan.id,
-      payment_date: iso(new Date()),
+      payment_date: paymentDate,
       amount: hypotheticalAmount,
       note: 'Über Sondertilgungs-Simulator erfasst',
     })
@@ -83,7 +86,7 @@ export function SondertilgungSimulator({
     <Card>
       <CardTitle>Sondertilgungs-Simulator</CardTitle>
       <p className="text-xs text-gray-400 mt-1 mb-3">
-        Zunächst rein hypothetisch – erst mit Klick auf &bdquo;Jetzt genau so erfassen&ldquo; unten wird die Sondertilgung heute mit dem berechneten Betrag tatsächlich gespeichert.
+        Zunächst rein hypothetisch – erst mit Klick auf &bdquo;Jetzt genau so erfassen&ldquo; unten wird die Sondertilgung zum gewählten Datum mit dem berechneten Betrag tatsächlich gespeichert. Das Datum darf auch in der Zukunft liegen, z.B. für eine bereits per Terminüberweisung geplante Sondertilgung.
       </p>
 
       <div className="space-y-3">
@@ -104,7 +107,7 @@ export function SondertilgungSimulator({
 
         <div className="flex gap-3">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sondertilgung heute</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Sondertilgung</label>
             <input
               type="number"
               step="0.01"
@@ -122,6 +125,17 @@ export function SondertilgungSimulator({
                 className={`px-3 py-2.5 text-sm ${mode === 'prozent' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600'}`}>%</button>
             </div>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Datum</label>
+          <input
+            type="date"
+            value={paymentDate}
+            onChange={e => { setPaymentDate(e.target.value); setConfirmOverLimit(false) }}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="text-xs text-gray-400 mt-1">Auch ein zukünftiges Datum möglich, z.B. für eine bereits geplante, aber noch nicht ausgeführte Terminüberweisung.</p>
         </div>
 
         {mode === 'prozent' && hypotheticalAmount > 0 && (
@@ -149,7 +163,7 @@ export function SondertilgungSimulator({
             {isOverLimit && loan && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
                 <p className="text-xs text-amber-800">
-                  Diese Sondertilgung liegt {euro(overLimitBy)} über dem für {new Date().getFullYear()} vereinbarten kostenlosen Kontingent
+                  Diese Sondertilgung liegt {euro(overLimitBy)} über dem für {new Date(paymentDate).getFullYear()} vereinbarten kostenlosen Kontingent
                   ({loan.special_payment_limit_percent}% p.a. der Darlehenssumme) – zusammen mit ggf. bereits erfassten Sondertilgungen desselben Jahres.
                   Die Bank kann für den übersteigenden Teil eine Vorfälligkeitsentschädigung verlangen.
                 </p>
@@ -167,7 +181,7 @@ export function SondertilgungSimulator({
               disabled={applying || (isOverLimit && !confirmOverLimit)}
               className="w-full bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
             >
-              {applying ? 'Wird erfasst...' : `Jetzt genau so erfassen (${euro(hypotheticalAmount)} heute, ${formatDate(iso(new Date()))})`}
+              {applying ? 'Wird erfasst...' : `Jetzt genau so erfassen (${euro(hypotheticalAmount)} am ${formatDate(paymentDate)})`}
             </button>
           </div>
         )}
