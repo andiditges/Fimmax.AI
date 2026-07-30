@@ -76,6 +76,15 @@ export default async function Dashboard() {
         <p className="text-gray-500 text-sm mt-1">Steuerjahr {currentYear}</p>
       </div>
 
+      {loanList.length > 0 && (
+        <Rentenuhr
+          initialDebt={portfolio.total_debt}
+          initialPaid={totalPrincipalPaid}
+          dailyPrincipalRate={dailyPrincipalRate}
+          asOf={rentenuhrAsOf}
+        />
+      )}
+
       {/* KPI-Karten */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -107,14 +116,6 @@ export default async function Dashboard() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-800">Finanz-Cockpit</h2>
                 <Link href="/finanzen" className="text-sm text-blue-600 hover:underline">Portfolio-Übersicht →</Link>
-              </div>
-              <div className="mb-4">
-                <Rentenuhr
-                  initialDebt={portfolio.total_debt}
-                  initialPaid={totalPrincipalPaid}
-                  dailyPrincipalRate={dailyPrincipalRate}
-                  asOf={rentenuhrAsOf}
-                />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Link href="/finanzen#kredite">

@@ -4,12 +4,12 @@ import { Clock } from 'lucide-react'
 import { euro } from '@/lib/format'
 import { useNow } from '@/lib/use-now'
 
-// 6 Nachkommastellen statt 2, damit bei den üblichen Tages-Tilgungsraten
+// 4 Nachkommastellen statt 2, damit bei den üblichen Tages-Tilgungsraten
 // (wenige € bis niedriger zweistelliger Betrag) jede Sekunde sichtbar etwas
 // weiterläuft, statt dass sich die Cent-Stelle erst nach vielen Sekunden
 // einmal ändert - der Sinn der Uhr ist gerade die spürbare Bewegung.
 function formatTicker(n: number): string {
-  return n.toLocaleString('de-DE', { minimumFractionDigits: 6, maximumFractionDigits: 6 })
+  return n.toLocaleString('de-DE', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
 }
 
 /**

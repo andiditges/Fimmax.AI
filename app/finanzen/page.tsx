@@ -332,7 +332,7 @@ export default async function Finanzen() {
               <summary className="flex items-center gap-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                 <LtvRing percent={(portfolio.total_debt / portfolio.total_property_value) * 100} />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Beleihungsauslauf</p>
+                  <p className="text-sm font-medium text-gray-900">Beleihungs-auslauf</p>
                   <p className="text-xs text-gray-400 mt-0.5">Restschuld / Wert</p>
                 </div>
                 {propertyFinance.length > 0 && (
