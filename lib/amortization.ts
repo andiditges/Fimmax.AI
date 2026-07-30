@@ -312,6 +312,12 @@ export function getDailyRateBreakdown(
   specialPayments: LoanSpecialPayment[],
   asOfDate: Date = new Date()
 ): DailyRateBreakdown | null {
+  // Noch nicht ausgezahlte Kredite (z.B. eine geplante Anschlussfinanzierung)
+  // haben noch keine laufende Periode - ohne diese Prüfung würde findIndex
+  // unten den allerersten Eintrag treffen (dessen Datum immer >= asOfDate
+  // liegt) und dessen Tilgungsrate fälschlich als "heute laufend" ausweisen,
+  // analog zur bestehenden Prüfung in getLoanStatus.
+  if (new Date(loan.disbursement_date) > asOfDate) return null
   const { entries } = generateAmortizationSchedule(loan, specialPayments)
   const regular = entries.filter(e => e.special_payment === 0)
   const currentIndex = regular.findIndex(e => !isAfter(asOfDate, new Date(e.date)) || iso(new Date(e.date)) === iso(asOfDate))

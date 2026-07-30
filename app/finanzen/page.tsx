@@ -136,6 +136,24 @@ export default async function Finanzen() {
     .map(({ loan, payoffDate }) => ({ loan, payoffDate }))
     .sort((a, b) => (a.payoffDate ?? '9999').localeCompare(b.payoffDate ?? '9999'))
 
+  // Eine Immobilie ist erst schuldenfrei, wenn ALLE ihre Kredite getilgt sind
+  // (nicht nur der erste) - sonst würde z.B. bei einer Anschlussfinanzierung
+  // (zwei Kredit-Datensätze für dieselbe Immobilie: der ursprüngliche Kredit
+  // und sein Nachfolger) schon das Ende des ursprünglichen Kredits fälschlich
+  // als "Immobilie schuldenfrei" gewertet, obwohl die Anschlussfinanzierung
+  // die Restschuld nahtlos fortführt.
+  const payoffByProperty = props
+    .map(p => {
+      const pSchedules = loanSchedules.filter(s => s.loan.property_id === p.id)
+      if (pSchedules.length === 0) return null
+      const payoffDate = pSchedules.every(s => s.payoffDate)
+        ? pSchedules.reduce((max, s) => (s.payoffDate! > max ? s.payoffDate! : max), pSchedules[0].payoffDate!)
+        : null
+      return { property: p, payoffDate }
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .sort((a, b) => (a.payoffDate ?? '9999').localeCompare(b.payoffDate ?? '9999'))
+
   // Zinsbindungs-Übersicht: über alle Kredite hinweg, statt nur einzeln je
   // Kredit-Detailseite sichtbar - damit Anschlussfinanzierungs-Planung nicht
   // im Klein-Klein der einzelnen Kredite untergeht.
@@ -222,7 +240,7 @@ export default async function Finanzen() {
     ? debtOverTime.find(d => new Date(d.date) >= now && d.remaining_balance <= totalOriginalPrincipal * 0.5)
     : undefined
 
-  const firstPayoff = payoffOverview[0]
+  const firstPropertyPayoff = payoffByProperty.find(p => p.payoffDate)
   const lastPayoffDate = payoffOverview.length > 0 && payoffOverview.every(p => p.payoffDate)
     ? payoffOverview[payoffOverview.length - 1].payoffDate
     : null
@@ -446,10 +464,10 @@ export default async function Finanzen() {
               </li>
             )}
             <li>Wären deine Immobilien fiktiv heute abbezahlt, bekämst du eine zu versteuernde Sofortrente von <strong className="text-blue-700">{euro(portfolio.monthly_rent_income)}</strong> / Monat</li>
-            {firstPayoff?.payoffDate && (
+            {firstPropertyPayoff?.payoffDate && (
               <li>
-                Deine erste Immobilie ({propertyById[firstPayoff.loan.property_id] ? propertyLabel(propertyById[firstPayoff.loan.property_id]) : firstPayoff.loan.name}) wird voraussichtlich am{' '}
-                <strong className="text-blue-700">{formatDate(firstPayoff.payoffDate)}</strong> schuldenfrei sein
+                Deine erste Immobilie ({propertyLabel(firstPropertyPayoff.property)}) wird voraussichtlich am{' '}
+                <strong className="text-blue-700">{formatDate(firstPropertyPayoff.payoffDate)}</strong> schuldenfrei sein
               </li>
             )}
             {lastPayoffDate && (
