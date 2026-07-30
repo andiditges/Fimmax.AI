@@ -67,6 +67,8 @@ export interface Property {
   condition_bathroom: PropertyConditionGrade | null
   condition_heating: PropertyConditionGrade | null
   renovation_note: string | null
+  expected_allocable_operating_cost_annual: number | null
+  expected_non_allocable_operating_cost_annual: number | null
   created_at: string
 }
 

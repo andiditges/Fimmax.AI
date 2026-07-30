@@ -53,6 +53,8 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
     comparable_rent_source: property?.comparable_rent_source ?? '',
     comparable_rent_as_of: property?.comparable_rent_as_of ?? '',
     renovation_note: property?.renovation_note ?? '',
+    expected_allocable_operating_cost_annual: property?.expected_allocable_operating_cost_annual != null ? String(property.expected_allocable_operating_cost_annual) : '',
+    expected_non_allocable_operating_cost_annual: property?.expected_non_allocable_operating_cost_annual != null ? String(property.expected_non_allocable_operating_cost_annual) : '',
   })
   const [conditions, setConditions] = useState<Record<string, PropertyConditionGrade | ''>>({
     condition_windows: property?.condition_windows ?? '',
@@ -243,6 +245,8 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
       comparable_rent_source: form.comparable_rent_source || null,
       comparable_rent_as_of: form.comparable_rent_as_of || null,
       renovation_note: form.renovation_note || null,
+      expected_allocable_operating_cost_annual: form.expected_allocable_operating_cost_annual ? parseFloat(form.expected_allocable_operating_cost_annual) : null,
+      expected_non_allocable_operating_cost_annual: form.expected_non_allocable_operating_cost_annual ? parseFloat(form.expected_non_allocable_operating_cost_annual) : null,
       condition_windows: conditions.condition_windows || null,
       condition_electrical: conditions.condition_electrical || null,
       condition_bathroom: conditions.condition_bathroom || null,
@@ -300,6 +304,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
   const OPTIONAL_FIELDS: (keyof typeof form)[] = [
     'unit', 'unit_label', 'current_value', 'movable_items', 'incidental_costs',
     'living_area_sqm', 'comparable_rent_min', 'comparable_rent_max', 'comparable_rent_source', 'comparable_rent_as_of', 'renovation_note',
+    'expected_allocable_operating_cost_annual', 'expected_non_allocable_operating_cost_annual',
   ]
 
   const field = (label: string, key: keyof typeof form, type = 'text', hint?: string) => (
@@ -541,6 +546,13 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
 
           {field('Aktueller Marktwert (€)', 'current_value', 'number',
             'Optional – dein geschätzter aktueller Marktwert, z.B. laut Gutachten oder Vergleichswerten. Fließt ins Finanz-Cockpit (Immobilienwert, Eigenkapital) ein. Leer lassen, um stattdessen den Kaufpreis zu verwenden.')}
+
+          <div className="grid grid-cols-2 gap-4">
+            {field('Erwartete umlagefähige Betriebskosten/Jahr (€)', 'expected_allocable_operating_cost_annual', 'number',
+              'Optional – grobe Schätzung, solange noch keine echte Jahresabrechnung im Nebenkostenassistenten erfasst ist. Umlagefähige Kosten sind i.d.R. cash-neutral (über die Nebenkostenvorauszahlung gedeckt) und fließen deshalb nicht ins Cashflow-Cockpit ein.')}
+            {field('Erwartete nicht-umlagefähige Betriebskosten/Jahr (€)', 'expected_non_allocable_operating_cost_annual', 'number',
+              'Optional – z.B. Verwaltung, Instandhaltung, Rücklage. Ersetzt, sobald gesetzt, die grobe Hochrechnung aus hochgeladenen Belegen im Finanz-Cockpit.')}
+          </div>
           </>)}
 
           {(!isWizard || step === 3) && (<>

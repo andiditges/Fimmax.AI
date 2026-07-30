@@ -1,9 +1,9 @@
 'use client'
 
-import { Clock } from 'lucide-react'
+import { Clock, CheckCircle2, Circle } from 'lucide-react'
 import { euro } from '@/lib/format'
 import { useNow } from '@/lib/use-now'
-import { netWorthTier } from '@/lib/net-worth'
+import { netWorthTier, NET_WORTH_TIERS } from '@/lib/net-worth'
 
 // 4 Nachkommastellen statt 2, damit bei den üblichen Tages-Tilgungsraten
 // (wenige € bis niedriger zweistelliger Betrag) jede Sekunde sichtbar etwas
@@ -42,9 +42,11 @@ export function Rentenuhr({
   const paidNow = Math.min(totalPrincipal, initialPaid + ratePerMs * elapsedMs)
 
   const { index, total, tier } = netWorthTier(netWorth ?? 0)
-  const progressPercent = tier.max != null
+  const nextTier = NET_WORTH_TIERS[index + 1] ?? null
+  const progressToNext = tier.max != null
     ? Math.min(100, Math.max(0, ((netWorth ?? 0) - tier.min) / (tier.max - tier.min) * 100))
     : 100
+  const remainingToNext = tier.max != null ? Math.max(0, tier.max - (netWorth ?? 0)) : 0
 
   return (
     <div className="rounded-2xl bg-gray-900 text-white p-5 shadow-sm overflow-hidden">
@@ -89,11 +91,56 @@ export function Rentenuhr({
             <span>Vermögens-Stufe {index + 1} / {total}</span>
             <span>{euro(netWorth)}</span>
           </div>
-          <p className="mt-1 text-sm font-semibold text-white">{tier.title}</p>
-          <p className="text-xs text-gray-400">{tier.subtitle}</p>
-          <div className="mt-2 h-1.5 rounded-full bg-gray-700 overflow-hidden">
-            <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${progressPercent}%` }} />
+
+          {/* Erreichte Stufen als durchgehend gefüllte Segmente, damit auf
+              einen Blick sichtbar ist, wie viel schon geschafft ist - eine
+              reine "Fortschritt in der aktuellen Stufe"-Anzeige sah bei
+              höheren Stufen fälschlich nach "gerade erst angefangen" aus. */}
+          <div className="mt-2 flex items-center gap-0.5">
+            {NET_WORTH_TIERS.map((t, i) => (
+              <div key={t.title} className={`flex-1 h-1.5 rounded-full ${i <= index ? 'bg-emerald-400' : 'bg-gray-700'}`} />
+            ))}
           </div>
+
+          <div className="mt-3 flex items-start gap-2">
+            <CheckCircle2 className="text-emerald-400 shrink-0 mt-0.5" size={20} />
+            <div>
+              <p className="text-sm font-semibold text-white">{tier.title}</p>
+              <p className="text-xs text-gray-400">{tier.subtitle}</p>
+            </div>
+          </div>
+
+          {nextTier && (
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-[11px] text-gray-400">
+                <span>Nächste Stufe: {nextTier.title}</span>
+                <span>noch {euro(remainingToNext)}</span>
+              </div>
+              <div className="mt-1 h-1.5 rounded-full bg-gray-700 overflow-hidden">
+                <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${progressToNext}%` }} />
+              </div>
+            </div>
+          )}
+
+          <details className="mt-3 group">
+            <summary className="text-[11px] text-gray-400 hover:text-gray-300 cursor-pointer list-none flex items-center gap-1 [&::-webkit-details-marker]:hidden">
+              Alle Stufen anzeigen
+              <span className="transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
+            </summary>
+            <ul className="mt-2 space-y-1.5">
+              {NET_WORTH_TIERS.map((t, i) => (
+                <li key={t.title} className={`flex items-center gap-2 text-xs ${i === index ? 'text-white font-semibold' : i < index ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {i <= index
+                    ? <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
+                    : <Circle size={14} className="text-gray-700 shrink-0" />}
+                  <span>{t.title}</span>
+                  <span className="text-gray-600 ml-auto shrink-0">
+                    {euro(t.min)}{t.max ? `–${euro(t.max)}` : '+'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </details>
         </div>
       )}
     </div>

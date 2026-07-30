@@ -665,8 +665,19 @@ export function aggregatePortfolioFinancials(
     return d > twelveMonthsAgo && d <= asOfDate
   })
   // Trailing-12-Monate statt Einzelmonat, da Kosten wie Versicherung/Grundsteuer
-  // unregelmäßig anfallen und ein Einzelmonat sonst irreführend wäre.
-  const monthlyOperatingCostRunrate = trailingReceipts.reduce((s, r) => s + r.amount, 0) / 12
+  // unregelmäßig anfallen und ein Einzelmonat sonst irreführend wäre. Je
+  // Immobilie: sobald expected_non_allocable_operating_cost_annual gesetzt
+  // ist (manuelle Schätzung oder aus einer echten Jahresabrechnung
+  // übernommen), ersetzt sie die Beleg-Hochrechnung für diese Immobilie -
+  // umlagefähige Kosten fließen bewusst nicht ein, da sie im Normalfall über
+  // die Nebenkostenvorauszahlung der Mieter gedeckt und damit cashflow-neutral sind.
+  const monthlyOperatingCostRunrate = properties.reduce((sum, p) => {
+    if (p.expected_non_allocable_operating_cost_annual != null) {
+      return sum + p.expected_non_allocable_operating_cost_annual / 12
+    }
+    const propertyReceipts = trailingReceipts.filter(r => r.property_id === p.id)
+    return sum + propertyReceipts.reduce((s, r) => s + r.amount, 0) / 12
+  }, 0)
 
   // Noch nicht ausgezahlte Kredite (Auszahlungsdatum in der Zukunft) zahlen
   // noch keine Rate - sonst würde z.B. eine geplante Anschlussfinanzierung
