@@ -14,6 +14,7 @@ export default function EditLoan() {
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [assets, setAssets] = useState<{ id: string; name: string | null; category: string; institution: string | null }[]>([])
+  const [otherLoans, setOtherLoans] = useState<{ id: string; name: string; lender: string | null }[]>([])
   const [form, setForm] = useState({
     name: '',
     lender: '',
@@ -31,6 +32,7 @@ export default function EditLoan() {
     bereitstellungszins_rate: '',
     bereitstellungsfreie_monate: '',
     funded_by_asset_id: '',
+    replaces_loan_id: '',
   })
 
   useEffect(() => {
@@ -56,8 +58,12 @@ export default function EditLoan() {
         bereitstellungszins_rate: data.bereitstellungszins_rate != null ? String(data.bereitstellungszins_rate) : '',
         bereitstellungsfreie_monate: data.bereitstellungsfreie_monate != null ? String(data.bereitstellungsfreie_monate) : '',
         funded_by_asset_id: data.funded_by_asset_id ?? '',
+        replaces_loan_id: data.replaces_loan_id ?? '',
       })
       setLoaded(true)
+      supabase.from('loans').select('id, name, lender').eq('property_id', data.property_id).neq('id', params.id).then(({ data: loans }) => {
+        setOtherLoans(loans ?? [])
+      })
     })
   }, [params.id, supabase])
 
@@ -112,6 +118,7 @@ export default function EditLoan() {
       bereitstellungszins_rate: form.bereitstellungszins_rate ? parseFloat(form.bereitstellungszins_rate) : null,
       bereitstellungsfreie_monate: form.bereitstellungsfreie_monate ? parseInt(form.bereitstellungsfreie_monate) : null,
       funded_by_asset_id: form.funded_by_asset_id || null,
+      replaces_loan_id: form.replaces_loan_id || null,
     }).eq('id', params.id)
 
     if (error) { alert('Fehler: ' + error.message); setLoading(false); return }
@@ -167,6 +174,23 @@ export default function EditLoan() {
                 className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
+
+          {otherLoans.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Löst ab (Anschlussfinanzierung von)</label>
+              <p className="text-xs text-gray-400 mb-1">
+                Optional – nur ausfüllen, wenn dieser Kredit die Restschuld eines bestehenden Kredits derselben Immobilie fortführt (z.B. nach Ende der Zinsbindung). Verhindert, dass beide Kreditsummen doppelt in Tilgungsquote und Restschuld gezählt werden.
+              </p>
+              <select value={form.replaces_loan_id}
+                onChange={e => setForm(f => ({ ...f, replaces_loan_id: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">– keiner –</option>
+                {otherLoans.map(l => (
+                  <option key={l.id} value={l.id}>{l.name}{l.lender ? ` · ${l.lender}` : ''}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Tilgungsfreie Zeit (Monate)</label>

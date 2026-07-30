@@ -302,6 +302,63 @@ export function getLoanStatus(
 }
 
 /**
+ * true, wenn dieser Kredit durch einen bereits ausgezahlten Nachfolgekredit
+ * (Anschlussfinanzierung, verknüpft über replaces_loan_id) zum angegebenen
+ * Datum bereits abgelöst ist. Der eigene Tilgungsplan eines Kredits weiss
+ * nichts von einer Ablösung und schreibt Zins/Tilgung unter unveränderten
+ * Konditionen einfach bis zum eigenen rechnerischen Nullpunkt fort - ohne
+ * diese Prüfung würde er nach der Ablösung weiter "aktive" Restschuld/Rate
+ * ausweisen, obwohl die tatsächliche Restschuld längst in den
+ * Nachfolgekredit übergegangen ist (der ab seiner Auszahlung separat zählt).
+ */
+export function isSupersededAt(loan: Loan, allLoans: Loan[], asOfDate: Date): boolean {
+  const successor = allLoans.find(l => l.replaces_loan_id === loan.id)
+  return !!successor && new Date(successor.disbursement_date) <= asOfDate
+}
+
+export interface LoanChainStatus {
+  root: Loan
+  active: Loan
+  financed: number
+  remaining: number
+  paid: number
+}
+
+/**
+ * Fasst durch Anschlussfinanzierungen (replaces_loan_id) verkettete Kredite
+ * zu ihrer wirtschaftlichen Realität zusammen, statt sie wie unabhängige
+ * Kredite zu behandeln: "financed" bleibt über die ganze Kette hinweg das
+ * ursprünglich vom Wurzelkredit geliehene Volumen, "remaining" ist die
+ * aktuelle Restschuld des gerade aktiven Kredits der Kette. So bleibt "paid"
+ * (financed - remaining) beim Wechsel auf eine Anschlussfinanzierung stetig,
+ * statt entweder zu verdoppeln (beide principal zählen mit) oder schlagartig
+ * einzubrechen (nur noch der neue, viel kleinere principal als Basis).
+ * Eigenständige Kredite ohne Anschlussfinanzierung sind der Trivialfall einer
+ * Kette der Länge 1. Noch nicht ausgezahlte Wurzelkredite (z.B. eine geplante
+ * Anschlussfinanzierung ohne eigenen Vorgänger) zählen bewusst nicht mit.
+ */
+export function aggregateLoanChains(
+  loans: Loan[],
+  specialPaymentsByLoan: Record<string, LoanSpecialPayment[]>,
+  asOfDate: Date = new Date()
+): LoanChainStatus[] {
+  const roots = loans.filter(l => l.replaces_loan_id == null)
+  return roots
+    .filter(root => new Date(root.disbursement_date) <= asOfDate)
+    .map(root => {
+      let active = root
+      for (;;) {
+        const successor = loans.find(l => l.replaces_loan_id === active.id)
+        if (successor && new Date(successor.disbursement_date) <= asOfDate) active = successor
+        else break
+      }
+      const remaining = getLoanStatus(active, specialPaymentsByLoan[active.id] ?? [], asOfDate).remaining_balance
+      const financed = root.principal
+      return { root, active, financed, remaining, paid: Math.max(0, financed - remaining) }
+    })
+}
+
+/**
  * Tages-Zins-/Tilgungssatz der laufenden Periode: die reguläre Periodenrate
  * (Zins + Tilgung) geteilt durch die Tage der Periode – bewusst simpel statt
  * unterjährig neu verzinst, analog zur bestehenden Monatsraten-Umrechnung in
@@ -388,10 +445,12 @@ export function totalDailyPrincipal(
   specialPaymentsByLoan: Record<string, LoanSpecialPayment[]>,
   asOfDate: Date = new Date()
 ): number {
-  return loans.reduce((s, l) => {
-    const breakdown = getDailyRateBreakdown(l, specialPaymentsByLoan[l.id] ?? [], asOfDate)
-    return s + (breakdown?.daily_principal ?? 0)
-  }, 0)
+  return loans
+    .filter(l => !isSupersededAt(l, loans, asOfDate))
+    .reduce((s, l) => {
+      const breakdown = getDailyRateBreakdown(l, specialPaymentsByLoan[l.id] ?? [], asOfDate)
+      return s + (breakdown?.daily_principal ?? 0)
+    }, 0)
 }
 
 /**
@@ -410,6 +469,7 @@ export function aggregateTodayCashflow(
   asOfDate: Date = new Date()
 ): TodayCashflowSnapshot {
   const breakdowns = loans
+    .filter(l => !isSupersededAt(l, loans, asOfDate))
     .map(l => getDailyRateBreakdown(l, specialPaymentsByLoan[l.id] ?? [], asOfDate))
     .filter((b): b is DailyRateBreakdown => b !== null)
 
@@ -467,6 +527,7 @@ export function aggregateDailyRateOverTime(
   let cursor = startDate
   while (!isAfter(cursor, endDate)) {
     const breakdowns = loans
+      .filter(l => !isSupersededAt(l, loans, cursor))
       .map(l => getDailyRateBreakdown(l, specialPaymentsByLoan[l.id] ?? [], cursor))
       .filter((b): b is DailyRateBreakdown => b !== null)
 
@@ -557,7 +618,9 @@ export function aggregateDebtOverTime(
   return dates.map(date => {
     const d = new Date(date)
     const total = schedules.reduce(
-      (sum, { loan, result }) => sum + balanceAtDate(result.entries, loan.principal, d, loan.disbursement_date),
+      (sum, { loan, result }) => isSupersededAt(loan, loans, d)
+        ? sum
+        : sum + balanceAtDate(result.entries, loan.principal, d, loan.disbursement_date),
       0
     )
     return { date, remaining_balance: total }
@@ -575,7 +638,12 @@ export function aggregatePortfolioFinancials(
   monthlyReserveFromRent: number = 0,
   asOfDate: Date = new Date()
 ): PortfolioFinancialSummary {
-  const loanStatuses = loans.map(l => getLoanStatus(l, specialPaymentsByLoan[l.id] ?? [], asOfDate))
+  // Durch eine ausgezahlte Anschlussfinanzierung abgelöste Kredite zählen ab
+  // da nicht mehr mit - ihr eigener Tilgungsplan wüsste sonst nichts von der
+  // Ablösung und würde fiktiv weiterlaufende Restschuld/Rate ausweisen, die
+  // in Wahrheit längst durch den Nachfolgekredit ersetzt ist.
+  const activeLoans = loans.filter(l => !isSupersededAt(l, loans, asOfDate))
+  const loanStatuses = activeLoans.map(l => getLoanStatus(l, specialPaymentsByLoan[l.id] ?? [], asOfDate))
 
   const totalDebt = loanStatuses.reduce((s, l) => s + l.remaining_balance, 0)
   const totalPropertyValue = properties.reduce((s, p) => s + propertyValue(p), 0)
@@ -603,7 +671,7 @@ export function aggregatePortfolioFinancials(
   // Noch nicht ausgezahlte Kredite (Auszahlungsdatum in der Zukunft) zahlen
   // noch keine Rate - sonst würde z.B. eine geplante Anschlussfinanzierung
   // schon Jahre vor Auszahlung die aktuelle Kreditrate/den Cashflow verzerren.
-  const monthlyDebtService = loans.reduce(
+  const monthlyDebtService = activeLoans.reduce(
     (s, l, i) => new Date(l.disbursement_date) > asOfDate
       ? s
       : s + loanStatuses[i].current_annuity_amount * (periodsPerYear(l.payment_frequency) / 12),

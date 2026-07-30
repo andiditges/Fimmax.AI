@@ -7,19 +7,21 @@ import { RemindersWidget } from '@/components/reminders/reminders-widget'
 import { PropertyList } from '@/components/properties/property-list'
 import { Rentenuhr } from '@/components/dashboard/rentenuhr'
 import { calcAnnualAfa } from '@/lib/afa'
-import { aggregatePortfolioFinancials, totalDailyPrincipal } from '@/lib/amortization'
+import { aggregatePortfolioFinancials, aggregateLoanChains, totalDailyPrincipal } from '@/lib/amortization'
 import { sumRentForYear } from '@/lib/rent-schedule'
-import { sumMonthlyReserveFromRent } from '@/lib/reserves'
+import { sumMonthlyReserveFromRent, sumReserveCurrentValue } from '@/lib/reserves'
+import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
+import { aggregateNetWorth } from '@/lib/net-worth'
 import { getLandlordNews } from '@/lib/news'
 import { euro } from '@/lib/format'
-import { Property, Receipt, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Reminder, PropertyReserve } from '@/lib/types'
+import { Property, Receipt, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Reminder, PropertyReserve, Asset, OperatingCost } from '@/lib/types'
 
 export default async function Dashboard() {
   await requireUser()
   const supabase = await createClient()
   const currentYear = new Date().getFullYear()
 
-  const [{ data: properties }, { data: receipts }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: reminders }, { data: reserves }, news] = await Promise.all([
+  const [{ data: properties }, { data: receipts }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: reminders }, { data: reserves }, { data: assetsData }, { data: operatingCostsData }, news] = await Promise.all([
     supabase.from('properties').select('*').order('created_at'),
     supabase.from('receipts').select('*'),
     supabase.from('loans').select('*'),
@@ -28,6 +30,8 @@ export default async function Dashboard() {
     supabase.from('rent_adjustments').select('*'),
     supabase.from('reminders').select('*').neq('status', 'erledigt'),
     supabase.from('property_reserves').select('*'),
+    supabase.from('assets').select('*'),
+    supabase.from('operating_costs').select('*'),
     getLandlordNews(),
   ])
 
@@ -39,6 +43,8 @@ export default async function Dashboard() {
   const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
   const reminderList = (reminders ?? []) as Reminder[]
   const reserveList = (reserves ?? []) as PropertyReserve[]
+  const assets = (assetsData ?? []) as Asset[]
+  const operatingCostList = (operatingCostsData ?? []) as OperatingCost[]
 
   const { data: specialPayments } = loanList.length
     ? await supabase.from('loan_special_payments').select('*').in('loan_id', loanList.map(l => l.id))
@@ -50,9 +56,13 @@ export default async function Dashboard() {
   }, {} as Record<string, LoanSpecialPayment[]>)
 
   const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs, sumMonthlyReserveFromRent(reserveList))
-  const totalPrincipalPaid = portfolio.loans.reduce((s, l) => s + l.cumulative_principal_paid, 0)
+  // Kettenbasiert statt portfolio.loans.reduce(cumulative_principal_paid), damit
+  // eine Anschlussfinanzierung die Rentenuhr nicht schlagartig zurückspringen lässt.
+  const totalPrincipalPaid = aggregateLoanChains(loanList, specialPaymentsByLoan).reduce((s, c) => s + c.paid, 0)
   const dailyPrincipalRate = totalDailyPrincipal(loanList, specialPaymentsByLoan)
   const rentenuhrAsOf = new Date().toISOString()
+  const totalReserves = sumReserveCurrentValue(reserveList) + sumInstandhaltungsruecklage(operatingCostList)
+  const netWorth = aggregateNetWorth(assets, portfolio.total_equity, totalReserves)
 
   const agreementsByTenant = agreementList.reduce((acc, a) => {
     if (a.tenant_id) (acc[a.tenant_id] ??= []).push(a)
@@ -82,6 +92,7 @@ export default async function Dashboard() {
           initialPaid={totalPrincipalPaid}
           dailyPrincipalRate={dailyPrincipalRate}
           asOf={rentenuhrAsOf}
+          netWorth={netWorth.net_worth}
         />
       )}
 

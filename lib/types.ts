@@ -315,6 +315,7 @@ export interface Loan {
   bereitstellungszins_rate: number | null
   bereitstellungsfreie_monate: number | null
   funded_by_asset_id: string | null
+  replaces_loan_id: string | null
   created_at: string
 }
 

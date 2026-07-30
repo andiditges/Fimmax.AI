@@ -13,7 +13,7 @@ import { ReceiptBrowser } from '@/components/receipts/receipt-browser'
 import { Ehegattenschaukel } from '@/components/properties/ehegattenschaukel'
 import { calcAnnualAfa, shouldRecommendNutzungsdauergutachten } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
-import { getLoanStatus, generateAmortizationSchedule, interestPaidInYear } from '@/lib/amortization'
+import { getLoanStatus, generateAmortizationSchedule, interestPaidInYear, aggregateLoanChains } from '@/lib/amortization'
 import { buildTaxExportRow } from '@/lib/tax-export'
 import { generateRentSchedule, currentRentAmount, currentAgreement } from '@/lib/rent-schedule'
 import { sumInstandhaltungsruecklage, isUtilityBillableTenant } from '@/lib/operating-costs'
@@ -78,16 +78,24 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
     ? await supabase.from('loan_special_payments').select('*').in('loan_id', propertyLoans.map(l => l.id))
     : { data: [] as LoanSpecialPayment[] }
 
+  const specialPaymentsByLoanId = propertyLoans.reduce((acc, l) => {
+    acc[l.id] = (allSpecialPayments ?? []).filter(sp => sp.loan_id === l.id)
+    return acc
+  }, {} as Record<string, LoanSpecialPayment[]>)
+
   const loanStatuses = propertyLoans.map(l => ({
     loan: l,
-    status: getLoanStatus(l, (allSpecialPayments ?? []).filter(sp => sp.loan_id === l.id)),
+    status: getLoanStatus(l, specialPaymentsByLoanId[l.id] ?? []),
   }))
-  // Noch nicht ausgezahlte Kredite (z.B. eine geplante Anschlussfinanzierung)
-  // zählen bei Tilgungsquote/LTV bewusst nicht mit - sonst würde ihr voller
-  // principal die Quote verfälschen, obwohl noch keine Schuld besteht.
-  const activeLoanStatuses = loanStatuses.filter(({ loan }) => new Date(loan.disbursement_date) <= new Date())
-  const totalLoanPrincipal = activeLoanStatuses.reduce((s, { loan }) => s + loan.principal, 0)
-  const totalLoanRemaining = activeLoanStatuses.reduce((s, { status }) => s + status.remaining_balance, 0)
+  // aggregateLoanChains statt roher principal-/remaining-Summen: sonst würde
+  // eine Anschlussfinanzierung (zwei Kredit-Datensätze für dieselbe Immobilie)
+  // nach ihrer Auszahlung doppelt gezählt, die Tilgungs-/LTV-Quote also
+  // dauerhaft verfälschen. Noch nicht ausgezahlte Wurzelkredite zählen dabei
+  // weiterhin nicht mit - sonst würde ihr voller principal die Quote
+  // verfälschen, obwohl noch keine Schuld besteht.
+  const loanChains = aggregateLoanChains(propertyLoans, specialPaymentsByLoanId)
+  const totalLoanPrincipal = loanChains.reduce((s, c) => s + c.financed, 0)
+  const totalLoanRemaining = loanChains.reduce((s, c) => s + c.remaining, 0)
   const totalTilgungPercent = totalLoanPrincipal > 0 ? ((totalLoanPrincipal - totalLoanRemaining) / totalLoanPrincipal) * 100 : 0
   const ltvPercent = propertyValue(p) > 0 ? (totalLoanRemaining / propertyValue(p)) * 100 : 0
 

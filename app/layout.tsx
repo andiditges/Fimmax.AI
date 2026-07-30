@@ -3,6 +3,7 @@ import { Geist } from 'next/font/google'
 import { createClient } from '@/lib/supabase/server'
 import { Nav } from '@/components/nav'
 import { Footer } from '@/components/footer'
+import { FeedbackButton } from '@/components/feedback-button'
 import './globals.css'
 
 const geist = Geist({ subsets: ['latin'] })
@@ -33,6 +34,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {children}
         </main>
         <Footer />
+        {user && <FeedbackButton />}
       </body>
     </html>
   )

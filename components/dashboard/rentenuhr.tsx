@@ -3,6 +3,7 @@
 import { Clock } from 'lucide-react'
 import { euro } from '@/lib/format'
 import { useNow } from '@/lib/use-now'
+import { netWorthTier } from '@/lib/net-worth'
 
 // 4 Nachkommastellen statt 2, damit bei den üblichen Tages-Tilgungsraten
 // (wenige € bis niedriger zweistelliger Betrag) jede Sekunde sichtbar etwas
@@ -24,11 +25,13 @@ export function Rentenuhr({
   initialPaid,
   dailyPrincipalRate,
   asOf,
+  netWorth,
 }: {
   initialDebt: number
   initialPaid: number
   dailyPrincipalRate: number
   asOf: string
+  netWorth?: number
 }) {
   const now = useNow(200)
   const elapsedMs = now ? now.getTime() - new Date(asOf).getTime() : 0
@@ -37,6 +40,11 @@ export function Rentenuhr({
   const totalPrincipal = initialDebt + initialPaid
   const debtNow = Math.max(0, initialDebt - ratePerMs * elapsedMs)
   const paidNow = Math.min(totalPrincipal, initialPaid + ratePerMs * elapsedMs)
+
+  const { index, total, tier } = netWorthTier(netWorth ?? 0)
+  const progressPercent = tier.max != null
+    ? Math.min(100, Math.max(0, ((netWorth ?? 0) - tier.min) / (tier.max - tier.min) * 100))
+    : 100
 
   return (
     <div className="rounded-2xl bg-gray-900 text-white p-5 shadow-sm overflow-hidden">
@@ -74,6 +82,20 @@ export function Rentenuhr({
       <p className="mt-4 text-[11px] text-gray-500">
         Läuft auf Basis der aktuell laufenden Tages-Tilgungsrate ({euro(dailyPrincipalRate)}/Tag) symbolisch in Echtzeit weiter – ersetzt keine exakte Abrechnung.
       </p>
+
+      {netWorth != null && (
+        <div className="mt-4 pt-4 border-t border-gray-700">
+          <div className="flex items-center justify-between text-[11px] text-gray-400 uppercase tracking-wide">
+            <span>Vermögens-Stufe {index + 1} / {total}</span>
+            <span>{euro(netWorth)}</span>
+          </div>
+          <p className="mt-1 text-sm font-semibold text-white">{tier.title}</p>
+          <p className="text-xs text-gray-400">{tier.subtitle}</p>
+          <div className="mt-2 h-1.5 rounded-full bg-gray-700 overflow-hidden">
+            <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${progressPercent}%` }} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -14,6 +14,7 @@ export default function NewLoan() {
   const [loading, setLoading] = useState(false)
   const [properties, setProperties] = useState<{ id: string; address: string; unit: string | null; unit_label: string | null; purchase_price: number; incidental_costs: number }[]>([])
   const [assets, setAssets] = useState<{ id: string; name: string | null; category: string; institution: string | null }[]>([])
+  const [loans, setLoans] = useState<{ id: string; property_id: string; name: string; lender: string | null }[]>([])
   const [form, setForm] = useState({
     property_id: searchParams.get('property') ?? '',
     name: '',
@@ -33,6 +34,7 @@ export default function NewLoan() {
     bereitstellungszins_rate: '',
     bereitstellungsfreie_monate: '',
     funded_by_asset_id: '',
+    replaces_loan_id: '',
   })
 
   const [rateMode, setRateMode] = useState<'eur' | 'percent'>('eur')
@@ -45,7 +47,12 @@ export default function NewLoan() {
     supabase.from('assets').select('id, name, category, institution').then(({ data }) => {
       setAssets(data ?? [])
     })
+    supabase.from('loans').select('id, property_id, name, lender').then(({ data }) => {
+      setLoans(data ?? [])
+    })
   })
+
+  const loansForProperty = loans.filter(l => l.property_id === form.property_id)
 
   const principal = parseFloat(form.principal)
   const rate = parseFloat(form.nominal_interest_rate)
@@ -105,6 +112,7 @@ export default function NewLoan() {
       bereitstellungszins_rate: form.bereitstellungszins_rate ? parseFloat(form.bereitstellungszins_rate) : null,
       bereitstellungsfreie_monate: form.bereitstellungsfreie_monate ? parseInt(form.bereitstellungsfreie_monate) : null,
       funded_by_asset_id: form.funded_by_asset_id || null,
+      replaces_loan_id: form.replaces_loan_id || null,
     })
     if (error) { alert('Fehler: ' + error.message); setLoading(false); return }
 
@@ -207,6 +215,23 @@ export default function NewLoan() {
                 className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
+
+          {loansForProperty.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Löst ab (Anschlussfinanzierung von)</label>
+              <p className="text-xs text-gray-400 mb-1">
+                Optional – nur ausfüllen, wenn dieser Kredit die Restschuld eines bestehenden Kredits derselben Immobilie fortführt (z.B. nach Ende der Zinsbindung). Verhindert, dass beide Kreditsummen doppelt in Tilgungsquote und Restschuld gezählt werden.
+              </p>
+              <select value={form.replaces_loan_id}
+                onChange={e => setForm(f => ({ ...f, replaces_loan_id: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">– keiner –</option>
+                {loansForProperty.map(l => (
+                  <option key={l.id} value={l.id}>{l.name}{l.lender ? ` · ${l.lender}` : ''}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Tilgungsfreie Zeit (Monate)</label>

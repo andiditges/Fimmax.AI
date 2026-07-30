@@ -8,7 +8,7 @@ import { CapexChart } from '@/components/charts/capex-chart'
 import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
 import { FreedomCountdown } from '@/components/finanzen/freedom-countdown'
-import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus, principalPaidInYear, getNextPeriodDailyRateBreakdown, getMonthlyPrincipalAt, iso } from '@/lib/amortization'
+import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, aggregateLoanChains, generateAmortizationSchedule, getLoanStatus, principalPaidInYear, getNextPeriodDailyRateBreakdown, getMonthlyPrincipalAt, iso } from '@/lib/amortization'
 import { totalEquityInvested, calcEquityBreakEven } from '@/lib/equity-breakeven'
 import { aggregateNetWorth, projectedAssetValue } from '@/lib/net-worth'
 import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
@@ -87,13 +87,14 @@ export default async function Finanzen() {
   // bzw. am höchsten beliehen sind, ohne jede Objektseite einzeln zu öffnen.
   const propertyFinance = props
     .map(p => {
-      // Noch nicht ausgezahlte Kredite (z.B. eine geplante Anschlussfinanzierung)
-      // zählen hier bewusst nicht mit - sonst würde ihr voller principal die
-      // Tilgungs-/LTV-Quote verfälschen, obwohl noch keine Schuld besteht.
-      const pLoans = loanList.filter(l => l.property_id === p.id && new Date(l.disbursement_date) <= new Date())
-      if (pLoans.length === 0) return null
-      const principal = pLoans.reduce((s, l) => s + l.principal, 0)
-      const remaining = pLoans.reduce((s, l) => s + getLoanStatus(l, specialPaymentsByLoan[l.id] ?? []).remaining_balance, 0)
+      // aggregateLoanChains statt roher principal-/remaining-Summen: sonst
+      // würde eine Anschlussfinanzierung (zwei Kredit-Datensätze für dieselbe
+      // Immobilie) nach ihrer Auszahlung doppelt gezählt, die Tilgungs-/LTV-
+      // Quote also dauerhaft verfälschen.
+      const chains = aggregateLoanChains(loanList.filter(l => l.property_id === p.id), specialPaymentsByLoan)
+      if (chains.length === 0) return null
+      const principal = chains.reduce((s, c) => s + c.financed, 0)
+      const remaining = chains.reduce((s, c) => s + c.remaining, 0)
       const value = propertyValue(p)
       return {
         property: p,
@@ -123,7 +124,11 @@ export default async function Finanzen() {
     }))
     .filter(c => c.items.length > 0)
 
-  const totalPrincipalPaid = portfolio.loans.reduce((s, l) => s + l.cumulative_principal_paid, 0)
+  // Kettenbasiert statt portfolio.loans.reduce(cumulative_principal_paid):
+  // sonst würde die Tilgungsquote im Moment einer Anschlussfinanzierung
+  // schlagartig einbrechen (der neue Kredit hat ja noch nichts abbezahlt),
+  // obwohl die reale Gesamttilgung seit dem urspruenglichen Kredit stetig ist.
+  const totalPrincipalPaid = aggregateLoanChains(loanList, specialPaymentsByLoan).reduce((s, c) => s + c.paid, 0)
   const totalSondertilgungenPaid = (specialPayments ?? [])
     .filter(sp => sp.payment_date <= iso(new Date()))
     .reduce((s, sp) => s + sp.amount, 0)
@@ -210,7 +215,7 @@ export default async function Finanzen() {
     return acc
   }, {} as Record<string, RentAdjustment[]>)
 
-  const equityInvested = totalEquityInvested(props, loanList)
+  const equityInvested = totalEquityInvested(props, loanList, specialPaymentsByLoan)
   const breakEven = calcEquityBreakEven(
     props,
     loanSchedules,
@@ -226,7 +231,10 @@ export default async function Finanzen() {
   // debtOverTime zurück (Restschuld je Datum über alle Kredite), statt pro
   // Meilenstein neu zu rechnen. Schreibt Status quo fort (keine weiteren
   // Sondertilgungen/Zinsänderungen/Anschlussfinanzierungen unterstellt).
-  const totalOriginalPrincipal = loanList.reduce((s, l) => s + l.principal, 0)
+  // Nur Wurzelkredite (keine Anschlussfinanzierungen) zählen als "ursprünglich
+  // finanziert" - sonst würde das rollierte Restschuld-Volumen einer
+  // Anschlussfinanzierung nochmal obendrauf gezählt.
+  const totalOriginalPrincipal = loanList.filter(l => l.replaces_loan_id == null).reduce((s, l) => s + l.principal, 0)
   const totalDebtAt = (date: Date): number => {
     const entry = debtOverTime.find(d => new Date(d.date) >= date)
     return entry ? entry.remaining_balance : 0

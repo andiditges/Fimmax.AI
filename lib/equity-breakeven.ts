@@ -1,6 +1,6 @@
 import { addMonths, isAfter } from 'date-fns'
-import type { Property, Loan, Tenant, RentalAgreement, RentAdjustment, AmortizationEntry } from './types'
-import { iso } from './amortization'
+import type { Property, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, AmortizationEntry } from './types'
+import { iso, aggregateLoanChains } from './amortization'
 import { sumRentForMonth } from './rent-schedule'
 
 /**
@@ -9,12 +9,18 @@ import { sumRentForMonth } from './rent-schedule'
  * dieses Objekt bereits abdecken. Bei Vollfinanzierung (Kredit deckt auch noch
  * Renovierung o.ä.) wird pro Objekt bei 0 gekappt statt negativ zu werden -
  * das wäre kein "eingesetztes Eigenkapital", sondern zusätzlich finanziertes Geld.
+ * Nutzt aggregateLoanChains statt der rohen Kredit-principals zu summieren,
+ * damit eine Anschlussfinanzierung (zwei Kredit-Datensätze für dieselbe
+ * Immobilie) nicht als zusätzlich finanziertes Geld doppelt gezählt wird.
  */
-export function totalEquityInvested(properties: Property[], loans: Loan[]): number {
+export function totalEquityInvested(
+  properties: Property[],
+  loans: Loan[],
+  specialPaymentsByLoan: Record<string, LoanSpecialPayment[]> = {}
+): number {
   return properties.reduce((sum, p) => {
-    const loanPrincipal = loans
-      .filter(l => l.property_id === p.id)
-      .reduce((s, l) => s + l.principal, 0)
+    const loanPrincipal = aggregateLoanChains(loans.filter(l => l.property_id === p.id), specialPaymentsByLoan)
+      .reduce((s, c) => s + c.financed, 0)
     const acquisitionCost = p.purchase_price + p.incidental_costs + (p.grunderwerbsteuer ?? 0)
     return sum + Math.max(0, acquisitionCost - loanPrincipal)
   }, 0)
