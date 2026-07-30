@@ -372,6 +372,23 @@ export function getMonthlyPrincipalAt(
 }
 
 /**
+ * Summe der aktuell laufenden Tages-Tilgungsrate über alle Kredite - Basis
+ * für Echtzeit-Hochrechnungen (z.B. die Dashboard-"Rentenuhr"), ohne dafür
+ * die übrigen Cashflow-Felder von aggregateTodayCashflow mitschleppen zu
+ * müssen.
+ */
+export function totalDailyPrincipal(
+  loans: Loan[],
+  specialPaymentsByLoan: Record<string, LoanSpecialPayment[]>,
+  asOfDate: Date = new Date()
+): number {
+  return loans.reduce((s, l) => {
+    const breakdown = getDailyRateBreakdown(l, specialPaymentsByLoan[l.id] ?? [], asOfDate)
+    return s + (breakdown?.daily_principal ?? 0)
+  }, 0)
+}
+
+/**
  * "Stand heute"-Karte fürs Finanz-Cockpit: rechnet die Tagessätze aller
  * Kredite sowie Miete/Betriebskosten-Laufrate auf die bereits vergangenen
  * Tage des laufenden Kalendermonats hoch. Bewusst kalendermonatsbasiert

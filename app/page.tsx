@@ -5,8 +5,9 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { NewsFeed } from '@/components/news-feed'
 import { RemindersWidget } from '@/components/reminders/reminders-widget'
 import { PropertyList } from '@/components/properties/property-list'
+import { Rentenuhr } from '@/components/dashboard/rentenuhr'
 import { calcAnnualAfa } from '@/lib/afa'
-import { aggregatePortfolioFinancials } from '@/lib/amortization'
+import { aggregatePortfolioFinancials, totalDailyPrincipal } from '@/lib/amortization'
 import { sumRentForYear } from '@/lib/rent-schedule'
 import { sumMonthlyReserveFromRent } from '@/lib/reserves'
 import { getLandlordNews } from '@/lib/news'
@@ -49,6 +50,9 @@ export default async function Dashboard() {
   }, {} as Record<string, LoanSpecialPayment[]>)
 
   const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs, sumMonthlyReserveFromRent(reserveList))
+  const totalPrincipalPaid = portfolio.loans.reduce((s, l) => s + l.cumulative_principal_paid, 0)
+  const dailyPrincipalRate = totalDailyPrincipal(loanList, specialPaymentsByLoan)
+  const rentenuhrAsOf = new Date().toISOString()
 
   const agreementsByTenant = agreementList.reduce((acc, a) => {
     if (a.tenant_id) (acc[a.tenant_id] ??= []).push(a)
@@ -104,10 +108,18 @@ export default async function Dashboard() {
                 <h2 className="text-lg font-semibold text-gray-800">Finanz-Cockpit</h2>
                 <Link href="/finanzen" className="text-sm text-blue-600 hover:underline">Portfolio-Übersicht →</Link>
               </div>
+              <div className="mb-4">
+                <Rentenuhr
+                  initialDebt={portfolio.total_debt}
+                  initialPaid={totalPrincipalPaid}
+                  dailyPrincipalRate={dailyPrincipalRate}
+                  asOf={rentenuhrAsOf}
+                />
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Link href="/finanzen#kredite">
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardTitle className="min-h-10">Restschulden (aktuell)</CardTitle>
+                    <CardTitle className="min-h-10">Verbindlichkeiten (aktuell)</CardTitle>
                     <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(portfolio.total_debt)}</p>
                   </Card>
                 </Link>

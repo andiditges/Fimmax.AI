@@ -7,6 +7,7 @@ import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { CapexChart } from '@/components/charts/capex-chart'
 import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
+import { FreedomCountdown } from '@/components/finanzen/freedom-countdown'
 import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, generateAmortizationSchedule, getLoanStatus, principalPaidInYear, getNextPeriodDailyRateBreakdown, getMonthlyPrincipalAt, iso } from '@/lib/amortization'
 import { totalEquityInvested, calcEquityBreakEven } from '@/lib/equity-breakeven'
 import { aggregateNetWorth, projectedAssetValue } from '@/lib/net-worth'
@@ -280,6 +281,8 @@ export default async function Finanzen() {
         <p className="text-gray-500 text-sm mt-1">Portfolio-Übersicht über alle Immobilien und Kredite</p>
       </div>
 
+      {lastPayoffDate && <FreedomCountdown targetDate={lastPayoffDate} />}
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-blue-50 border-blue-100 md:col-span-2">
           <CardTitle>Nettovermögen</CardTitle>
@@ -369,7 +372,7 @@ export default async function Finanzen() {
           <p className="text-lg md:text-2xl font-bold text-gray-900 break-words">{euro(portfolio.total_property_value)}</p>
         </Card>
         <Card>
-          <CardTitle className="min-h-10">Restschulden (aktuell)</CardTitle>
+          <CardTitle className="min-h-10">Verbindlichkeiten (aktuell)</CardTitle>
           <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(portfolio.total_debt)}</p>
         </Card>
         <Card>
@@ -424,7 +427,7 @@ export default async function Finanzen() {
             )}
           </ul>
           <p className="text-xs text-gray-400 mt-2">
-            Jahreswerte zeigen nur die planmäßige Tilgung (ohne Sondertilgungen), damit die Zahlen die tatsächliche, stetig steigende Tilgungskurve abbilden. "Gesamttilgung" oben enthält Sondertilgungen weiterhin, da dort die reale Restschuld-Reduzierung zählt.
+            Jahreswerte zeigen nur die planmäßige Tilgung (ohne Sondertilgungen), damit die Zahlen die tatsächliche, stetig steigende Tilgungskurve abbilden. "Gesamttilgung" oben enthält Sondertilgungen weiterhin, da dort die reale Verbindlichkeiten-Reduzierung zählt.
           </p>
         </Card>
       )}
@@ -522,7 +525,7 @@ export default async function Finanzen() {
       )}
 
       <Card>
-        <CardTitle>Gesamtschulden-Verlauf (alle Kredite)</CardTitle>
+        <CardTitle>Verbindlichkeiten-Verlauf (alle Kredite)</CardTitle>
         <DebtOverTimeChart data={debtOverTime} />
       </Card>
 
