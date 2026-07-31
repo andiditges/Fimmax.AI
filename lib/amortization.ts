@@ -364,24 +364,28 @@ export function aggregateLoanChains(
  * unterjährig neu verzinst, analog zur bestehenden Monatsraten-Umrechnung in
  * aggregatePortfolioFinancials.
  */
-export function getDailyRateBreakdown(
-  loan: Loan,
-  specialPayments: LoanSpecialPayment[],
-  asOfDate: Date = new Date()
+// Kern von getDailyRateBreakdown, arbeitet auf einem bereits generierten
+// Tilgungsplan statt ihn selbst zu erzeugen - so kann ein Aufrufer, der
+// denselben Kredit für mehrere Stichtage abfragt (z.B. aggregateDailyRateOverTime),
+// den teuren generateAmortizationSchedule-Aufruf einmal pro Kredit statt
+// einmal pro Stichtag machen.
+function breakdownFromEntries(
+  entries: AmortizationEntry[],
+  disbursementDate: string,
+  asOfDate: Date
 ): DailyRateBreakdown | null {
   // Noch nicht ausgezahlte Kredite (z.B. eine geplante Anschlussfinanzierung)
   // haben noch keine laufende Periode - ohne diese Prüfung würde findIndex
   // unten den allerersten Eintrag treffen (dessen Datum immer >= asOfDate
   // liegt) und dessen Tilgungsrate fälschlich als "heute laufend" ausweisen,
   // analog zur bestehenden Prüfung in getLoanStatus.
-  if (new Date(loan.disbursement_date) > asOfDate) return null
-  const { entries } = generateAmortizationSchedule(loan, specialPayments)
+  if (new Date(disbursementDate) > asOfDate) return null
   const regular = entries.filter(e => e.special_payment === 0)
   const currentIndex = regular.findIndex(e => !isAfter(asOfDate, new Date(e.date)) || iso(new Date(e.date)) === iso(asOfDate))
   if (currentIndex === -1) return null // Kredit bereits getilgt oder außerhalb des Horizonts
 
   const current = regular[currentIndex]
-  const periodStart = currentIndex > 0 ? regular[currentIndex - 1].date : loan.disbursement_date
+  const periodStart = currentIndex > 0 ? regular[currentIndex - 1].date : disbursementDate
   const days = current.days_in_period
 
   return {
@@ -393,6 +397,16 @@ export function getDailyRateBreakdown(
     daily_principal: days > 0 ? current.scheduled_principal / days : 0,
     daily_total: days > 0 ? current.total_payment / days : 0,
   }
+}
+
+export function getDailyRateBreakdown(
+  loan: Loan,
+  specialPayments: LoanSpecialPayment[],
+  asOfDate: Date = new Date()
+): DailyRateBreakdown | null {
+  if (new Date(loan.disbursement_date) > asOfDate) return null
+  const { entries } = generateAmortizationSchedule(loan, specialPayments)
+  return breakdownFromEntries(entries, loan.disbursement_date, asOfDate)
 }
 
 /**
@@ -523,12 +537,24 @@ export function aggregateDailyRateOverTime(
   const startDate = new Date(new Date(earliestDisbursement).getFullYear(), new Date(earliestDisbursement).getMonth(), 1)
   const endDate = addMonths(new Date(), monthsAhead)
 
+  // Tilgungsplan je Kredit nur einmal berechnen statt bei jedem der
+  // monatlichen Stichtage neu - vorher wurde hier pro Monat × Kredit ein
+  // kompletter 40-Jahres-Tilgungsplan neu generiert (über getDailyRateBreakdown),
+  // was bei mehreren Jahren Kredit-Historie und mehreren Krediten (v.a. nach
+  // Anschlussfinanzierungs-Ketten mit zusätzlichen Kredit-Datensätzen) zu
+  // hunderten redundanten Neuberechnungen führte und auf Vercel das
+  // Funktions-Zeitlimit sprengen konnte (lokal ohne Zeitlimit unauffällig).
+  const schedules = loans.map(l => ({
+    loan: l,
+    entries: generateAmortizationSchedule(l, specialPaymentsByLoan[l.id] ?? []).entries,
+  }))
+
   const points: DailyRatePoint[] = []
   let cursor = startDate
   while (!isAfter(cursor, endDate)) {
-    const breakdowns = loans
-      .filter(l => !isSupersededAt(l, loans, cursor))
-      .map(l => getDailyRateBreakdown(l, specialPaymentsByLoan[l.id] ?? [], cursor))
+    const breakdowns = schedules
+      .filter(({ loan }) => !isSupersededAt(loan, loans, cursor))
+      .map(({ loan, entries }) => breakdownFromEntries(entries, loan.disbursement_date, cursor))
       .filter((b): b is DailyRateBreakdown => b !== null)
 
     points.push({
