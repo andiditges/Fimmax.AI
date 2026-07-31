@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/supabase/get-user'
 import { Card, CardTitle } from '@/components/ui/card'
@@ -178,9 +177,7 @@ export default async function Dashboard() {
         {/* Seitenspalte */}
         <div className="lg:col-span-1">
           <div className="lg:sticky lg:top-20">
-            <Suspense fallback={<Card><CardTitle>Markt & Immobilien-Nachrichten</CardTitle><p className="text-sm text-gray-400 mt-2">Lädt...</p></Card>}>
-              <NewsFeedAsync />
-            </Suspense>
+            <NewsFeedAsync />
           </div>
         </div>
       </div>
