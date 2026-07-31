@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Clock, CheckCircle2, Circle } from 'lucide-react'
 import { euro } from '@/lib/format'
 import { useNow } from '@/lib/use-now'
@@ -48,6 +49,14 @@ export function Rentenuhr({
     : 100
   const remainingToNext = tier.max != null ? Math.max(0, tier.max - (netWorth ?? 0)) : 0
 
+  // Welche Stufe gerade im Detail angezeigt wird - per Klick auf eines der
+  // 11 Segmente umschaltbar, damit man auch schon erreichte oder noch weit
+  // entfernte Stufen ansehen kann, nicht nur die aktuelle.
+  const [selectedIndex, setSelectedIndex] = useState(index)
+  const selectedTier = NET_WORTH_TIERS[selectedIndex]
+  const selectedAchieved = selectedIndex <= index
+  const selectedRemaining = Math.max(0, selectedTier.min - (netWorth ?? 0))
+
   return (
     <div className="rounded-2xl bg-gray-900 text-white p-5 shadow-sm overflow-hidden">
       <div className="flex items-center gap-2">
@@ -95,18 +104,39 @@ export function Rentenuhr({
           {/* Erreichte Stufen als durchgehend gefüllte Segmente, damit auf
               einen Blick sichtbar ist, wie viel schon geschafft ist - eine
               reine "Fortschritt in der aktuellen Stufe"-Anzeige sah bei
-              höheren Stufen fälschlich nach "gerade erst angefangen" aus. */}
+              höheren Stufen fälschlich nach "gerade erst angefangen" aus.
+              Jedes Segment ist anklickbar, um die Details dieser Stufe
+              (geschafft oder noch offen) im Panel darunter zu sehen. */}
           <div className="mt-2 flex items-center gap-0.5">
             {NET_WORTH_TIERS.map((t, i) => (
-              <div key={t.title} className={`flex-1 h-1.5 rounded-full ${i <= index ? 'bg-emerald-400' : 'bg-gray-700'}`} />
+              <button
+                key={t.title}
+                type="button"
+                onClick={() => setSelectedIndex(i)}
+                aria-label={`${t.title} (${euro(t.min)}${t.max ? ` – ${euro(t.max)}` : '+'})`}
+                aria-pressed={i === selectedIndex}
+                className={`flex-1 h-2.5 rounded-full transition-colors cursor-pointer hover:opacity-80 ${i <= index ? 'bg-emerald-400' : 'bg-gray-700'} ${i === selectedIndex ? 'ring-2 ring-white/70' : ''}`}
+              />
             ))}
           </div>
 
           <div className="mt-3 flex items-start gap-2">
-            <CheckCircle2 className="text-emerald-400 shrink-0 mt-0.5" size={20} />
+            {selectedAchieved
+              ? <CheckCircle2 className="text-emerald-400 shrink-0 mt-0.5" size={20} />
+              : <Circle className="text-gray-600 shrink-0 mt-0.5" size={20} />}
             <div>
-              <p className="text-sm font-semibold text-white">{tier.title}</p>
-              <p className="text-xs text-gray-400">{tier.subtitle}</p>
+              <p className="text-sm font-semibold text-white">{selectedTier.title}</p>
+              <p className="text-xs text-gray-400">{selectedTier.subtitle}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {euro(selectedTier.min)}{selectedTier.max ? ` – ${euro(selectedTier.max)}` : '+'}
+              </p>
+              {selectedAchieved ? (
+                <p className="text-xs text-emerald-400 mt-1">
+                  Geschafft{selectedIndex === index ? ' – deine aktuelle Stufe' : ''}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-400 mt-1">Noch {euro(selectedRemaining)} bis zu dieser Stufe</p>
+              )}
             </div>
           </div>
 
@@ -121,26 +151,6 @@ export function Rentenuhr({
               </div>
             </div>
           )}
-
-          <details className="mt-3 group">
-            <summary className="text-[11px] text-gray-400 hover:text-gray-300 cursor-pointer list-none flex items-center gap-1 [&::-webkit-details-marker]:hidden">
-              Alle Stufen anzeigen
-              <span className="transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
-            </summary>
-            <ul className="mt-2 space-y-1.5">
-              {NET_WORTH_TIERS.map((t, i) => (
-                <li key={t.title} className={`flex items-center gap-2 text-xs ${i === index ? 'text-white font-semibold' : i < index ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {i <= index
-                    ? <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
-                    : <Circle size={14} className="text-gray-700 shrink-0" />}
-                  <span>{t.title}</span>
-                  <span className="text-gray-600 ml-auto shrink-0">
-                    {euro(t.min)}{t.max ? `–${euro(t.max)}` : '+'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </details>
         </div>
       )}
     </div>

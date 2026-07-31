@@ -1,8 +1,9 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/supabase/get-user'
 import { Card, CardTitle } from '@/components/ui/card'
-import { NewsFeed } from '@/components/news-feed'
+import { NewsFeedAsync } from '@/components/news-feed-async'
 import { RemindersWidget } from '@/components/reminders/reminders-widget'
 import { PropertyList } from '@/components/properties/property-list'
 import { Rentenuhr } from '@/components/dashboard/rentenuhr'
@@ -12,7 +13,6 @@ import { sumRentForYear } from '@/lib/rent-schedule'
 import { sumMonthlyReserveFromRent, sumReserveCurrentValue } from '@/lib/reserves'
 import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
 import { aggregateNetWorth } from '@/lib/net-worth'
-import { getLandlordNews } from '@/lib/news'
 import { euro } from '@/lib/format'
 import { Property, Receipt, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Reminder, PropertyReserve, Asset, OperatingCost } from '@/lib/types'
 
@@ -21,7 +21,7 @@ export default async function Dashboard() {
   const supabase = await createClient()
   const currentYear = new Date().getFullYear()
 
-  const [{ data: properties }, { data: receipts }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: reminders }, { data: reserves }, { data: assetsData }, { data: operatingCostsData }, news] = await Promise.all([
+  const [{ data: properties }, { data: receipts }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: reminders }, { data: reserves }, { data: assetsData }, { data: operatingCostsData }] = await Promise.all([
     supabase.from('properties').select('*').order('created_at'),
     supabase.from('receipts').select('*'),
     supabase.from('loans').select('*'),
@@ -32,7 +32,6 @@ export default async function Dashboard() {
     supabase.from('property_reserves').select('*'),
     supabase.from('assets').select('*'),
     supabase.from('operating_costs').select('*'),
-    getLandlordNews(),
   ])
 
   const props = (properties ?? []) as Property[]
@@ -179,7 +178,9 @@ export default async function Dashboard() {
         {/* Seitenspalte */}
         <div className="lg:col-span-1">
           <div className="lg:sticky lg:top-20">
-            <NewsFeed items={news} />
+            <Suspense fallback={<Card><CardTitle>Markt & Immobilien-Nachrichten</CardTitle><p className="text-sm text-gray-400 mt-2">Lädt...</p></Card>}>
+              <NewsFeedAsync />
+            </Suspense>
           </div>
         </div>
       </div>
