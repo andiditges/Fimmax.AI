@@ -8,7 +8,7 @@ import { CapexChart } from '@/components/charts/capex-chart'
 import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
 import { FreedomCountdown } from '@/components/finanzen/freedom-countdown'
-import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, aggregateLoanChains, generateAmortizationSchedule, getLoanStatus, principalPaidInYear, getNextPeriodDailyRateBreakdown, getMonthlyPrincipalAt, iso } from '@/lib/amortization'
+import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, aggregateLoanChains, generateAmortizationSchedule, getLoanStatus, principalPaidInYear, getMonthlyPrincipalAt, iso } from '@/lib/amortization'
 import { totalEquityInvested, calcEquityBreakEven } from '@/lib/equity-breakeven'
 import { aggregateNetWorth, projectedAssetValue } from '@/lib/net-worth'
 import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
@@ -194,12 +194,6 @@ export default async function Finanzen() {
     : 0
 
   const now = new Date()
-  const dailyPrincipalNextMonth = loanList.reduce((s, l) => {
-    const breakdown = getNextPeriodDailyRateBreakdown(l, specialPaymentsByLoan[l.id] ?? [], now)
-    return s + (breakdown?.daily_principal ?? 0)
-  }, 0)
-  const currentMonthName = now.toLocaleDateString('de-DE', { month: 'long' })
-  const nextMonthName = new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleDateString('de-DE', { month: 'long' })
 
   const in12MonthsDate = new Date(now.getFullYear() + 1, now.getMonth(), 15)
   const monthlyPrincipalNow = loanList.reduce((s, l) => s + getMonthlyPrincipalAt(l, specialPaymentsByLoan[l.id] ?? [], now), 0)
@@ -429,31 +423,18 @@ export default async function Finanzen() {
         <Card className="bg-green-50 border-green-100">
           <CardTitle>Tilgung im Überblick</CardTitle>
           <ul className="mt-2 space-y-1.5 text-sm text-gray-700 list-disc list-inside">
-            <li>Deine Mieter haben dir {thisYear - 1} bereits <strong className="text-green-700">{euro(principalLastYear)}</strong> getilgt</li>
             <li>
-              Deine Mieter tilgen dir im {currentMonthName} täglich <strong className="text-green-700">{euro(todayCashflow.daily_principal_total)}</strong>
-              , im {nextMonthName} sind es <strong className="text-green-700">{euro(dailyPrincipalNextMonth)}</strong>
+              Bisher getilgt: <strong className="text-green-700">{euro(totalPrincipalPaid)}</strong>
+              {totalSondertilgungenPaid > 0 && <> (davon {euro(totalSondertilgungenPaid)} Sondertilgungen)</>}
             </li>
-            <li>
-              Deine monatliche Tilgungssumme über alle Kredite liegt aktuell bei <strong className="text-green-700">{euro(monthlyPrincipalNow)}</strong> pro Monat
-              {' '}und wird bei gleichen Voraussetzungen (keine weiteren Sondertilgungen, Zinsänderungen o.ä.) bis {in12MonthsLabel} auf <strong className="text-green-700">{euro(monthlyPrincipalIn12Months)}</strong> pro Monat steigen
-            </li>
-            <li>
-              Deine Gesamttilgung über alle Kredite steht jetzt bei <strong className="text-green-700">{euro(totalPrincipalPaid)}</strong>
-              {totalSondertilgungenPaid > 0 && <> (davon <strong className="text-green-700">{euro(totalSondertilgungenPaid)}</strong> Sondertilgungen)</>}
-            </li>
-            <li>Deine Mieter werden dir {thisYear} insgesamt <strong className="text-green-700">{euro(principalThisYear)}</strong> tilgen</li>
-            <li>{thisYear + 1} werden es voraussichtlich <strong className="text-green-700">{euro(principalNextYear)}</strong> sein (angenommen keine Mietausfälle, Kündigungen oder Mieterhöhungen)</li>
+            <li>Monatlich aktuell: <strong className="text-green-700">{euro(monthlyPrincipalNow)}</strong> → in 12 Monaten <strong className="text-green-700">{euro(monthlyPrincipalIn12Months)}</strong></li>
+            <li>{thisYear - 1}: <strong className="text-green-700">{euro(principalLastYear)}</strong> · {thisYear}: <strong className="text-green-700">{euro(principalThisYear)}</strong> · {thisYear + 1}: <strong className="text-green-700">{euro(principalNextYear)}</strong></li>
             {indexRentIncreasePotential > 0 && (
-              <li>
-                Falls du im Januar {thisYear + 1} bei allen dann Indexmiete-erhöhungsberechtigten Mietverhältnissen erhöhst, kämen rechnerisch zusätzlich bis zu{' '}
-                <strong className="text-green-700">{euro(indexRentIncreasePotential)}</strong> Mehreinnahme für {thisYear + 1} zusammen –
-                z.B. geeignet für eine zusätzliche Sondertilgung Ende {thisYear + 1} (auf Basis des zuletzt erfassten VPI-Werts, ohne Gewähr)
-              </li>
+              <li>Indexmieten-Erhöhung Jan. {thisYear + 1}: bis zu <strong className="text-green-700">{euro(indexRentIncreasePotential)}</strong> Mehreinnahme</li>
             )}
           </ul>
           <p className="text-xs text-gray-400 mt-2">
-            Jahreswerte zeigen nur die planmäßige Tilgung (ohne Sondertilgungen), damit die Zahlen die tatsächliche, stetig steigende Tilgungskurve abbilden. "Gesamttilgung" oben enthält Sondertilgungen weiterhin, da dort die reale Verbindlichkeiten-Reduzierung zählt.
+            Jahreswerte ohne Sondertilgungen (planmäßige Tilgungskurve). "Bisher getilgt" enthält Sondertilgungen weiterhin.
           </p>
         </Card>
       )}

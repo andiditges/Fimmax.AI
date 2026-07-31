@@ -18,7 +18,11 @@ function decodeEntities(s: string): string {
 
 export async function getLandlordNews(): Promise<NewsItem[]> {
   try {
-    const res = await fetch(FEED_URL, { next: { revalidate: 3600 } })
+    // Explizites Timeout, da ein hängender externer Feed sonst das gesamte
+    // Dashboard-Rendering blockieren wuerde (Server-Component-Fetch ohne
+    // eigenes Timeout haengt, bis Vercel die Funktion hart abbricht - die
+    // Seite laedt dann ueberhaupt nicht, statt nur ohne News anzuzeigen).
+    const res = await fetch(FEED_URL, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(5000) })
     if (!res.ok) return []
     const xml = await res.text()
 

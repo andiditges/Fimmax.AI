@@ -185,6 +185,7 @@ export interface ThresholdStatus {
   threshold_15: number
   percentage: number
   within_3_years: boolean
+  cutoff_date: string
   alert_level: 'safe' | 'warning' | 'danger' | 'exceeded'
 }
 

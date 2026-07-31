@@ -27,5 +27,12 @@ export function calc15Threshold(property: Property, receipts: Receipt[]): Thresh
   else if (percentage >= 87) alertLevel = 'danger'
   else if (percentage >= 67) alertLevel = 'warning'
 
-  return { renovation_total: renovationTotal, threshold_15: threshold15, percentage, within_3_years: within3Years, alert_level: alertLevel }
+  return {
+    renovation_total: renovationTotal,
+    threshold_15: threshold15,
+    percentage,
+    within_3_years: within3Years,
+    cutoff_date: cutoffDate.toISOString().slice(0, 10),
+    alert_level: alertLevel,
+  }
 }

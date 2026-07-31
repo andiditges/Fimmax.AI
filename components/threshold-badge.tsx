@@ -1,6 +1,6 @@
 'use client'
 import { ThresholdStatus } from '@/lib/types'
-import { euro } from '@/lib/format'
+import { euro, formatDate } from '@/lib/format'
 
 const COLORS = {
   safe: 'bg-green-100 text-green-800',
@@ -20,7 +20,7 @@ export function ThresholdBadge({ status }: { status: ThresholdStatus }) {
   if (!status.within_3_years) return null
   return (
     <span className={`text-xs font-medium px-2 py-1 rounded-full ${COLORS[status.alert_level]}`}>
-      {LABELS[status.alert_level]} ({status.percentage.toFixed(0)}%)
+      {LABELS[status.alert_level]} ({status.percentage.toFixed(0)}%, Frist bis {formatDate(status.cutoff_date)})
     </span>
   )
 }
@@ -36,7 +36,7 @@ export function ThresholdBar({ status }: { status: ThresholdStatus }) {
   return (
     <div className="mt-3">
       <div className="flex justify-between text-xs text-gray-500 mb-1">
-        <span>Renovierungskosten (3-Jahres-Fenster)</span>
+        <span>Renovierungskosten (3-Jahres-Fenster, Frist bis {formatDate(status.cutoff_date)})</span>
         <span>{euro(status.renovation_total)} / {euro(status.threshold_15)}</span>
       </div>
       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
