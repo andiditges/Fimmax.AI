@@ -22,7 +22,13 @@ export async function getLandlordNews(): Promise<NewsItem[]> {
     // Dashboard-Rendering blockieren wuerde (Server-Component-Fetch ohne
     // eigenes Timeout haengt, bis Vercel die Funktion hart abbricht - die
     // Seite laedt dann ueberhaupt nicht, statt nur ohne News anzuzeigen).
-    const res = await fetch(FEED_URL, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(5000) })
+    // cache: 'no-store' statt next.revalidate - Next's Fetch-Cache kann bei
+    // einem instabilen externen Host (news.google.com bricht gelegentlich
+    // die TLS-Verbindung mit ECONNRESET ab) eine Revalidierung ausserhalb
+    // dieses try/catch anstossen, die dann unabgefangen durchschlägt. Ohne
+    // eigene Cache-Verwaltung bleibt jeder Fehlerfall sicher innerhalb des
+    // catch unten.
+    const res = await fetch(FEED_URL, { cache: 'no-store', signal: AbortSignal.timeout(5000) })
     if (!res.ok) return []
     const xml = await res.text()
 
