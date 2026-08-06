@@ -1,5 +1,6 @@
 import { getLoanStatus, simulateSpecialPayment, specialPaymentAllowanceRemaining } from './amortization'
 import { calc15Threshold } from './threshold15'
+import { getReceiptAllocations } from './receipt-allocations'
 import { euro, propertyLabel } from './format'
 import {
   Asset,
@@ -9,6 +10,7 @@ import {
   Property,
   PropertyReserve,
   Receipt,
+  ReceiptItem,
   Reminder,
   Tip,
 } from './types'
@@ -20,6 +22,7 @@ export interface TipsInput {
   assets: Asset[]
   reserves: PropertyReserve[]
   receipts: Receipt[]
+  receiptItems?: ReceiptItem[]
   reminders: Reminder[]
   portfolio: PortfolioFinancialSummary
 }
@@ -141,9 +144,10 @@ function aktienquoteTip({ assets }: TipsInput): Tip | null {
   }
 }
 
-function schwelle15Tips({ properties, receipts }: TipsInput): Tip[] {
+function schwelle15Tips({ properties, receipts, receiptItems }: TipsInput): Tip[] {
+  const allocations = getReceiptAllocations(receipts, receiptItems ?? [])
   return properties
-    .map(p => ({ p, status: calc15Threshold(p, receipts.filter(r => r.property_id === p.id)) }))
+    .map(p => ({ p, status: calc15Threshold(p, allocations.filter(a => a.property_id === p.id)) }))
     .filter(({ status }) => status.within_3_years && status.alert_level !== 'safe')
     .map(({ p, status }) => ({
       id: `schwelle15-${p.id}`,

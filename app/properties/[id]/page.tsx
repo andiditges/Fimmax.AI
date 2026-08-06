@@ -15,10 +15,11 @@ import { calcAnnualAfa, shouldRecommendNutzungsdauergutachten } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
 import { getLoanStatus, generateAmortizationSchedule, interestPaidInYear, aggregateLoanChains } from '@/lib/amortization'
 import { buildTaxExportRow } from '@/lib/tax-export'
+import { getReceiptAllocations } from '@/lib/receipt-allocations'
 import { generateRentSchedule, currentRentAmount, currentAgreement } from '@/lib/rent-schedule'
 import { sumInstandhaltungsruecklage, isUtilityBillableTenant } from '@/lib/operating-costs'
 import { euro, formatDate, propertyLabel, propertyValue } from '@/lib/format'
-import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, Receipt, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost, PROPERTY_CONDITION_GRADE_LABELS, PropertyConditionGrade } from '@/lib/types'
+import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, Receipt, ReceiptItem, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost, PROPERTY_CONDITION_GRADE_LABELS, PropertyConditionGrade } from '@/lib/types'
 
 const HOA_STATUS_COLORS: Record<HoaResolutionStatus, string> = {
   offen: 'bg-gray-100 text-gray-700',
@@ -32,9 +33,14 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
   const supabase = await createClient()
   const currentYear = new Date().getFullYear()
 
-  const [{ data: property }, { data: receipts }, { data: tenants }, { data: loans }, { data: reminders }, { data: hoaDocuments }, { data: hoaResolutions }, { data: reserves }, { data: operatingCosts }] = await Promise.all([
+  const [{ data: property }, { data: receipts }, { data: receiptItems }, { data: tenants }, { data: loans }, { data: reminders }, { data: hoaDocuments }, { data: hoaResolutions }, { data: reserves }, { data: operatingCosts }] = await Promise.all([
     supabase.from('properties').select('*').eq('id', id).single(),
-    supabase.from('receipts').select('*').eq('property_id', id).order('receipt_date', { ascending: false }),
+    // Bewusst nicht auf property_id gefiltert: ein Beleg kann per
+    // receipt_items auf mehrere Immobilien aufgeteilt sein, dessen eigener
+    // property_id-Wert dann eine andere/die "primäre" Immobilie sein kann -
+    // die Allokations-Filterung unten übernimmt die Objekt-Zuordnung.
+    supabase.from('receipts').select('*'),
+    supabase.from('receipt_items').select('*'),
     supabase.from('tenants').select('*').eq('property_id', id),
     supabase.from('loans').select('*').eq('property_id', id),
     supabase.from('reminders').select('*').eq('property_id', id).order('status').order('due_date', { ascending: true, nullsFirst: false }),
@@ -47,7 +53,13 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
   if (!property) notFound()
 
   const p = property as Property
-  const recs = (receipts ?? []) as Receipt[]
+  const allReceipts = (receipts ?? []) as Receipt[]
+  const allReceiptItems = (receiptItems ?? []) as ReceiptItem[]
+  // Belege, die als Dokument primär dieser Immobilie zugeordnet sind (für die
+  // Beleg-Liste/-Verwaltung unten) - unabhängig davon, wie sie steuerlich per
+  // Allokation aufgeteilt sind.
+  const recs = allReceipts.filter(r => r.property_id === id).sort((a, b) => b.receipt_date.localeCompare(a.receipt_date))
+  const propAllocations = getReceiptAllocations(allReceipts, allReceiptItems).filter(a => a.property_id === id)
   const tenantList = (tenants ?? []) as Tenant[]
   const propertyLoans = (loans ?? []) as Loan[]
   const reminderList = (reminders ?? []) as Reminder[]
@@ -99,11 +111,11 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
   const totalTilgungPercent = totalLoanPrincipal > 0 ? ((totalLoanPrincipal - totalLoanRemaining) / totalLoanPrincipal) * 100 : 0
   const ltvPercent = propertyValue(p) > 0 ? (totalLoanRemaining / propertyValue(p)) * 100 : 0
 
-  const threshold = calc15Threshold(p, recs)
+  const threshold = calc15Threshold(p, propAllocations)
   const annualAfa = calcAnnualAfa(p)
 
-  const yearRecs = recs.filter(r => r.tax_year === currentYear)
-  const yearExpenses = yearRecs.reduce((s, r) => s + r.amount, 0)
+  const yearAllocations = propAllocations.filter(a => a.tax_year === currentYear)
+  const yearExpenses = yearAllocations.reduce((s, a) => s + a.amount, 0)
   const yearIncome = tenantList.reduce((sum, t) => {
     const schedule = generateRentSchedule(
       t,
@@ -132,20 +144,20 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
   const categoryTotals = Object.keys(byCategory).map(cat => ({
     cat,
     label: byCategory[cat as keyof typeof byCategory],
-    total: yearRecs.filter(r => r.category === cat).reduce((s, r) => s + r.amount, 0),
+    total: yearAllocations.filter(a => a.category === cat).reduce((s, a) => s + a.amount, 0),
   })).filter(c => c.total > 0)
 
   const loanInterestThisYear = propertyLoans.reduce((s, l) => {
     const sp = (allSpecialPayments ?? []).filter(x => x.loan_id === l.id)
     return s + interestPaidInYear(generateAmortizationSchedule(l, sp).entries, currentYear)
   }, 0)
-  const taxExportRow = buildTaxExportRow(p, currentYear, recs, yearIncome, loanInterestThisYear)
+  const taxExportRow = buildTaxExportRow(p, currentYear, propAllocations, yearIncome, loanInterestThisYear)
   const openReminders = reminderList.filter(r => r.status !== 'erledigt')
   const receiptYears = [...new Set(recs.map(r => r.tax_year))].sort((a, b) => b - a)
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <Link href="/properties" className="text-sm text-gray-400 hover:text-gray-600 mb-1 block">← Immobilien</Link>
           <h1 className="text-2xl font-bold text-gray-900">{propertyLabel(p)}</h1>
@@ -359,7 +371,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
             {loanStatuses.map(({ loan, status }) => (
               <Link key={loan.id} href={`/loans/${loan.id}`}>
                 <Card className="hover:shadow-md transition-shadow cursor-pointer py-3">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{loan.name}</p>
                       <p className="text-xs text-gray-400 mt-0.5">{loan.nominal_interest_rate}% Sollzins · {euro(status.current_annuity_amount)} / {loan.payment_frequency}</p>
@@ -393,7 +405,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
               return (
                 <Link key={t.id} href={`/tenants/${t.id}`}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer py-3">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
                           {t.name}{t.unit && t.unit !== 'Wohnung' ? ` · ${t.unit}` : ''}
@@ -430,7 +442,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
           <Card className="text-center py-8 text-gray-400">Noch keine Belege</Card>
         ) : (
           <Card>
-            <ReceiptBrowser receipts={recs} />
+            <ReceiptBrowser receipts={recs} items={allReceiptItems} />
           </Card>
         )}
       </div>
@@ -449,7 +461,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
               <div className="space-y-2">
                 {hoaDocs.map(doc => (
                   <Card key={doc.id} className="py-3">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">{doc.title}</p>
                         <p className="text-xs text-gray-400 mt-0.5">
@@ -470,7 +482,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
                 <CardTitle>Beschlüsse (letzte 3 Jahre)</CardTitle>
                 <div className="mt-3 space-y-3">
                   {hoaResolutionList.map(res => (
-                    <div key={res.id} className="flex items-start justify-between gap-3 text-sm">
+                    <div key={res.id} className="flex items-start justify-between gap-3 flex-wrap text-sm">
                       <div className="min-w-0">
                         <p className="text-gray-900">{res.title}</p>
                         {res.description && <p className="text-xs text-gray-500 mt-0.5">{res.description}</p>}

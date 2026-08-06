@@ -8,10 +8,11 @@ import { ReceiptBrowser } from '@/components/receipts/receipt-browser'
 import { ArchiveYearButton } from '@/components/receipts/archive-year-button'
 import { calc15Threshold } from '@/lib/threshold15'
 import { buildTaxExportRow } from '@/lib/tax-export'
+import { getReceiptAllocations } from '@/lib/receipt-allocations'
 import { generateAmortizationSchedule, interestPaidInYear } from '@/lib/amortization'
 import { sumRentForYear } from '@/lib/rent-schedule'
 import { euro, propertyLabel } from '@/lib/format'
-import { Property, Receipt, Tenant, RentalAgreement, RentAdjustment, Loan, LoanSpecialPayment } from '@/lib/types'
+import { Property, Receipt, ReceiptItem, Tenant, RentalAgreement, RentAdjustment, Loan, LoanSpecialPayment } from '@/lib/types'
 
 export default async function SteuerUebersicht({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
   await requireUser()
@@ -21,9 +22,10 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
   const year = yearParam ? parseInt(yearParam) : thisYear - 1
   const yearOptions = [thisYear, thisYear - 1, thisYear - 2]
 
-  const [{ data: properties }, { data: receipts }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: loans }] = await Promise.all([
+  const [{ data: properties }, { data: receipts }, { data: receiptItems }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: loans }] = await Promise.all([
     supabase.from('properties').select('*').order('created_at'),
     supabase.from('receipts').select('*'),
+    supabase.from('receipt_items').select('*'),
     supabase.from('tenants').select('*'),
     supabase.from('rental_agreements').select('*'),
     supabase.from('rent_adjustments').select('*'),
@@ -32,6 +34,8 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
 
   const props = (properties ?? []) as Property[]
   const recs = (receipts ?? []) as Receipt[]
+  const recItems = (receiptItems ?? []) as ReceiptItem[]
+  const allocations = getReceiptAllocations(recs, recItems)
   const tenantList = (tenants ?? []) as Tenant[]
   const agreementList = (rentalAgreements ?? []) as RentalAgreement[]
   const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
@@ -54,8 +58,14 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
   const rows = props.map(p => {
     const propTenants = tenantList.filter(t => t.property_id === p.id)
     const yearIncome = sumRentForYear(propTenants, agreementsByTenant, adjustmentsByTenant, year)
-    const propReceipts = recs.filter(r => r.property_id === p.id)
-    const yearExpenses = propReceipts.filter(r => r.tax_year === year).reduce((s, r) => s + r.amount, 0)
+    // Allokationen bewusst auf dieses Objekt beschränkt (nicht die
+    // ungefilterte Portfolio-Liste) - sonst flossen fremde Objekte in
+    // Werbungskosten/Ergebnis dieses Objekts mit ein. Bei aufgeteilten
+    // Belegen (mehrere Objekte in einer Position) zählt jedes Objekt nur
+    // seinen eigenen Anteil, nicht den vollen Beleg-Betrag.
+    const propAllocations = allocations.filter(a => a.property_id === p.id)
+    const yearAllocations = propAllocations.filter(a => a.tax_year === year)
+    const yearExpenses = yearAllocations.reduce((s, a) => s + a.amount, 0)
     const propLoans = loanList.filter(l => l.property_id === p.id)
     const loanInterest = propLoans.reduce((s, l) => {
       const sp = specialPaymentList.filter(x => x.loan_id === l.id)
@@ -63,13 +73,12 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
     }, 0)
     return {
       property: p,
-      threshold: calc15Threshold(p, propReceipts),
-      // Beleg-Liste bewusst auf dieses Objekt beschränkt (vorher versehentlich
-      // die ungefilterte Portfolio-Liste) - sonst flossen fremde Objekte in
-      // Werbungskosten/Ergebnis dieses Objekts mit ein.
-      taxRow: buildTaxExportRow(p, year, propReceipts, yearIncome, loanInterest),
+      threshold: calc15Threshold(p, propAllocations),
+      taxRow: buildTaxExportRow(p, year, propAllocations, yearIncome, loanInterest),
       yearExpenses,
-      receiptCount: propReceipts.filter(r => r.tax_year === year).length,
+      // Distinkte Belege zählen, nicht Allocation-Zeilen - ein auf 2
+      // Positionen aufgeteilter Beleg zählt bei diesem Objekt weiterhin als 1.
+      receiptCount: new Set(yearAllocations.map(a => a.receipt_id)).size,
     }
   })
 
@@ -206,7 +215,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-3">Belege durchsuchen (alle Objekte, alle Jahre)</h2>
         <Card>
-          <ReceiptBrowser receipts={recs} properties={props} showPropertyColumn />
+          <ReceiptBrowser receipts={recs} items={recItems} properties={props} showPropertyColumn />
         </Card>
       </div>
     </div>

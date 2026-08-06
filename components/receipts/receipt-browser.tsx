@@ -1,17 +1,19 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { getReceiptSignedUrl } from '@/app/actions/receipts'
 import { euro, propertyLabel } from '@/lib/format'
-import { CATEGORY_LABELS, Property, Receipt } from '@/lib/types'
+import { CATEGORY_LABELS, Property, Receipt, ReceiptItem } from '@/lib/types'
 
 export function ReceiptBrowser({
   receipts,
+  items = [],
   properties,
   showPropertyColumn = false,
 }: {
   receipts: Receipt[]
+  items?: ReceiptItem[]
   properties?: Property[]
   showPropertyColumn?: boolean
 }) {
@@ -28,6 +30,23 @@ export function ReceiptBrowser({
     [properties]
   )
 
+  const itemsByReceipt = useMemo(() => {
+    const map = new Map<string, ReceiptItem[]>()
+    for (const item of items) {
+      const list = map.get(item.receipt_id)
+      if (list) list.push(item)
+      else map.set(item.receipt_id, [item])
+    }
+    return map
+  }, [items])
+
+  const categorySummary = useCallback((r: Receipt): string => {
+    const receiptItems = itemsByReceipt.get(r.id)
+    if (!receiptItems || receiptItems.length === 0) return CATEGORY_LABELS[r.category]
+    const labels = Array.from(new Set(receiptItems.map(i => CATEGORY_LABELS[i.category])))
+    return labels.join(', ')
+  }, [itemsByReceipt])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return receipts
@@ -36,14 +55,14 @@ export function ReceiptBrowser({
         if (from && r.receipt_date < from) return false
         if (to && r.receipt_date > to) return false
         if (!q) return true
-        const haystack = [r.vendor, r.description, CATEGORY_LABELS[r.category], String(r.tax_year)]
+        const haystack = [r.vendor, r.description, categorySummary(r), String(r.tax_year)]
           .filter(Boolean)
           .join(' ')
           .toLowerCase()
         return haystack.includes(q)
       })
       .sort((a, b) => b.receipt_date.localeCompare(a.receipt_date))
-  }, [receipts, query, from, to])
+  }, [receipts, query, from, to, showArchived, categorySummary])
 
   async function openReceipt(r: Receipt) {
     if (!r.file_url) return
@@ -92,7 +111,7 @@ export function ReceiptBrowser({
       ) : (
         <div className="space-y-2">
           {filtered.map(r => (
-            <div key={r.id} className="flex items-center justify-between gap-3 border border-gray-100 rounded-xl px-3 py-2.5 text-sm">
+            <div key={r.id} className="flex items-center justify-between gap-3 flex-wrap border border-gray-100 rounded-xl px-3 py-2.5 text-sm">
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-gray-900 truncate">
                   {r.vendor ?? r.description ?? '–'}
@@ -101,7 +120,7 @@ export function ReceiptBrowser({
                   )}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {new Date(r.receipt_date).toLocaleDateString('de-DE')} · {CATEGORY_LABELS[r.category]}
+                  {new Date(r.receipt_date).toLocaleDateString('de-DE')} · {categorySummary(r)}
                   {r.is_renovation && ' · Renovierung'}
                   {r.archived && ' · archiviert'}
                 </p>

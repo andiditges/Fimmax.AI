@@ -5,6 +5,7 @@ export type ReceiptCategory =
   | 'grundsteuer'
   | 'zinsen'
   | 'hausgeld'
+  | 'abfall'
   | 'sonstiges'
 
 export const CATEGORY_LABELS: Record<ReceiptCategory, string> = {
@@ -14,6 +15,7 @@ export const CATEGORY_LABELS: Record<ReceiptCategory, string> = {
   grundsteuer: 'Grundsteuer',
   zinsen: 'Schuldzinsen',
   hausgeld: 'Hausgeld / WEG',
+  abfall: 'Müllgebühren',
   sonstiges: 'Sonstiges',
 }
 
@@ -132,6 +134,21 @@ export interface Receipt {
   ai_confidence: number | null
   tax_year: number
   archived: boolean
+  created_at: string
+}
+
+// Optionale Aufteilung eines Belegs auf mehrere Kostenarten und/oder
+// Immobilien (z.B. ein Bescheid mit Grundsteuer + Müllgebühren, oder eine
+// Sammelrechnung über mehrere Einheiten). Kein Item vorhanden -> der Beleg
+// selbst (category/amount/property_id) ist die alleinige Quelle.
+export interface ReceiptItem {
+  id: string
+  receipt_id: string
+  property_id: string
+  category: ReceiptCategory
+  amount: number
+  is_renovation: boolean
+  description: string | null
   created_at: string
 }
 

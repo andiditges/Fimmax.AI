@@ -47,7 +47,7 @@ export function ReminderRow({
 
   return (
     <Card className="py-3">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[reminder.category]}`}>

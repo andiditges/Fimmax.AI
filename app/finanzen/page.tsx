@@ -16,19 +16,20 @@ import { sumReserveCurrentValue, sumMonthlyReserveFromRent } from '@/lib/reserve
 import { currentAgreement } from '@/lib/rent-schedule'
 import { latestVpiReading, calcIndexmieteStatus } from '@/lib/vpi'
 import { euro, formatDate, propertyLabel, propertyValue, percent } from '@/lib/format'
-import { ASSET_CATEGORY_LABELS, Asset, AssetCategory, Property, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Receipt, PropertyReserve, OperatingCost, RESERVE_CATEGORY_LABELS, VpiReading } from '@/lib/types'
+import { ASSET_CATEGORY_LABELS, Asset, AssetCategory, Property, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Receipt, ReceiptItem, PropertyReserve, OperatingCost, RESERVE_CATEGORY_LABELS, VpiReading } from '@/lib/types'
 
 export default async function Finanzen() {
   await requireUser()
   const supabase = await createClient()
 
-  const [{ data: properties }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: receipts }, { data: assetsData }, { data: reservesData }, { data: operatingCostsData }, { data: vpiReadingsData }] = await Promise.all([
+  const [{ data: properties }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: receipts }, { data: receiptItems }, { data: assetsData }, { data: reservesData }, { data: operatingCostsData }, { data: vpiReadingsData }] = await Promise.all([
     supabase.from('properties').select('*'),
     supabase.from('loans').select('*'),
     supabase.from('tenants').select('*'),
     supabase.from('rental_agreements').select('*'),
     supabase.from('rent_adjustments').select('*'),
     supabase.from('receipts').select('*'),
+    supabase.from('receipt_items').select('*'),
     supabase.from('assets').select('*').order('created_at'),
     supabase.from('property_reserves').select('*').order('created_at'),
     supabase.from('operating_costs').select('*'),
@@ -41,6 +42,7 @@ export default async function Finanzen() {
   const agreementList = (rentalAgreements ?? []) as RentalAgreement[]
   const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
   const recs = (receipts ?? []) as Receipt[]
+  const recItems = (receiptItems ?? []) as ReceiptItem[]
   const assets = (assetsData ?? []) as Asset[]
   const reserveList = (reservesData ?? []) as PropertyReserve[]
   const operatingCostList = (operatingCostsData ?? []) as OperatingCost[]
@@ -74,7 +76,7 @@ export default async function Finanzen() {
   const totalInstandhaltungsruecklage = sumInstandhaltungsruecklage(operatingCostList)
   const totalReserves = sumReserveCurrentValue(reserveList) + totalInstandhaltungsruecklage
 
-  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs, monthlyReserveFromRent)
+  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs, recItems, monthlyReserveFromRent)
   const debtOverTime = aggregateDebtOverTime(loanList, specialPaymentsByLoan)
   const todayCashflow = aggregateTodayCashflow(loanList, specialPaymentsByLoan, portfolio.monthly_rent_income, portfolio.monthly_operating_cost_runrate, monthlyReserveFromRent)
   const dailyRateOverTime = aggregateDailyRateOverTime(loanList, specialPaymentsByLoan)
@@ -707,7 +709,7 @@ export default async function Finanzen() {
               return (
                 <Link key={l.id} href={`/loans/${l.id}`}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 truncate">{l.name}</p>
                         <p className="text-sm text-gray-400 mt-0.5">
@@ -730,7 +732,7 @@ export default async function Finanzen() {
               {futureLoans.map(l => (
                 <Link key={l.id} href={`/loans/${l.id}`}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer bg-gray-50">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-700 truncate">{l.name}</p>
                         <p className="text-sm text-gray-400 mt-0.5">
@@ -759,7 +761,7 @@ export default async function Finanzen() {
                 return (
                   <Link key={l.id} href={`/loans/${l.id}`}>
                     <Card className="hover:shadow-md transition-shadow cursor-pointer opacity-70">
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-700 truncate">{l.name}</p>
                           <p className="text-sm text-gray-400 mt-0.5">

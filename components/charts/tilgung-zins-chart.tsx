@@ -93,50 +93,52 @@ export function TilgungZinsChart({ data }: { data: Point[] }) {
   }
 
   return (
-    <div className="relative h-64 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={data}
-          margin={{ top: 40, right: 8, bottom: 0, left: 0 }}
-          onMouseMove={(state) => {
-            const index = Number(state?.activeTooltipIndex)
-            if (state?.isTooltipActive && state.activeCoordinate && Number.isInteger(index)) {
-              const point = data[index]
-              if (point) {
-                setHover({
-                  x: state.activeCoordinate.x,
-                  y: state.activeCoordinate.y,
-                  progress: point.progress,
-                  payoff: point.remaining_balance <= 0.01,
-                })
+    <div className="w-full">
+      <div className="relative h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={data}
+            margin={{ top: 40, right: 8, bottom: 0, left: 0 }}
+            onMouseMove={(state) => {
+              const index = Number(state?.activeTooltipIndex)
+              if (state?.isTooltipActive && state.activeCoordinate && Number.isInteger(index)) {
+                const point = data[index]
+                if (point) {
+                  setHover({
+                    x: state.activeCoordinate.x,
+                    y: state.activeCoordinate.y,
+                    progress: point.progress,
+                    payoff: point.remaining_balance <= 0.01,
+                  })
+                }
               }
-            }
-          }}
-          onMouseLeave={() => setHover(null)}
-        >
-          <CartesianGrid strokeDasharray="0" vertical={false} stroke="#f3f4f6" />
-          <XAxis
-            dataKey="date"
-            tickFormatter={d => new Date(d).toLocaleDateString('de-DE', { month: 'short', year: '2-digit' })}
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
-            axisLine={{ stroke: '#f3f4f6' }}
-            tickLine={false}
-            minTickGap={40}
-          />
-          <YAxis
-            tickFormatter={v => euro(v)}
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
-            axisLine={false}
-            tickLine={false}
-            width={55}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Line type="monotone" dataKey="interest" name="Zinsen" stroke="#ef4444" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }} />
-          <Line type="monotone" dataKey="principal" name="Tilgung" stroke="#16a34a" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#16a34a', stroke: '#fff', strokeWidth: 2 }} />
-        </LineChart>
-      </ResponsiveContainer>
-      {hover && <SmileyOverlay hover={hover} />}
-      <div className="flex items-center gap-4 text-xs text-gray-400 mt-1 px-1">
+            }}
+            onMouseLeave={() => setHover(null)}
+          >
+            <CartesianGrid strokeDasharray="0" vertical={false} stroke="#f3f4f6" />
+            <XAxis
+              dataKey="date"
+              tickFormatter={d => new Date(d).toLocaleDateString('de-DE', { month: 'short', year: '2-digit' })}
+              tick={{ fontSize: 11, fill: '#9ca3af' }}
+              axisLine={{ stroke: '#f3f4f6' }}
+              tickLine={false}
+              minTickGap={40}
+            />
+            <YAxis
+              tickFormatter={v => euro(v)}
+              tick={{ fontSize: 11, fill: '#9ca3af' }}
+              axisLine={false}
+              tickLine={false}
+              width={55}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Line type="monotone" dataKey="interest" name="Zinsen" stroke="#ef4444" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }} />
+            <Line type="monotone" dataKey="principal" name="Tilgung" stroke="#16a34a" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#16a34a', stroke: '#fff', strokeWidth: 2 }} />
+          </LineChart>
+        </ResponsiveContainer>
+        {hover && <SmileyOverlay hover={hover} />}
+      </div>
+      <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs text-gray-400 mt-1 px-1">
         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> Zinsen</span>
         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-600 inline-block" /> Tilgung</span>
         <span className="text-gray-300">· zum Durchhovern: das Gesicht freut sich mehr, je weiter der Kredit getilgt ist</span>

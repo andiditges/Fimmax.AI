@@ -2,16 +2,17 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/supabase/get-user'
 import { PropertyList } from '@/components/properties/property-list'
-import { Property, Receipt, Tenant, RentalAgreement, RentAdjustment } from '@/lib/types'
+import { Property, Receipt, ReceiptItem, Tenant, RentalAgreement, RentAdjustment } from '@/lib/types'
 
 export default async function PropertiesOverview() {
   await requireUser()
   const supabase = await createClient()
   const currentYear = new Date().getFullYear()
 
-  const [{ data: properties }, { data: receipts }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }] = await Promise.all([
+  const [{ data: properties }, { data: receipts }, { data: receiptItems }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }] = await Promise.all([
     supabase.from('properties').select('*').order('created_at'),
     supabase.from('receipts').select('*'),
+    supabase.from('receipt_items').select('*'),
     supabase.from('tenants').select('*'),
     supabase.from('rental_agreements').select('*'),
     supabase.from('rent_adjustments').select('*'),
@@ -19,6 +20,7 @@ export default async function PropertiesOverview() {
 
   const props = (properties ?? []) as Property[]
   const recs = (receipts ?? []) as Receipt[]
+  const recItems = (receiptItems ?? []) as ReceiptItem[]
   const tenantList = (tenants ?? []) as Tenant[]
   const agreementList = (rentalAgreements ?? []) as RentalAgreement[]
   const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
@@ -35,7 +37,7 @@ export default async function PropertiesOverview() {
         </Link>
       </div>
 
-      <PropertyList properties={props} receipts={recs} tenants={tenantList} rentalAgreements={agreementList} rentAdjustments={adjustmentList} currentYear={currentYear} />
+      <PropertyList properties={props} receipts={recs} receiptItems={recItems} tenants={tenantList} rentalAgreements={agreementList} rentAdjustments={adjustmentList} currentYear={currentYear} />
     </div>
   )
 }

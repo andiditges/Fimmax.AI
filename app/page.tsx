@@ -13,16 +13,17 @@ import { sumMonthlyReserveFromRent, sumReserveCurrentValue } from '@/lib/reserve
 import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
 import { aggregateNetWorth } from '@/lib/net-worth'
 import { euro } from '@/lib/format'
-import { Property, Receipt, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Reminder, PropertyReserve, Asset, OperatingCost } from '@/lib/types'
+import { Property, Receipt, ReceiptItem, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Reminder, PropertyReserve, Asset, OperatingCost } from '@/lib/types'
 
 export default async function Dashboard() {
   await requireUser()
   const supabase = await createClient()
   const currentYear = new Date().getFullYear()
 
-  const [{ data: properties }, { data: receipts }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: reminders }, { data: reserves }, { data: assetsData }, { data: operatingCostsData }] = await Promise.all([
+  const [{ data: properties }, { data: receipts }, { data: receiptItems }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: reminders }, { data: reserves }, { data: assetsData }, { data: operatingCostsData }] = await Promise.all([
     supabase.from('properties').select('*').order('created_at'),
     supabase.from('receipts').select('*'),
+    supabase.from('receipt_items').select('*'),
     supabase.from('loans').select('*'),
     supabase.from('tenants').select('*'),
     supabase.from('rental_agreements').select('*'),
@@ -35,6 +36,7 @@ export default async function Dashboard() {
 
   const props = (properties ?? []) as Property[]
   const recs = (receipts ?? []) as Receipt[]
+  const recItems = (receiptItems ?? []) as ReceiptItem[]
   const loanList = (loans ?? []) as Loan[]
   const tenantList = (tenants ?? []) as Tenant[]
   const agreementList = (rentalAgreements ?? []) as RentalAgreement[]
@@ -53,7 +55,7 @@ export default async function Dashboard() {
     return acc
   }, {} as Record<string, LoanSpecialPayment[]>)
 
-  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs, sumMonthlyReserveFromRent(reserveList))
+  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs, recItems, sumMonthlyReserveFromRent(reserveList))
   // Kettenbasiert statt portfolio.loans.reduce(cumulative_principal_paid), damit
   // eine Anschlussfinanzierung die Rentenuhr nicht schlagartig zurückspringen lässt.
   const totalPrincipalPaid = aggregateLoanChains(loanList, specialPaymentsByLoan).reduce((s, c) => s + c.paid, 0)
@@ -157,7 +159,7 @@ export default async function Dashboard() {
               <h2 className="text-lg font-semibold text-gray-800">Meine Immobilien</h2>
               <Link href="/properties" className="text-sm text-blue-600 hover:underline">Alle anzeigen →</Link>
             </div>
-            <PropertyList properties={props} receipts={recs} tenants={tenantList} rentalAgreements={agreementList} rentAdjustments={adjustmentList} currentYear={currentYear} />
+            <PropertyList properties={props} receipts={recs} receiptItems={recItems} tenants={tenantList} rentalAgreements={agreementList} rentAdjustments={adjustmentList} currentYear={currentYear} />
           </div>
 
           {/* Quick Action */}

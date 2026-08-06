@@ -18,6 +18,7 @@ import {
   Property,
   PropertyReserve,
   Receipt,
+  ReceiptItem,
   Reminder,
   RentAdjustment,
   RentalAgreement,
@@ -35,6 +36,7 @@ export default async function TippsPage() {
     { data: rentalAgreements },
     { data: rentAdjustments },
     { data: receipts },
+    { data: receiptItems },
     { data: assetsData },
     { data: reservesData },
     { data: operatingCostsData },
@@ -46,6 +48,7 @@ export default async function TippsPage() {
     supabase.from('rental_agreements').select('*'),
     supabase.from('rent_adjustments').select('*'),
     supabase.from('receipts').select('*'),
+    supabase.from('receipt_items').select('*'),
     supabase.from('assets').select('*').order('created_at'),
     supabase.from('property_reserves').select('*').order('created_at'),
     supabase.from('operating_costs').select('*'),
@@ -58,6 +61,7 @@ export default async function TippsPage() {
   const agreementList = (rentalAgreements ?? []) as RentalAgreement[]
   const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
   const recs = (receipts ?? []) as Receipt[]
+  const recItems = (receiptItems ?? []) as ReceiptItem[]
   const assets = (assetsData ?? []) as Asset[]
   const reserveList = (reservesData ?? []) as PropertyReserve[]
   const operatingCostList = (operatingCostsData ?? []) as OperatingCost[]
@@ -75,7 +79,7 @@ export default async function TippsPage() {
   const monthlyReserveFromRent = sumMonthlyReserveFromRent(reserveList)
   const totalReserves = sumReserveCurrentValue(reserveList) + sumInstandhaltungsruecklage(operatingCostList)
 
-  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs, monthlyReserveFromRent)
+  const portfolio = aggregatePortfolioFinancials(props, loanList, specialPaymentsByLoan, tenantList, agreementList, adjustmentList, recs, recItems, monthlyReserveFromRent)
 
   const tips = generateTips({
     properties: props,
@@ -84,6 +88,7 @@ export default async function TippsPage() {
     assets,
     reserves: reserveList,
     receipts: recs,
+    receiptItems: recItems,
     reminders: reminderList,
     portfolio,
   })

@@ -11,6 +11,7 @@ import type {
   RentalAgreement,
   RentAdjustment,
   Receipt,
+  ReceiptItem,
   PaymentFrequency,
   DayCountConvention,
   DailyRateBreakdown,
@@ -18,6 +19,7 @@ import type {
   DailyRatePoint,
 } from './types'
 import { sumRentForMonth } from './rent-schedule'
+import { getReceiptAllocations } from './receipt-allocations'
 import { propertyValue } from './format'
 
 const EPS = 0.01
@@ -661,6 +663,7 @@ export function aggregatePortfolioFinancials(
   rentalAgreements: RentalAgreement[],
   rentAdjustments: RentAdjustment[],
   receipts: Receipt[],
+  receiptItems: ReceiptItem[] = [],
   monthlyReserveFromRent: number = 0,
   asOfDate: Date = new Date()
 ): PortfolioFinancialSummary {
@@ -686,8 +689,8 @@ export function aggregatePortfolioFinancials(
 
   const twelveMonthsAgo = new Date(asOfDate)
   twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1)
-  const trailingReceipts = receipts.filter(r => {
-    const d = new Date(r.receipt_date)
+  const trailingAllocations = getReceiptAllocations(receipts, receiptItems).filter(a => {
+    const d = new Date(a.receipt_date)
     return d > twelveMonthsAgo && d <= asOfDate
   })
   // Trailing-12-Monate statt Einzelmonat, da Kosten wie Versicherung/Grundsteuer
@@ -701,8 +704,8 @@ export function aggregatePortfolioFinancials(
     if (p.expected_non_allocable_operating_cost_annual != null) {
       return sum + p.expected_non_allocable_operating_cost_annual / 12
     }
-    const propertyReceipts = trailingReceipts.filter(r => r.property_id === p.id)
-    return sum + propertyReceipts.reduce((s, r) => s + r.amount, 0) / 12
+    const propertyAllocations = trailingAllocations.filter(a => a.property_id === p.id)
+    return sum + propertyAllocations.reduce((s, a) => s + a.amount, 0) / 12
   }, 0)
 
   // Noch nicht ausgezahlte Kredite (Auszahlungsdatum in der Zukunft) zahlen

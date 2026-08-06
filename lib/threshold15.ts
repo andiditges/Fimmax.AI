@@ -1,6 +1,7 @@
-import { Property, Receipt, ThresholdStatus } from './types'
+import { Property, ThresholdStatus } from './types'
+import { ReceiptAllocation } from './receipt-allocations'
 
-export function calc15Threshold(property: Property, receipts: Receipt[]): ThresholdStatus {
+export function calc15Threshold(property: Property, allocations: ReceiptAllocation[]): ThresholdStatus {
   const purchaseDate = new Date(property.purchase_date)
   const cutoffDate = new Date(purchaseDate)
   cutoffDate.setFullYear(cutoffDate.getFullYear() + 3)
@@ -12,12 +13,12 @@ export function calc15Threshold(property: Property, receipts: Receipt[]): Thresh
   // bereits vorab beauftragt), stehen im wirtschaftlichen Zusammenhang mit
   // der Anschaffung und zählen für die 15%-Grenze ebenso mit wie Kosten
   // danach - nur die Obergrenze (3 Jahre nach Anschaffung) ist relevant.
-  const renovationTotal = receipts
-    .filter(r => {
-      const date = new Date(r.receipt_date)
-      return r.is_renovation && date <= cutoffDate
+  const renovationTotal = allocations
+    .filter(a => {
+      const date = new Date(a.receipt_date)
+      return a.is_renovation && date <= cutoffDate
     })
-    .reduce((sum, r) => sum + r.amount, 0)
+    .reduce((sum, a) => sum + a.amount, 0)
 
   const threshold15 = property.building_value * 0.15
   const percentage = threshold15 > 0 ? (renovationTotal / threshold15) * 100 : 0

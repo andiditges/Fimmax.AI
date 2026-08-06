@@ -3,13 +3,15 @@ import { Card } from '@/components/ui/card'
 import { ThresholdBadge } from '@/components/threshold-badge'
 import { calcAnnualAfa } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
+import { getReceiptAllocations } from '@/lib/receipt-allocations'
 import { sumRentForYear } from '@/lib/rent-schedule'
 import { euro, propertyLabel } from '@/lib/format'
-import { Property, Receipt, Tenant, RentalAgreement, RentAdjustment } from '@/lib/types'
+import { Property, Receipt, ReceiptItem, Tenant, RentalAgreement, RentAdjustment } from '@/lib/types'
 
 export function PropertyList({
   properties,
   receipts,
+  receiptItems = [],
   tenants,
   rentalAgreements,
   rentAdjustments,
@@ -17,6 +19,7 @@ export function PropertyList({
 }: {
   properties: Property[]
   receipts: Receipt[]
+  receiptItems?: ReceiptItem[]
   tenants: Tenant[]
   rentalAgreements: RentalAgreement[]
   rentAdjustments: RentAdjustment[]
@@ -42,20 +45,23 @@ export function PropertyList({
     return acc
   }, {} as Record<string, RentAdjustment[]>)
 
+  const allocations = getReceiptAllocations(receipts, receiptItems)
+
   return (
     <div className="space-y-3">
       {properties.map(p => {
-        const propRecs = receipts.filter(r => r.property_id === p.id)
-        const threshold = calc15Threshold(p, propRecs)
-        const yearExpenses = propRecs.filter(r => r.tax_year === currentYear).reduce((s, r) => s + r.amount, 0)
+        const propAllocations = allocations.filter(a => a.property_id === p.id)
+        const threshold = calc15Threshold(p, propAllocations)
+        const yearExpenses = propAllocations.filter(a => a.tax_year === currentYear).reduce((s, a) => s + a.amount, 0)
+        const receiptCount = new Set(propAllocations.map(a => a.receipt_id)).size
         const propTenants = tenants.filter(t => t.property_id === p.id)
         const yearIncome = sumRentForYear(propTenants, agreementsByTenant, adjustmentsByTenant, currentYear)
 
         return (
           <Link key={p.id} href={`/properties/${p.id}`}>
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="min-w-0">
                   <p className="font-semibold text-gray-900 truncate">{propertyLabel(p)}</p>
                   <p className="text-sm text-gray-500 mt-0.5">AfA: {euro(calcAnnualAfa(p))} / Jahr · {p.afa_rate}% · Bj. {p.build_year}</p>
                 </div>
@@ -64,7 +70,7 @@ export function PropertyList({
               <div className="mt-3 flex gap-6 text-sm">
                 <span className="text-green-600">Einnahmen: <strong>{euro(yearIncome)}</strong></span>
                 <span className="text-red-500">Ausgaben: <strong>{euro(yearExpenses)}</strong></span>
-                <span className="text-gray-500">{propRecs.length} Belege</span>
+                <span className="text-gray-500">{receiptCount} Belege</span>
               </div>
             </Card>
           </Link>

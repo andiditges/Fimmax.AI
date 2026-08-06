@@ -1,6 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
-import { ReceiptCategory } from '@/lib/types'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -23,33 +22,62 @@ export async function POST(req: NextRequest) {
 Bekannte Immobilien des Nutzers:
 ${propertyList || '(noch keine hinterlegt)'}
 
-Kategorien (wähle genau eine):
+Kategorien (jede Position bekommt genau eine):
 - instandhaltung: Reparaturen, Handwerker, Materialien für die Immobilie
 - verwaltung: Hausverwaltung, Kontoführung, Steuerberater
 - versicherung: Gebäude-, Haftpflicht-, Rechtschutzversicherung
 - grundsteuer: Grundsteuer-Bescheide
 - zinsen: Kreditzinsen, Bankgebühren für Immobilienkredit
 - hausgeld: WEG-Hausgeld, Nebenkostenvorauszahlungen
+- abfall: Müllgebühren, Abfallgebührenbescheide
 - sonstiges: alles andere
 
-is_renovation = true nur wenn es sich um Renovierungs- oder Instandsetzungsarbeiten handelt (relevant für 15%-Grenze).`
+Ein Beleg kann MEHRERE Positionen enthalten, wenn er mehrere Kostenarten oder
+mehrere Immobilien/Einheiten abdeckt - erzwinge NICHT künstlich eine einzige
+Kategorie oder Immobilie. Typisches Beispiel: ein "Bescheid über die
+Grundbesitzabgaben" einer Stadt/Gemeinde bündelt oft Grundsteuer UND
+Müllgebühren (Abfall) in einer Zahlungsübersicht für dieselbe Immobilie - das
+sind dann zwei Positionen (category "grundsteuer" und "abfall"), auch wenn
+nur ein Gesamtbetrag/eine Zahlungsübersicht abgedruckt ist. Ein anderes
+Beispiel: eine Sammelrechnung (z.B. Baumarkt) für Material, das mehreren
+Einheiten zugeordnet werden soll, ergibt eine Position pro Immobilie.
+
+Wenn auf dem Beleg mehrere Kostenarten erkennbar sind, aber nicht eindeutig
+ist, wie sich der Gesamtbetrag genau auf die Positionen aufteilt (z.B. weil
+ein Änderungsbescheid nur eine Differenz nennt), setze "needs_review" auf
+true und erkläre in "review_note" kurz, was der Nutzer prüfen/ergänzen sollte
+- rate nicht einfach eine Aufteilung, wenn sie nicht aus dem Dokument
+hervorgeht.
+
+is_renovation = true nur für Positionen der Kategorie instandhaltung, wenn es
+sich um Renovierungs- oder Instandsetzungsarbeiten handelt (relevant für
+15%-Grenze).`
 
   const userPrompt = `Analysiere diesen Beleg. Antworte NUR mit JSON, kein anderer Text:
 {
   "receipt_date": "YYYY-MM-DD oder null",
-  "amount": Betrag als Zahl (Brutto-Gesamtbetrag),
-  "vendor": "Lieferant/Firma oder null",
-  "description": "kurze Beschreibung der Leistung",
-  "category": "eine der Kategorien",
-  "is_renovation": true oder false,
-  "suggested_property_id": "UUID der wahrscheinlichsten Immobilie oder null",
+  "amount": Gesamtbetrag des Belegs als Zahl (Brutto),
+  "vendor": "Lieferant/Firma/Behörde oder null",
+  "items": [
+    {
+      "category": "eine der Kategorien",
+      "amount": Betrag dieser Position als Zahl,
+      "description": "kurze Beschreibung der Leistung",
+      "suggested_property_id": "UUID der wahrscheinlichsten Immobilie für diese Position oder null",
+      "is_renovation": true oder false
+    }
+  ],
+  "needs_review": true oder false,
+  "review_note": "kurzer Hinweis, was zu prüfen ist, oder null",
   "confidence": Zahl zwischen 0 und 1
-}`
+}
+"items" enthält mindestens einen Eintrag. Wenn der Beleg nur eine Kostenart/
+Immobilie betrifft, hat "items" genau einen Eintrag (Summe = "amount").`
 
   try {
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 512,
+      max_tokens: 1024,
       system: systemPrompt,
       messages: [
         {
