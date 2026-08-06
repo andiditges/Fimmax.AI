@@ -30,7 +30,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="de">
       <body className={`${geist.className} bg-gray-50 min-h-screen flex flex-col`}>
         <Nav userEmail={user?.email ?? null} />
-        <main className="max-w-6xl mx-auto px-4 py-8 flex-1 w-full">
+        {/* pb-24 statt py-8 unten: der global fixierte FeedbackButton
+            (bottom-5 right-5) braucht Platz, sonst ueberlappt er den
+            letzten sichtbaren Inhalt jeder Seite (z.B. Meilensteine-Liste
+            in /finanzen). */}
+        <main className="max-w-6xl mx-auto px-4 pt-8 pb-24 flex-1 w-full">
           {children}
         </main>
         <Footer />
