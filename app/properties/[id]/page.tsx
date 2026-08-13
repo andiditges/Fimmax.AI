@@ -197,17 +197,6 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
         </Card>
       </div>
 
-      {/* Nebenkostenassistent */}
-      <Card>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <CardTitle>Nebenkostenassistent</CardTitle>
-            <p className="text-sm text-gray-500">Checkliste gegen vergessene Kostenarten + fertiges Abrechnungsschreiben je Mieter</p>
-          </div>
-          <Link href={`/properties/${id}/nebenkosten`} className="text-sm text-blue-600 hover:underline whitespace-nowrap">Öffnen →</Link>
-        </div>
-      </Card>
-
       {/* Zustand & Vergleichsmiete */}
       {(p.living_area_sqm || conditionEntries.length > 0 || p.comparable_rent_min || p.renovation_note) && (
         <Card>
@@ -319,6 +308,19 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
           <ThresholdBar status={threshold} />
         </Card>
       )}
+
+      {/* Nebenkostenassistent */}
+      <Link href={`/properties/${id}/nebenkosten`} className="block">
+        <Card className="!bg-blue-600 border-0 hover:!bg-blue-700 transition-colors cursor-pointer">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <p className="text-white font-semibold">Hier zum Nebenkostenassistent</p>
+              <p className="text-blue-100 text-sm mt-0.5">Kostenpositionen (Grundsteuer, Müll, Verwaltung, …) eintragen, Abrechnungsschreiben je Mieter erzeugen – fließt automatisch in deinen Steuer-Export ein</p>
+            </div>
+            <span className="text-white text-xl">→</span>
+          </div>
+        </Card>
+      </Link>
 
       {/* Ausgaben nach Kategorie */}
       {categoryTotals.length > 0 && (
