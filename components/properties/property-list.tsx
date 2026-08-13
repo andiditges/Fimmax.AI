@@ -1,3 +1,5 @@
+'use client'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { ThresholdBadge } from '@/components/threshold-badge'
@@ -25,6 +27,8 @@ export function PropertyList({
   rentAdjustments: RentAdjustment[]
   currentYear: number
 }) {
+  const router = useRouter()
+
   if (properties.length === 0) {
     return (
       <Card className="text-center py-12">
@@ -58,14 +62,23 @@ export function PropertyList({
         const yearIncome = sumRentForYear(propTenants, agreementsByTenant, adjustmentsByTenant, currentYear)
 
         return (
-          <Link key={p.id} href={`/properties/${p.id}`}>
+          <div key={p.id} onClick={() => router.push(`/properties/${p.id}`)}>
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="min-w-0">
                   <p className="font-semibold text-gray-900 truncate">{propertyLabel(p)}</p>
                   <p className="text-sm text-gray-500 mt-0.5">AfA: {euro(calcAnnualAfa(p))} / Jahr · {p.afa_rate}% · Bj. {p.build_year}</p>
                 </div>
-                <ThresholdBadge status={threshold} />
+                <div className="flex flex-col items-end gap-1">
+                  <ThresholdBadge status={threshold} />
+                  <Link
+                    href={`/properties/${p.id}/nebenkosten`}
+                    onClick={e => e.stopPropagation()}
+                    className="text-xs text-blue-600 hover:underline whitespace-nowrap"
+                  >
+                    Nebenkostenassistent →
+                  </Link>
+                </div>
               </div>
               <div className="mt-3 flex gap-6 text-sm">
                 <span className="text-green-600">Einnahmen: <strong>{euro(yearIncome)}</strong></span>
@@ -73,7 +86,7 @@ export function PropertyList({
                 <span className="text-gray-500">{receiptCount} Belege</span>
               </div>
             </Card>
-          </Link>
+          </div>
         )
       })}
     </div>
