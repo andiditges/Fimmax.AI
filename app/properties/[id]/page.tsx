@@ -11,10 +11,11 @@ import { TilgungRing, LtvRing } from '@/components/properties/tilgung-ring'
 import { RiskOverview } from '@/components/tipps/risk-overview'
 import { ReceiptBrowser } from '@/components/receipts/receipt-browser'
 import { Ehegattenschaukel } from '@/components/properties/ehegattenschaukel'
+import { HoaDocumentMove } from '@/components/hoa/hoa-document-move'
 import { calcAnnualAfa, shouldRecommendNutzungsdauergutachten } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
 import { getLoanStatus, generateAmortizationSchedule, interestPaidInYear, aggregateLoanChains } from '@/lib/amortization'
-import { buildTaxExportRow } from '@/lib/tax-export'
+import { buildTaxExportRow, buildTaxExportDetailRows, rowsToCsv, detailRowsToCsv } from '@/lib/tax-export'
 import { getReceiptAllocations } from '@/lib/receipt-allocations'
 import { generateRentSchedule, currentRentAmount, currentAgreement } from '@/lib/rent-schedule'
 import { sumInstandhaltungsruecklage, isUtilityBillableTenant } from '@/lib/operating-costs'
@@ -151,7 +152,8 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
     const sp = (allSpecialPayments ?? []).filter(x => x.loan_id === l.id)
     return s + interestPaidInYear(generateAmortizationSchedule(l, sp).entries, currentYear)
   }, 0)
-  const taxExportRow = buildTaxExportRow(p, currentYear, propAllocations, yearIncome, loanInterestThisYear)
+  const taxExportRow = buildTaxExportRow(p, currentYear, propAllocations, yearIncome, loanInterestThisYear, operatingCostList)
+  const taxExportDetailRows = buildTaxExportDetailRows(p, currentYear, propAllocations, annualAfa, loanInterestThisYear, operatingCostList)
   const openReminders = reminderList.filter(r => r.status !== 'erledigt')
   const receiptYears = [...new Set(recs.map(r => r.tax_year))].sort((a, b) => b - a)
 
@@ -168,7 +170,8 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
         <div className="flex flex-col items-end gap-2">
           <ThresholdBadge status={threshold} />
           <Link href={`/properties/${id}/edit`} className="text-sm text-blue-600 hover:underline">Bearbeiten</Link>
-          <TaxExportButton rows={[taxExportRow]} filename={`steuer-export-${p.address.replace(/\s+/g, '-')}-${currentYear}.csv`} label={`Steuer-Export ${currentYear} (CSV)`} />
+          <TaxExportButton csv={rowsToCsv([taxExportRow])} filename={`steuer-export-${p.address.replace(/\s+/g, '-')}-${currentYear}.csv`} label={`Steuer-Export ${currentYear} (CSV)`} />
+          <TaxExportButton csv={detailRowsToCsv(p, currentYear, taxExportDetailRows)} filename={`steuer-positionen-${p.address.replace(/\s+/g, '-')}-${currentYear}.csv`} label={`Alle Positionen ${currentYear} (CSV)`} />
         </div>
       </div>
 
@@ -472,6 +475,11 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
                         <span className="text-xs text-gray-400 whitespace-nowrap">📄 Protokoll hinterlegt</span>
                       )}
                     </div>
+                    {doc.file_url && (
+                      <div className="mt-2">
+                        <HoaDocumentMove doc={doc} propertyId={id} />
+                      </div>
+                    )}
                   </Card>
                 ))}
               </div>

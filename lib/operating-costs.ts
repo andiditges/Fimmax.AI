@@ -69,6 +69,15 @@ export function sumInstandhaltungsruecklage(costs: OperatingCost[]): number {
   return costs.filter(c => c.category === 'ruecklage_zufuehrung').reduce((s, c) => s + c.amount, 0)
 }
 
+// Nicht umlagefähige Kosten aus der WEG-/Hausgeldabrechnung, die der
+// Eigentümer selbst trägt und als Werbungskosten absetzen kann - mit
+// Ausnahme der Rücklagenzuführung: die ist laut aktueller BFH-Rechtsprechung
+// (IX R 19/21) erst abzugsfähig, wenn die WEG das Geld tatsächlich für eine
+// Maßnahme ausgibt, nicht schon bei Einzahlung ins Hausgeld.
+export function deductibleOwnCosts(costs: OperatingCost[]): OperatingCost[] {
+  return costs.filter(c => OPERATING_COST_CATEGORY_MAP[c.category]?.group === 'nicht_umlagefaehig' && c.category !== 'ruecklage_zufuehrung')
+}
+
 // Anzahl der Kalendermonate, die ein Mieter im gegebenen Jahr im Mietverhältnis war.
 export function monthsActiveInYear(tenant: Tenant, year: number): number {
   const moveIn = new Date(tenant.move_in_date)

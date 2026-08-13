@@ -16,6 +16,8 @@ export interface ReceiptAllocation {
   receipt_date: string
   tax_year: number
   archived: boolean
+  vendor: string | null
+  description: string | null
 }
 
 export function getReceiptAllocations(receipts: Receipt[], items: ReceiptItem[]): ReceiptAllocation[] {
@@ -38,6 +40,8 @@ export function getReceiptAllocations(receipts: Receipt[], items: ReceiptItem[])
         receipt_date: r.receipt_date,
         tax_year: r.tax_year,
         archived: r.archived,
+        vendor: r.vendor,
+        description: r.description,
       }]
     }
     return receiptItems.map(item => ({
@@ -49,6 +53,8 @@ export function getReceiptAllocations(receipts: Receipt[], items: ReceiptItem[])
       receipt_date: r.receipt_date,
       tax_year: r.tax_year,
       archived: r.archived,
+      vendor: r.vendor,
+      description: item.description ?? r.description,
     }))
   })
 }

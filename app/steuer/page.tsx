@@ -7,12 +7,13 @@ import { TaxExportButton } from '@/components/tax-export-button'
 import { ReceiptBrowser } from '@/components/receipts/receipt-browser'
 import { ArchiveYearButton } from '@/components/receipts/archive-year-button'
 import { calc15Threshold } from '@/lib/threshold15'
-import { buildTaxExportRow } from '@/lib/tax-export'
+import { buildTaxExportRow, buildTaxExportDetailRows, rowsToCsv, detailRowsToCsv } from '@/lib/tax-export'
 import { getReceiptAllocations } from '@/lib/receipt-allocations'
+import { calcAnnualAfa } from '@/lib/afa'
 import { generateAmortizationSchedule, interestPaidInYear } from '@/lib/amortization'
 import { sumRentForYear } from '@/lib/rent-schedule'
 import { euro, propertyLabel } from '@/lib/format'
-import { Property, Receipt, ReceiptItem, Tenant, RentalAgreement, RentAdjustment, Loan, LoanSpecialPayment } from '@/lib/types'
+import { Property, Receipt, ReceiptItem, Tenant, RentalAgreement, RentAdjustment, Loan, LoanSpecialPayment, OperatingCost } from '@/lib/types'
 
 export default async function SteuerUebersicht({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
   await requireUser()
@@ -22,7 +23,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
   const year = yearParam ? parseInt(yearParam) : thisYear - 1
   const yearOptions = [thisYear, thisYear - 1, thisYear - 2]
 
-  const [{ data: properties }, { data: receipts }, { data: receiptItems }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: loans }] = await Promise.all([
+  const [{ data: properties }, { data: receipts }, { data: receiptItems }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: loans }, { data: operatingCosts }] = await Promise.all([
     supabase.from('properties').select('*').order('created_at'),
     supabase.from('receipts').select('*'),
     supabase.from('receipt_items').select('*'),
@@ -30,6 +31,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
     supabase.from('rental_agreements').select('*'),
     supabase.from('rent_adjustments').select('*'),
     supabase.from('loans').select('*'),
+    supabase.from('operating_costs').select('*'),
   ])
 
   const props = (properties ?? []) as Property[]
@@ -40,6 +42,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
   const agreementList = (rentalAgreements ?? []) as RentalAgreement[]
   const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
   const loanList = (loans ?? []) as Loan[]
+  const operatingCostList = (operatingCosts ?? []) as OperatingCost[]
 
   const { data: specialPayments } = loanList.length
     ? await supabase.from('loan_special_payments').select('*').in('loan_id', loanList.map(l => l.id))
@@ -71,10 +74,12 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
       const sp = specialPaymentList.filter(x => x.loan_id === l.id)
       return s + interestPaidInYear(generateAmortizationSchedule(l, sp).entries, year)
     }, 0)
+    const propOperatingCosts = operatingCostList.filter(c => c.property_id === p.id)
     return {
       property: p,
       threshold: calc15Threshold(p, propAllocations),
-      taxRow: buildTaxExportRow(p, year, propAllocations, yearIncome, loanInterest),
+      taxRow: buildTaxExportRow(p, year, propAllocations, yearIncome, loanInterest, propOperatingCosts),
+      detailRows: buildTaxExportDetailRows(p, year, propAllocations, calcAnnualAfa(p), loanInterest, propOperatingCosts),
       yearExpenses,
       // Distinkte Belege zählen, nicht Allocation-Zeilen - ein auf 2
       // Positionen aufgeteilter Beleg zählt bei diesem Objekt weiterhin als 1.
@@ -145,7 +150,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
             <p className="text-sm text-gray-400 mt-1">Keine Objekte</p>
           ) : (
             <div className="mt-1">
-              <TaxExportButton rows={rows.map(r => r.taxRow)} filename={`steuer-export-portfolio-${year}.csv`} label="Portfolio (CSV)" />
+              <TaxExportButton csv={rowsToCsv(rows.map(r => r.taxRow))} filename={`steuer-export-portfolio-${year}.csv`} label="Portfolio (CSV)" />
             </div>
           )}
         </Card>
@@ -195,7 +200,8 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
                   <span className="text-gray-500">Ergebnis: <strong className="text-green-600">{euro(r.taxRow.ergebnis)}</strong></span>
                 </div>
                 <div className="mt-3 flex items-center gap-4 flex-wrap">
-                  <TaxExportButton rows={[r.taxRow]} filename={`steuer-export-${r.property.address.replace(/\s+/g, '-')}-${year}.csv`} label="CSV-Export" />
+                  <TaxExportButton csv={rowsToCsv([r.taxRow])} filename={`steuer-export-${r.property.address.replace(/\s+/g, '-')}-${year}.csv`} label="CSV-Export" />
+                  <TaxExportButton csv={detailRowsToCsv(r.property, year, r.detailRows)} filename={`steuer-positionen-${r.property.address.replace(/\s+/g, '-')}-${year}.csv`} label="Alle Positionen (CSV)" />
                   {r.receiptCount > 0 && (
                     <a
                       href={`/api/receipts/zip?propertyId=${r.property.id}&year=${year}`}
