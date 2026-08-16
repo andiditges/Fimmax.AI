@@ -48,41 +48,53 @@ html {
 }
 
 ::-webkit-scrollbar {
-  width: 14px;
+  width: 17px;
 }
 
 ::-webkit-scrollbar-track {
   background-color: #f3f4f6;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    #e5e7eb 0,
-    #e5e7eb 1px,
-    transparent 1px,
-    transparent 28px
-  );
+  background-image:
+    linear-gradient(to right, transparent calc(50% - 1px), #b0b8c4 calc(50% - 1px), #b0b8c4 calc(50% + 1px), transparent calc(50% + 1px)),
+    repeating-linear-gradient(
+      to bottom,
+      #e5e7eb 0,
+      #e5e7eb 1px,
+      transparent 1px,
+      transparent 28px
+    );
   border-left: 1px solid #e5e7eb;
 }
 
 [data-theme="dark"] ::-webkit-scrollbar-track {
   background-color: #1f2937;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    #374151 0,
-    #374151 1px,
-    transparent 1px,
-    transparent 28px
-  );
+  background-image:
+    linear-gradient(to right, transparent calc(50% - 1px), #6b7280 calc(50% - 1px), #6b7280 calc(50% + 1px), transparent calc(50% + 1px)),
+    repeating-linear-gradient(
+      to bottom,
+      #374151 0,
+      #374151 1px,
+      transparent 1px,
+      transparent 28px
+    );
   border-left: 1px solid #374151;
 }
 
+/* Seilzug: eine durchgehende, dünne Führungsschienen-Linie im Schacht
+   (::-webkit-scrollbar-track, oben), die die Kabine (::-webkit-scrollbar-
+   thumb) beim Scrollen einfach überdeckt - dadurch wirkt es, als hinge die
+   Kabine an einem Seil, das immer bis zur aktuellen Position reicht, ganz
+   ohne JavaScript. Die Kabine selbst bekommt zwei Schiebetüren: eine dunkle
+   Mittelfuge (wo beide Türflügel aufeinandertreffen) plus je eine helle
+   Kante am Außenrand jedes Flügels (wo er auf die Kabinenwand trifft). */
 ::-webkit-scrollbar-thumb {
   border-radius: 4px;
   border: 3px solid #f8fafc;
   background-clip: padding-box;
   background-image:
-    radial-gradient(circle 1.8px at 35% 8px, #ffd479 1.8px, transparent 2.6px),
-    radial-gradient(circle 1.8px at 65% 8px, #ffd479 1.8px, transparent 2.6px),
-    linear-gradient(to right, transparent 46%, rgba(0, 0, 0, 0.25) 46%, rgba(0, 0, 0, 0.25) 54%, transparent 54%),
+    radial-gradient(circle 3.4px at 30% 11px, #fff3d6 0 1.8px, #6b3315 1.8px 2.6px, transparent 2.8px),
+    radial-gradient(circle 3.4px at 70% 11px, #fff3d6 0 1.8px, #6b3315 1.8px 2.6px, transparent 2.8px),
+    linear-gradient(to right, rgba(255, 255, 255, 0.35) 0, transparent 10%, transparent 90%, rgba(255, 255, 255, 0.35) 100%),
+    linear-gradient(to right, transparent 46%, rgba(0, 0, 0, 0.3) 46%, rgba(0, 0, 0, 0.3) 54%, transparent 54%),
     linear-gradient(180deg, #c1652f, #8f3a1a);
 }
 
@@ -92,9 +104,10 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
   background-image:
-    radial-gradient(circle 1.8px at 35% 8px, #ffe4a3 1.8px, transparent 2.6px),
-    radial-gradient(circle 1.8px at 65% 8px, #ffe4a3 1.8px, transparent 2.6px),
-    linear-gradient(to right, transparent 46%, rgba(0, 0, 0, 0.25) 46%, rgba(0, 0, 0, 0.25) 54%, transparent 54%),
+    radial-gradient(circle 3.4px at 30% 11px, #fffaf0 0 1.8px, #7a3a19 1.8px 2.6px, transparent 2.8px),
+    radial-gradient(circle 3.4px at 70% 11px, #fffaf0 0 1.8px, #7a3a19 1.8px 2.6px, transparent 2.8px),
+    linear-gradient(to right, rgba(255, 255, 255, 0.4) 0, transparent 10%, transparent 90%, rgba(255, 255, 255, 0.4) 100%),
+    linear-gradient(to right, transparent 46%, rgba(0, 0, 0, 0.3) 46%, rgba(0, 0, 0, 0.3) 54%, transparent 54%),
     linear-gradient(180deg, #d1753f, #9f4a2a);
 }
 
