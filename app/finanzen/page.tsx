@@ -461,23 +461,11 @@ export default async function Finanzen() {
                 <strong className="text-blue-700 dark:text-blue-300">{formatDate(firstPropertyPayoff.payoffDate)}</strong> schuldenfrei sein
               </li>
             )}
-            {lastPayoffDate && (
-              <li>
-                Dein gesamtes Portfolio wird bei gleichbleibenden Konditionen voraussichtlich am{' '}
-                <strong className="text-blue-700 dark:text-blue-300">{formatDate(lastPayoffDate)}</strong> komplett schuldenfrei sein
-              </li>
-            )}
             {halfDebtPoint && (
               <li>
                 Am <strong className="text-blue-700 dark:text-blue-300">{formatDate(halfDebtPoint.date)}</strong> hast du rechnerisch die Hälfte deiner ursprünglichen Kreditsumme ({euro(totalOriginalPrincipal)}) getilgt
               </li>
             )}
-            {tilgungMilestones.map(m => (
-              <li key={m.years}>
-                Nach {m.years} Jahren (bis {formatDate(m.date)}) hast du voraussichtlich <strong className="text-blue-700 dark:text-blue-300">{euro(m.paid)}</strong> getilgt
-                {' '}({percent(m.percent, 1)} deiner ursprünglichen Kreditsumme)
-              </li>
-            ))}
             {tilgungCagr !== null && (
               <li>
                 Deine Tilgung wächst bis zum jeweiligen Laufzeitende deiner Kredite im (nach Kreditsumme gewichteten) Schnitt um{' '}
@@ -486,6 +474,17 @@ export default async function Finanzen() {
               </li>
             )}
           </ul>
+          {tilgungMilestones.length > 0 && (
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {tilgungMilestones.map(m => (
+                <div key={m.years} className="text-center bg-white/70 dark:bg-white/5 rounded-lg py-2 px-1">
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">nach {m.years} J.</p>
+                  <p className="font-bold text-blue-700 dark:text-blue-300 text-sm">{euro(m.paid)}</p>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">{percent(m.percent, 1)} getilgt</p>
+                </div>
+              ))}
+            </div>
+          )}
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             Break-even = kumulierter Cashflow (Miete abzüglich Zinsen, Tilgung, Kosten-Laufrate und Rücklagenbildung) seit dem frühesten Kaufdatum, verglichen mit dem eingesetzten Eigenkapital (Kaufpreis + Kaufnebenkosten abzüglich Kreditsumme je Objekt). Kosten-/Rücklagen-Laufrate werden dabei vereinfacht als konstant über die Zeit angenommen.
           </p>
