@@ -6,6 +6,8 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { ThresholdBadge, ThresholdBar } from '@/components/threshold-badge'
 import { ReminderRow } from '@/components/reminders/reminder-row'
 import { TaxExportButton } from '@/components/tax-export-button'
+import { ExposeButton } from '@/components/properties/expose-button'
+import { PropertyImages } from '@/components/properties/property-images'
 import { PropertyReserves } from '@/components/properties/property-reserves'
 import { TilgungRing, LtvRing } from '@/components/properties/tilgung-ring'
 import { RiskOverview } from '@/components/tipps/risk-overview'
@@ -20,7 +22,7 @@ import { getReceiptAllocations } from '@/lib/receipt-allocations'
 import { generateRentSchedule, currentRentAmount, currentAgreement } from '@/lib/rent-schedule'
 import { sumInstandhaltungsruecklage, isUtilityBillableTenant } from '@/lib/operating-costs'
 import { euro, formatDate, propertyLabel, propertyValue } from '@/lib/format'
-import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, Receipt, ReceiptItem, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost, PROPERTY_CONDITION_GRADE_LABELS, PropertyConditionGrade } from '@/lib/types'
+import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, PropertyImage, Receipt, ReceiptItem, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost, PROPERTY_CONDITION_GRADE_LABELS, PropertyConditionGrade } from '@/lib/types'
 
 const HOA_STATUS_COLORS: Record<HoaResolutionStatus, string> = {
   offen: 'bg-gray-100 text-gray-700',
@@ -34,7 +36,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
   const supabase = await createClient()
   const currentYear = new Date().getFullYear()
 
-  const [{ data: property }, { data: receipts }, { data: receiptItems }, { data: tenants }, { data: loans }, { data: reminders }, { data: hoaDocuments }, { data: hoaResolutions }, { data: reserves }, { data: operatingCosts }] = await Promise.all([
+  const [{ data: property }, { data: receipts }, { data: receiptItems }, { data: tenants }, { data: loans }, { data: reminders }, { data: hoaDocuments }, { data: hoaResolutions }, { data: reserves }, { data: operatingCosts }, { data: propertyImages }] = await Promise.all([
     supabase.from('properties').select('*').eq('id', id).single(),
     // Bewusst nicht auf property_id gefiltert: ein Beleg kann per
     // receipt_items auf mehrere Immobilien aufgeteilt sein, dessen eigener
@@ -49,6 +51,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
     supabase.from('hoa_resolutions').select('*').eq('property_id', id).gte('year', currentYear - 2).order('year', { ascending: false }),
     supabase.from('property_reserves').select('*').eq('property_id', id).order('created_at'),
     supabase.from('operating_costs').select('*').eq('property_id', id),
+    supabase.from('property_images').select('*').eq('property_id', id).order('is_cover', { ascending: false }).order('created_at'),
   ])
 
   if (!property) notFound()
@@ -68,6 +71,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
   const hoaResolutionList = (hoaResolutions ?? []) as HoaResolution[]
   const reserveList = (reserves ?? []) as PropertyReserve[]
   const operatingCostList = (operatingCosts ?? []) as OperatingCost[]
+  const imageList = (propertyImages ?? []) as PropertyImage[]
   const reminderById = Object.fromEntries(reminderList.map(r => [r.id, r]))
 
   const { data: rentalAgreements } = tenantList.length
@@ -172,6 +176,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
           <Link href={`/properties/${id}/edit`} className="text-sm text-blue-600 hover:underline">Bearbeiten</Link>
           <TaxExportButton csv={rowsToCsv([taxExportRow])} filename={`steuer-export-${p.address.replace(/\s+/g, '-')}-${currentYear}.csv`} label={`Steuer-Export ${currentYear} (CSV)`} />
           <TaxExportButton csv={detailRowsToCsv(p, currentYear, taxExportDetailRows)} filename={`steuer-positionen-${p.address.replace(/\s+/g, '-')}-${currentYear}.csv`} label={`Alle Positionen ${currentYear} (CSV)`} />
+          <ExposeButton propertyId={id} />
         </div>
       </div>
 
@@ -272,6 +277,9 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
         <h2 className="text-lg font-semibold text-gray-800 mb-3">Standortrisiko</h2>
         <RiskOverview properties={[p]} />
       </div>
+
+      {/* Bilder */}
+      <PropertyImages propertyId={id} images={imageList} />
 
       {/* Rücklagen */}
       <PropertyReserves

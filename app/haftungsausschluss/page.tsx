@@ -69,9 +69,18 @@ export default function Haftungsausschluss() {
           Fahrlässigkeit beruhen.
         </p>
         <p className="text-sm text-gray-700 mt-3 leading-relaxed">
-          Bitte prüfe alle von Fimmax.AI erzeugten Auswertungen (insbesondere den Steuer-Export) vor
-          Weitergabe an Finanzamt, Bank oder Dritte eigenständig auf Richtigkeit oder lasse sie von
-          einer fachkundigen Person gegenprüfen.
+          Das gilt insbesondere für sämtliche durch die Website generierten Daten und Dokumente (z. B.
+          Steuer-Exporte, Nebenkostenabrechnungen, Objekt-Exposés), für den Inhalt der von dir
+          hochgeladenen Bilder und Dokumente sowie für durch KI verarbeitete oder erzeugte Inhalte (z. B.
+          automatische Beleg-Kategorisierung, Standortrisiko-Einschätzung). Es obliegt stets dir, alle
+          Informationen vor jeder Verwendung – insbesondere gegenüber Banken, dem Finanzamt,
+          Käufer:innen, Mieter:innen oder sonstigen Dritten – eigenständig auf ihre Richtigkeit zu
+          prüfen und gegenzurechnen bzw. durch eine fachkundige Person prüfen zu lassen.
+        </p>
+        <p className="text-sm text-gray-700 mt-3 leading-relaxed">
+          Bitte prüfe alle von Fimmax.AI erzeugten Auswertungen (insbesondere den Steuer-Export und das
+          Objekt-Exposé) vor Weitergabe an Finanzamt, Bank oder Dritte eigenständig auf Richtigkeit oder
+          lasse sie von einer fachkundigen Person gegenprüfen.
         </p>
       </Card>
 

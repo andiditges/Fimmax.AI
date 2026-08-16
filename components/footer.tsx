@@ -8,6 +8,7 @@ export function Footer() {
         <div className="flex items-center gap-4">
           <Link href="/impressum" className="hover:text-gray-600 transition-colors">Impressum</Link>
           <Link href="/datenschutz" className="hover:text-gray-600 transition-colors">Datenschutz</Link>
+          <Link href="/agb" className="hover:text-gray-600 transition-colors">AGB</Link>
           <Link href="/haftungsausschluss" className="hover:text-gray-600 transition-colors">Haftungsausschluss</Link>
         </div>
       </div>

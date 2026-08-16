@@ -6,6 +6,7 @@ import { Card, CardTitle } from '@/components/ui/card'
 import { euro } from '@/lib/format'
 import { OPERATING_COST_CATEGORIES, OperatingCostCategoryConfig } from '@/lib/operating-costs'
 import { OperatingCost, OperatingCostCategory, Property, Tenant, UtilitySettlement } from '@/lib/types'
+import { ALLOWED_DOCUMENT_TYPES } from '@/lib/upload-validation'
 
 type Row = { amount: string; allocable: boolean; tenant_id: string }
 
@@ -119,8 +120,16 @@ export function NebenkostenForm({
           </p>
           <input
             type="file"
-            accept="image/*,application/pdf"
-            onChange={e => setFile(e.target.files?.[0] ?? null)}
+            accept={ALLOWED_DOCUMENT_TYPES.join(',')}
+            onChange={e => {
+              const f = e.target.files?.[0] ?? null
+              if (f && !ALLOWED_DOCUMENT_TYPES.includes(f.type)) {
+                alert('Nicht unterstütztes Dateiformat – bitte JPEG, PNG, WebP oder PDF verwenden.')
+                e.target.value = ''
+                return
+              }
+              setFile(f)
+            }}
             className="w-full text-sm"
           />
           {fileUrl && !file && <p className="text-xs text-gray-400 mt-2">✓ Jahresabrechnung bereits hinterlegt</p>}

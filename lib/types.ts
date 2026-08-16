@@ -71,6 +71,29 @@ export interface Property {
   renovation_note: string | null
   expected_allocable_operating_cost_annual: number | null
   expected_non_allocable_operating_cost_annual: number | null
+  rooms: number | null
+  energy_certificate_type: EnergyCertificateType | null
+  energy_certificate_value: number | null
+  energy_efficiency_class: string | null
+  heating_year: number | null
+  created_at: string
+}
+
+export type EnergyCertificateType = 'verbrauch' | 'bedarf'
+
+export const ENERGY_CERTIFICATE_TYPE_LABELS: Record<EnergyCertificateType, string> = {
+  verbrauch: 'Verbrauchsausweis',
+  bedarf: 'Bedarfsausweis',
+}
+
+export const ENERGY_EFFICIENCY_CLASSES = ['A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const
+
+export interface PropertyImage {
+  id: string
+  property_id: string
+  file_path: string
+  caption: string | null
+  is_cover: boolean
   created_at: string
 }
 

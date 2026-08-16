@@ -6,6 +6,7 @@ import { buildStoragePath } from '@/lib/storage-path'
 import { Card } from '@/components/ui/card'
 import { propertyLabel } from '@/lib/format'
 import { HOA_RESOLUTION_STATUS_LABELS, HoaResolutionStatus } from '@/lib/types'
+import { ALLOWED_DOCUMENT_TYPES } from '@/lib/upload-validation'
 
 export default function NewHoaDocument() {
   const router = useRouter()
@@ -124,8 +125,16 @@ export default function NewHoaDocument() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Protokoll (PDF/Bild)</label>
-            <input type="file" accept="image/*,application/pdf" disabled={!!docId}
-              onChange={e => setFile(e.target.files?.[0] ?? null)}
+            <input type="file" accept={ALLOWED_DOCUMENT_TYPES.join(',')} disabled={!!docId}
+              onChange={e => {
+                const f = e.target.files?.[0] ?? null
+                if (f && !ALLOWED_DOCUMENT_TYPES.includes(f.type)) {
+                  alert('Nicht unterstütztes Dateiformat – bitte JPEG, PNG, WebP oder PDF verwenden.')
+                  e.target.value = ''
+                  return
+                }
+                setFile(f)
+              }}
               className="w-full text-sm" />
           </div>
 

@@ -37,10 +37,12 @@ export default function Datenschutz() {
         <CardTitle>Immobilien-, Finanz- und Belegdaten</CardTitle>
         <p className="text-sm text-gray-700 mt-2 leading-relaxed">
           Alle Daten, die du selbst einträgst oder hochlädst – etwa zu Immobilien, Kaufverträgen,
-          Krediten, Belegen, Erinnerungen oder WEG-Dokumenten – verarbeiten wir ausschließlich, um dir die
-          Funktionen von Fimmax.AI bereitzustellen (Art. 6 Abs. 1 lit. b DSGVO). Hochgeladene Dateien
-          (z. B. Belege, Protokolle) werden verschlüsselt in einem privaten Speicherbereich abgelegt,
-          auf den nur du Zugriff hast.
+          Krediten, Belegen, Erinnerungen, Immobilienbildern oder WEG-Dokumenten – verarbeiten wir
+          ausschließlich, um dir die Funktionen von Fimmax.AI bereitzustellen (Art. 6 Abs. 1 lit. b
+          DSGVO). Hochgeladene Dateien (z. B. Belege, Immobilienbilder, Protokolle) werden verschlüsselt
+          in einem privaten Speicherbereich abgelegt, auf den nur du Zugriff hast. Von dir hochgeladene
+          Immobilienbilder werden dabei ausschließlich gespeichert und für das von dir erzeugte
+          Objekt-Exposé verwendet – anders als Belege werden sie nicht an einen KI-Anbieter übermittelt.
         </p>
       </Card>
 
@@ -104,12 +106,24 @@ export default function Datenschutz() {
       </Card>
 
       <Card>
+        <CardTitle>Nutzungsstatistik (Produktverbesserung)</CardTitle>
+        <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+          Um Fimmax.AI zu verbessern, erfassen wir, welche Seiten und Funktionen du innerhalb deines
+          eingeloggten Kontos nutzt (z. B. Seitenaufrufe, Erstellung eines Exposés oder Belegs). Diese
+          Daten speichern wir ausschließlich in unserer eigenen Datenbank, ohne Weitergabe an
+          Drittanbieter oder Analyse-Dienste, und ohne zusätzliche Cookies zu setzen (Art. 6 Abs. 1
+          lit. f DSGVO – berechtigtes Interesse an der Produktverbesserung). Du kannst der Erfassung
+          durch eine E-Mail an die oben genannte Adresse widersprechen.
+        </p>
+      </Card>
+
+      <Card>
         <CardTitle>Cookies</CardTitle>
         <p className="text-sm text-gray-700 mt-2 leading-relaxed">
           Wir verwenden ausschließlich technisch notwendige Cookies, die für den Login und die sichere
-          Sitzungsverwaltung erforderlich sind (Art. 6 Abs. 1 lit. b DSGVO, § 25 Abs. 2 Nr. 2 TTDSG).
-          Diese Cookies erfordern keine Einwilligung. Wir setzen aktuell keine Analyse-, Marketing- oder
-          Tracking-Cookies ein.
+          Sitzungsverwaltung erforderlich sind (Art. 6 Abs. 1 lit. b DSGVO, § 25 Abs. 2 Nr. 2 TDDDG,
+          vormals TTDSG). Diese Cookies erfordern keine Einwilligung. Wir setzen aktuell keine Analyse-,
+          Marketing- oder Tracking-Cookies ein.
         </p>
       </Card>
 

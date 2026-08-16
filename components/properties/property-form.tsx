@@ -8,10 +8,12 @@ import { findGemeindeForAddress, MIETRECHT_STATUS_LABEL } from '@/lib/mietrecht'
 import { GRUNDERWERBSTEUER_RATES } from '@/lib/grunderwerbsteuer'
 import { Card } from '@/components/ui/card'
 import { AddressAutocomplete } from '@/components/address-autocomplete'
+import { trackEvent } from '@/lib/analytics'
 import { euro } from '@/lib/format'
 import {
   Bundesland, IncidentalCostCategory, IncidentalCostItem, INCIDENTAL_COST_CATEGORY_LABELS,
   Property, PropertyConditionGrade, PROPERTY_CONDITION_GRADE_LABELS,
+  EnergyCertificateType, ENERGY_CERTIFICATE_TYPE_LABELS, ENERGY_EFFICIENCY_CLASSES,
 } from '@/lib/types'
 
 const CONDITION_FIELDS: { key: 'condition_windows' | 'condition_electrical' | 'condition_bathroom' | 'condition_heating'; label: string }[] = [
@@ -55,6 +57,11 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
     renovation_note: property?.renovation_note ?? '',
     expected_allocable_operating_cost_annual: property?.expected_allocable_operating_cost_annual != null ? String(property.expected_allocable_operating_cost_annual) : '',
     expected_non_allocable_operating_cost_annual: property?.expected_non_allocable_operating_cost_annual != null ? String(property.expected_non_allocable_operating_cost_annual) : '',
+    rooms: property?.rooms != null ? String(property.rooms) : '',
+    energy_certificate_type: property?.energy_certificate_type ?? ('' as EnergyCertificateType | ''),
+    energy_certificate_value: property?.energy_certificate_value != null ? String(property.energy_certificate_value) : '',
+    energy_efficiency_class: property?.energy_efficiency_class ?? '',
+    heating_year: property?.heating_year != null ? String(property.heating_year) : '',
   })
   const [conditions, setConditions] = useState<Record<string, PropertyConditionGrade | ''>>({
     condition_windows: property?.condition_windows ?? '',
@@ -247,6 +254,11 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
       renovation_note: form.renovation_note || null,
       expected_allocable_operating_cost_annual: form.expected_allocable_operating_cost_annual ? parseFloat(form.expected_allocable_operating_cost_annual) : null,
       expected_non_allocable_operating_cost_annual: form.expected_non_allocable_operating_cost_annual ? parseFloat(form.expected_non_allocable_operating_cost_annual) : null,
+      rooms: form.rooms ? parseFloat(form.rooms) : null,
+      energy_certificate_type: form.energy_certificate_type || null,
+      energy_certificate_value: form.energy_certificate_value ? parseFloat(form.energy_certificate_value) : null,
+      energy_efficiency_class: form.energy_efficiency_class || null,
+      heating_year: form.heating_year ? parseInt(form.heating_year) : null,
       condition_windows: conditions.condition_windows || null,
       condition_electrical: conditions.condition_electrical || null,
       condition_bathroom: conditions.condition_bathroom || null,
@@ -290,7 +302,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
     }
 
     if (property) router.push(`/properties/${property.id}`)
-    else setCreatedPropertyId(savedProperty.id)
+    else { trackEvent('property_created'); setCreatedPropertyId(savedProperty.id) }
   }
 
   async function onDelete() {
@@ -305,6 +317,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
     'unit', 'unit_label', 'current_value', 'movable_items', 'incidental_costs',
     'living_area_sqm', 'comparable_rent_min', 'comparable_rent_max', 'comparable_rent_source', 'comparable_rent_as_of', 'renovation_note',
     'expected_allocable_operating_cost_annual', 'expected_non_allocable_operating_cost_annual',
+    'rooms', 'energy_certificate_type', 'energy_certificate_value', 'energy_efficiency_class', 'heating_year',
   ]
 
   const field = (label: string, key: keyof typeof form, type = 'text', hint?: string) => (
@@ -609,6 +622,39 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
             </div>
 
             {field('Wohnfläche (m²)', 'living_area_sqm', 'number', 'Für die €/m²-Einordnung unten')}
+
+            {field('Zimmeranzahl', 'rooms', 'number', 'Optional – z.B. 3.5. Für Exposé/Verkaufsunterlagen')}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Energieausweis</label>
+              <p className="text-xs text-gray-400 mb-1">Optional – Pflichtangabe bei Verkauf/Vermietung (§ 87 GEG), für das Objekt-Exposé</p>
+              <div className="grid grid-cols-2 gap-3">
+                <select
+                  value={form.energy_certificate_type}
+                  onChange={e => setForm(f => ({ ...f, energy_certificate_type: e.target.value as EnergyCertificateType | '' }))}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Typ – bitte wählen...</option>
+                  {(Object.keys(ENERGY_CERTIFICATE_TYPE_LABELS) as EnergyCertificateType[]).map(t => (
+                    <option key={t} value={t}>{ENERGY_CERTIFICATE_TYPE_LABELS[t]}</option>
+                  ))}
+                </select>
+                <select
+                  value={form.energy_efficiency_class}
+                  onChange={e => setForm(f => ({ ...f, energy_efficiency_class: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Effizienzklasse – bitte wählen...</option>
+                  {ENERGY_EFFICIENCY_CLASSES.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                {field('Energiekennwert (kWh/(m²·a))', 'energy_certificate_value', 'number')}
+                {field('Baujahr Heizung', 'heating_year', 'number')}
+              </div>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Zustand je Gewerk</label>

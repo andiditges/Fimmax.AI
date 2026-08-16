@@ -7,6 +7,7 @@ import { buildStoragePath } from '@/lib/storage-path'
 import { euro, formatDate } from '@/lib/format'
 import { lookupVpiForMonth } from '@/lib/vpi-history'
 import { RentalAgreement } from '@/lib/types'
+import { ALLOWED_DOCUMENT_TYPES } from '@/lib/upload-validation'
 
 export function RentHistoryRow({ agreement }: { agreement: RentalAgreement }) {
   const router = useRouter()
@@ -91,7 +92,20 @@ export function RentHistoryRow({ agreement }: { agreement: RentalAgreement }) {
         )}
         <div>
           <label className="block text-xs text-gray-500 mb-1">Beleg (Vertrag/Erhöhungsschreiben)</label>
-          <input type="file" accept="image/*,application/pdf" onChange={e => setFile(e.target.files?.[0] ?? null)} className="w-full text-xs" />
+          <input
+            type="file"
+            accept={ALLOWED_DOCUMENT_TYPES.join(',')}
+            onChange={e => {
+              const f = e.target.files?.[0] ?? null
+              if (f && !ALLOWED_DOCUMENT_TYPES.includes(f.type)) {
+                alert('Nicht unterstütztes Dateiformat – bitte JPEG, PNG, WebP oder PDF verwenden.')
+                e.target.value = ''
+                return
+              }
+              setFile(f)
+            }}
+            className="w-full text-xs"
+          />
           {agreement.file_url && !file && <p className="text-xs text-gray-400 mt-0.5">✓ Beleg bereits hinterlegt</p>}
         </div>
         <div className="flex gap-2">

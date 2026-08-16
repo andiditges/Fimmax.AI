@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Nav } from '@/components/nav'
 import { Footer } from '@/components/footer'
 import { FeedbackButton } from '@/components/feedback-button'
+import { PageViewTracker } from '@/components/analytics/page-view-tracker'
 import './globals.css'
 
 const geist = Geist({ subsets: ['latin'] })
@@ -39,6 +40,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </main>
         <Footer />
         {user && <FeedbackButton />}
+        {user && <PageViewTracker />}
       </body>
     </html>
   )

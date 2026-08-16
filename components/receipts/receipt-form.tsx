@@ -3,9 +3,11 @@ import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { buildStoragePath } from '@/lib/storage-path'
+import { trackEvent } from '@/lib/analytics'
 import { Card } from '@/components/ui/card'
 import { propertyLabel } from '@/lib/format'
 import { CATEGORY_LABELS, Receipt, ReceiptCategory, ReceiptItem } from '@/lib/types'
+import { ALLOWED_DOCUMENT_TYPES as ALLOWED_RECEIPT_TYPES } from '@/lib/upload-validation'
 
 interface PropertyOption {
   id: string
@@ -162,6 +164,11 @@ export function ReceiptForm({
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
+    if (!ALLOWED_RECEIPT_TYPES.includes(f.type)) {
+      alert('Nicht unterstütztes Dateiformat – bitte JPEG, PNG, WebP oder PDF verwenden.')
+      if (fileRef.current) fileRef.current.value = ''
+      return
+    }
     setFile(f)
     setPreview(URL.createObjectURL(f))
     analyzeFile(f)
@@ -238,6 +245,7 @@ export function ReceiptForm({
       }).select('id').single()
       if (error || !data) { alert('Fehler: ' + error?.message); setSaving(false); return }
       savedReceiptId = data.id
+      trackEvent('receipt_created')
     } else {
       const { error } = await supabase.from('receipts').update(receiptPayload).eq('id', receiptId)
       if (error) { alert('Fehler: ' + error.message); setSaving(false); return }
@@ -373,7 +381,7 @@ export function ReceiptForm({
           <input
             ref={fileRef}
             type="file"
-            accept="image/*,application/pdf"
+            accept={ALLOWED_RECEIPT_TYPES.join(',')}
             capture="environment"
             onChange={onFileChange}
             className="hidden"

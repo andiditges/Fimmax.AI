@@ -30,7 +30,7 @@ export default function Login() {
       else { router.push('/'); router.refresh() }
     } else {
       if (!acceptedTerms) {
-        setError('Bitte bestätige den Haftungsausschluss und die Datenschutzerklärung.')
+        setError('Bitte bestätige die AGB, den Haftungsausschluss und die Datenschutzerklärung.')
         setLoading(false)
         return
       }
@@ -111,7 +111,9 @@ export default function Login() {
                   required
                 />
                 <span>
-                  Ich habe den{' '}
+                  Ich habe die{' '}
+                  <Link href="/agb" target="_blank" className="text-blue-600 hover:underline">AGB</Link>,
+                  den{' '}
                   <Link href="/haftungsausschluss" target="_blank" className="text-blue-600 hover:underline">Haftungsausschluss</Link>{' '}
                   und die{' '}
                   <Link href="/datenschutz" target="_blank" className="text-blue-600 hover:underline">Datenschutzerklärung</Link>{' '}
