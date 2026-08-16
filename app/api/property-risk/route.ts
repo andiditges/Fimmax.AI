@@ -1,5 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { checkAiUsageLimit } from '@/lib/ai-usage-limit'
+import { aiFeaturesEnabled, AI_DISABLED_MESSAGE } from '@/lib/ai-features-enabled'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -10,6 +13,15 @@ Wichtig: Du hast keinen Zugriff auf Live-Daten oder aktuelle Marktberichte - nur
 Score-Skala 1-10, wobei 1 = sehr geringes Risiko (stabile/wachsende Nachfrage, gute Lage) und 10 = sehr hohes Risiko (schrumpfende Region, fallende Preise, Überangebot). Gib ausschließlich valides JSON zurück, kein anderer Text.`
 
 export async function POST(req: NextRequest) {
+  if (!aiFeaturesEnabled()) return NextResponse.json({ error: AI_DISABLED_MESSAGE }, { status: 403 })
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
+  if (!(await checkAiUsageLimit(supabase, user.id, 'property_risk'))) {
+    return NextResponse.json({ error: 'Tageslimit für KI-Standortrisiko erreicht (Beta-Limit) - bitte morgen erneut versuchen.' }, { status: 429 })
+  }
+
   const { address, build_year, purchase_price, current_value } = await req.json()
   if (!address) return NextResponse.json({ error: 'Keine Adresse' }, { status: 400 })
 

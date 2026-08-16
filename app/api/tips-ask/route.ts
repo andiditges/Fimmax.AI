@@ -1,5 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { checkAiUsageLimit } from '@/lib/ai-usage-limit'
+import { aiFeaturesEnabled, AI_DISABLED_MESSAGE } from '@/lib/ai-features-enabled'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -13,6 +16,15 @@ Regeln:
 - Antworte auf Deutsch, in Fließtext oder kurzen Stichpunkten, keine übertriebene Formatierung.`
 
 export async function POST(req: NextRequest) {
+  if (!aiFeaturesEnabled()) return NextResponse.json({ error: AI_DISABLED_MESSAGE }, { status: 403 })
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
+  if (!(await checkAiUsageLimit(supabase, user.id, 'tips_ask'))) {
+    return NextResponse.json({ error: 'Tageslimit für KI-Tipps-Fragen erreicht (Beta-Limit) - bitte morgen erneut versuchen.' }, { status: 429 })
+  }
+
   const { question, context } = await req.json()
   if (!question || !context) return NextResponse.json({ error: 'Frage oder Kontext fehlt' }, { status: 400 })
 

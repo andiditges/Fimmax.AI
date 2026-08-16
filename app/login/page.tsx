@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -17,6 +17,15 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
+  const [slotsRemaining, setSlotsRemaining] = useState<number | null>(null)
+
+  useEffect(() => {
+    supabase.rpc('beta_signup_slots_remaining').then(({ data }) => {
+      if (typeof data === 'number') setSlotsRemaining(data)
+    })
+  }, [supabase])
+
+  const betaFull = slotsRemaining === 0
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -39,7 +48,7 @@ export default function Login() {
         password,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       })
-      if (error) setError(error.message)
+      if (error) setError(/beta ist aktuell auf 10 nutzer begrenzt/i.test(error.message) ? 'Die Beta ist aktuell voll (10 von 10 Plätzen belegt).' : error.message)
       else setInfo('Konto angelegt. Falls Bestätigung aktiv ist: bitte E-Mail-Postfach prüfen.')
     }
     setLoading(false)
@@ -77,6 +86,19 @@ export default function Login() {
         <h2 className="brick-text text-lg font-semibold mb-4 text-center">
           {mode === 'signin' ? 'Anmelden' : 'Konto anlegen'}
         </h2>
+
+        {mode === 'signup' && (
+          <div className="mb-4 text-xs text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900 rounded-xl px-3 py-2.5">
+            <p className="font-medium">Beta-Version{slotsRemaining != null && !betaFull ? ` – noch ${slotsRemaining} von 10 Plätzen frei` : ''}</p>
+            <p className="mt-1">Noch nicht alle Funktionen sind freigeschaltet. KI-Funktionen (Beleg-Analyse, Standortrisiko-Einschätzung, Tipps-Chat) laufen in dieser Version noch nicht - Belege können weiterhin ganz normal manuell erfasst werden.</p>
+          </div>
+        )}
+
+        {betaFull && mode === 'signup' ? (
+          <Card className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">
+            Die Beta ist aktuell voll (10 von 10 Plätzen belegt). Bitte später erneut versuchen.
+          </Card>
+        ) : (
         <Card>
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
@@ -133,15 +155,16 @@ export default function Login() {
               {loading ? <BrickLoader /> : mode === 'signin' ? 'Anmelden' : 'Konto anlegen'}
             </button>
           </form>
-
-          <button
-            type="button"
-            onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); setInfo(null) }}
-            className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:underline mt-4"
-          >
-            {mode === 'signin' ? 'Noch kein Konto? Registrieren' : 'Schon ein Konto? Anmelden'}
-          </button>
         </Card>
+        )}
+
+        <button
+          type="button"
+          onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); setInfo(null) }}
+          className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:underline mt-4"
+        >
+          {mode === 'signin' ? 'Noch kein Konto? Registrieren' : 'Schon ein Konto? Anmelden'}
+        </button>
       </div>
     </div>
   )
