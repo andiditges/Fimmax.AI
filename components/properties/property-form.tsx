@@ -322,8 +322,8 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
 
   const field = (label: string, key: keyof typeof form, type = 'text', hint?: string) => (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      {hint && <p className="text-xs text-gray-400 mb-1">{hint}</p>}
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
+      {hint && <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{hint}</p>}
       <input
         type={type}
         value={String(form[key])}
@@ -336,7 +336,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
             : key === 'movable_items' ? onMovableBlur
             : undefined
         }
-        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         required={OPTIONAL_FIELDS.indexOf(key) === -1}
       />
     </div>
@@ -346,8 +346,8 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
     return (
       <div className="max-w-xl">
         <Card className="text-center py-10">
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Immobilie angelegt</h1>
-          <p className="text-sm text-gray-500 mb-6">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Immobilie angelegt</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
             Möchtest du direkt das passende Darlehen dazu erfassen? Das geht auch später jederzeit über die Objektseite.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -361,7 +361,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
             <button
               type="button"
               onClick={() => router.push('/')}
-              className="bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+              className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-5 py-2.5 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               Später – zum Dashboard
             </button>
@@ -373,15 +373,15 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">{property ? 'Immobilie bearbeiten' : 'Neue Immobilie'}</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">{property ? 'Immobilie bearbeiten' : 'Neue Immobilie'}</h1>
       <Card>
         {isWizard && (
           <div className="mb-5">
-            <div className="flex items-center justify-between text-xs text-gray-400 mb-1.5">
+            <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500 mb-1.5">
               <span>Schritt {step} von {STEP_TITLES.length}</span>
               <span>{STEP_TITLES[step - 1]}</span>
             </div>
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
               <div className="h-full bg-blue-600 rounded-full transition-all" style={{ width: `${(step / STEP_TITLES.length) * 100}%` }} />
             </div>
           </div>
@@ -393,7 +393,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
         >
           {(!isWizard || step === 1) && (<>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Adresse</label>
             <AddressAutocomplete
               value={form.address}
               onChange={address => setForm(f => ({ ...f, address }))}
@@ -403,7 +403,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
               }}
             />
             {gemeindeMatch && (
-              <p className="text-xs text-amber-700 mt-1.5 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-2">
+              <p className="text-xs text-amber-700 dark:text-amber-400 mt-1.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900 rounded-lg px-2.5 py-2">
                 {gemeindeMatch.name} gilt als Gebiet mit angespanntem Wohnungsmarkt: {MIETRECHT_STATUS_LABEL[gemeindeMatch.status]}.
                 Relevant für Mieterhöhungen – siehe Kappungsgrenzen-Countdown unter "Mieterhöhung" nach dem Anlegen von Mietern.
               </p>
@@ -411,12 +411,12 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bundesland (Kauf)</label>
-            <p className="text-xs text-gray-400 mb-1">Wird beim Auswählen eines Adressvorschlags automatisch erkannt, kann aber jederzeit korrigiert werden.</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bundesland (Kauf)</label>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Wird beim Auswählen eines Adressvorschlags automatisch erkannt, kann aber jederzeit korrigiert werden.</p>
             <select
               value={form.bundesland}
               onChange={e => onBundeslandChange(e.target.value as Bundesland | '')}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Bitte wählen...</option>
               {BUNDESLAND_LIST.map(b => <option key={b} value={b}>{b}</option>)}
@@ -438,8 +438,8 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
             'Optional – bewegliche Gegenstände wie Einbauküche oder Markise, falls im Kaufvertrag separat ausgewiesen. Mindern die Bemessungsgrundlage für die Grunderwerbsteuer.')}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Grunderwerbsteuer (€)</label>
-            <p className="text-xs text-gray-400 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Grunderwerbsteuer (€)</label>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
               Automatisch berechnet aus (Kaufpreis − Einrichtungsgegenstände) × {form.bundesland ? `${GRUNDERWERBSTEUER_RATES[form.bundesland as Bundesland]}%` : 'Satz'} ({form.bundesland || 'Bundesland wählen'}, Stand 2026) – zum Abgleich mit dem Steuerbescheid. Kann bei Bedarf angepasst werden, z.B. bei Befreiungen.
             </p>
             <input
@@ -447,38 +447,38 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
               step="0.01"
               value={form.grunderwerbsteuer}
               onChange={e => setForm(f => ({ ...f, grunderwerbsteuer: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-gray-700">Kaufnebenkosten</label>
-              <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs shrink-0">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Kaufnebenkosten</label>
+              <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-xs shrink-0">
                 <button
                   type="button"
                   onClick={() => setIncidentalCostsMode('eur')}
-                  className={`px-2.5 py-1 transition-colors ${incidentalCostsMode === 'eur' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                  className={`px-2.5 py-1 transition-colors ${incidentalCostsMode === 'eur' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                 >
                   €
                 </button>
                 <button
                   type="button"
                   onClick={() => setIncidentalCostsMode('percent')}
-                  className={`px-2.5 py-1 border-l border-gray-200 transition-colors ${incidentalCostsMode === 'percent' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                  className={`px-2.5 py-1 border-l border-gray-200 dark:border-gray-700 transition-colors ${incidentalCostsMode === 'percent' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                 >
                   %
                 </button>
                 <button
                   type="button"
                   onClick={() => setIncidentalCostsMode('items')}
-                  className={`px-2.5 py-1 border-l border-gray-200 transition-colors ${incidentalCostsMode === 'items' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                  className={`px-2.5 py-1 border-l border-gray-200 dark:border-gray-700 transition-colors ${incidentalCostsMode === 'items' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                 >
                   Posten
                 </button>
               </div>
             </div>
-            <p className="text-xs text-gray-400 mb-1">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
               Notar, Grundbuch/Amtsgericht, Makler, Grundschuldbestellung, Nutzungsdauergutachten u.ä. – ohne Grunderwerbsteuer (die hat ihr eigenes Feld oben) und ohne Renovierung (kommt als Beleg mit is_renovation-Flag). Fließt in die Eigenkapital-Berechnung im Finanz-Cockpit ein.
             </p>
             {incidentalCostsMode === 'eur' ? (
@@ -487,7 +487,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
                 step="0.01"
                 value={form.incidental_costs}
                 onChange={e => setForm(f => ({ ...f, incidental_costs: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : incidentalCostsMode === 'percent' ? (
               <div className="flex items-center gap-2">
@@ -498,11 +498,11 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
                     value={incidentalCostsPercent}
                     onChange={e => onIncidentalCostsPercentChange(e.target.value)}
                     placeholder="z.B. 8"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm">%</span>
                 </div>
-                <span className="text-sm text-gray-500 whitespace-nowrap">
+                <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   = {form.incidental_costs && !isNaN(parseFloat(form.incidental_costs)) ? euro(parseFloat(form.incidental_costs)) : '–'}
                 </span>
               </div>
@@ -513,7 +513,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
                     <select
                       value={row.category}
                       onChange={e => updateItemRow(i, { category: e.target.value as IncidentalCostCategory })}
-                      className="border border-gray-200 rounded-xl px-2.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
+                      className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-2.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
                     >
                       {(Object.keys(INCIDENTAL_COST_CATEGORY_LABELS) as IncidentalCostCategory[]).map(c => (
                         <option key={c} value={c}>{INCIDENTAL_COST_CATEGORY_LABELS[c]}</option>
@@ -524,7 +524,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
                       value={row.note}
                       onChange={e => updateItemRow(i, { note: e.target.value })}
                       placeholder="Notiz (optional)"
-                      className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0"
+                      className="flex-1 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0"
                     />
                     <input
                       type="number"
@@ -532,13 +532,13 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
                       value={row.amount}
                       onChange={e => updateItemRow(i, { amount: e.target.value })}
                       placeholder="€"
-                      className="w-24 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
+                      className="w-24 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
                     />
                     <button
                       type="button"
                       onClick={() => removeItemRow(i)}
                       disabled={itemRows.length === 1}
-                      className="text-gray-400 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed px-1 shrink-0"
+                      className="text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-30 disabled:cursor-not-allowed px-1 shrink-0"
                       aria-label="Posten entfernen"
                     >
                       ✕
@@ -546,11 +546,11 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
                   </div>
                 ))}
                 <div className="flex items-center justify-between pt-1">
-                  <button type="button" onClick={addItemRow} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  <button type="button" onClick={addItemRow} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
                     + Posten hinzufügen
                   </button>
-                  <span className="text-sm text-gray-500">
-                    Summe: <strong className="text-gray-900">{euro(itemRowsSum(itemRows))}</strong>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    Summe: <strong className="text-gray-900 dark:text-gray-100">{euro(itemRowsSum(itemRows))}</strong>
                   </span>
                 </div>
               </div>
@@ -575,14 +575,14 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
           {field('davon Grundstücksanteil am Kaufpreis (€)', 'land_value', 'number',
             'Anteil am reinen Kaufpreis (ohne Nebenkosten) laut Kaufvertrag, Bodenrichtwert oder BMF-Tool')}
 
-          <p className="text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 -mt-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl px-3 py-2 -mt-2">
             Unsicher bei der Aufteilung? Das Bundesfinanzministerium stellt eine offizielle
             Arbeitshilfe zur Kaufpreisaufteilung bereit:{' '}
             <a
               href="https://www.bundesfinanzministerium.de/Datenportal/Daten/frei-nutzbare-produkte/Anwendungen/Kaufpreisaufteilung-Grundstuecke/Kaufpreisaufteilung-Grundstuecke.html"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
             >
               Kaufpreisaufteilung-Tool (BMF)
             </a>
@@ -594,7 +594,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
             'Wird aus dem Baujahr vorgeschlagen (gesetzlicher Standardwert), kann aber frei geändert werden – z.B. laut Restnutzungsdauergutachten (typisch 10-50 Jahre, § 7 Abs. 4 Satz 2 EStG). Der AfA-Satz ergibt sich automatisch als 100 / Restnutzungsdauer.')}
 
           {!isNaN(parseInt(form.usage_duration)) && parseInt(form.usage_duration) > 0 && (
-            <p className="text-sm text-gray-500 bg-gray-50 rounded-xl px-3 py-2 -mt-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2 -mt-2">
               Daraus ergibt sich ein AfA-Satz von <strong>{(100 / parseInt(form.usage_duration)).toFixed(2)}%</strong> p.a.
             </p>
           )}
@@ -605,17 +605,17 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
               id="self_managed"
               checked={form.is_self_managed}
               onChange={e => setForm(f => ({ ...f, is_self_managed: e.target.checked }))}
-              className="w-4 h-4 rounded border-gray-300 text-blue-600"
+              className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600"
             />
-            <label htmlFor="self_managed" className="text-sm text-gray-700">Selbst verwaltet (keine Hausverwaltung)</label>
+            <label htmlFor="self_managed" className="text-sm text-gray-700 dark:text-gray-300">Selbst verwaltet (keine Hausverwaltung)</label>
           </div>
           </>)}
 
           {(!isWizard || step === 4) && (<>
-          <div className={isWizard ? 'space-y-5' : 'border-t border-gray-100 pt-5 space-y-5'}>
+          <div className={isWizard ? 'space-y-5' : 'border-t border-gray-100 dark:border-gray-800 pt-5 space-y-5'}>
             <div>
-              <h2 className="text-sm font-semibold text-gray-800 mb-1">Zustand & Vergleichsmiete</h2>
-              <p className="text-xs text-gray-400">
+              <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Zustand & Vergleichsmiete</h2>
+              <p className="text-xs text-gray-400 dark:text-gray-500">
                 Alles optional. Hilft dir, deine Miete selbst gegen die ortsübliche Vergleichsmiete einzuordnen –
                 die App berechnet hier bewusst nichts automatisch (kein bundesweiter Mietspiegel verfügbar).
               </p>
@@ -626,13 +626,13 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
             {field('Zimmeranzahl', 'rooms', 'number', 'Optional – z.B. 3.5. Für Exposé/Verkaufsunterlagen')}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Energieausweis</label>
-              <p className="text-xs text-gray-400 mb-1">Optional – Pflichtangabe bei Verkauf/Vermietung (§ 87 GEG), für das Objekt-Exposé</p>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Energieausweis</label>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Optional – Pflichtangabe bei Verkauf/Vermietung (§ 87 GEG), für das Objekt-Exposé</p>
               <div className="grid grid-cols-2 gap-3">
                 <select
                   value={form.energy_certificate_type}
                   onChange={e => setForm(f => ({ ...f, energy_certificate_type: e.target.value as EnergyCertificateType | '' }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Typ – bitte wählen...</option>
                   {(Object.keys(ENERGY_CERTIFICATE_TYPE_LABELS) as EnergyCertificateType[]).map(t => (
@@ -642,7 +642,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
                 <select
                   value={form.energy_efficiency_class}
                   onChange={e => setForm(f => ({ ...f, energy_efficiency_class: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Effizienzklasse – bitte wählen...</option>
                   {ENERGY_EFFICIENCY_CLASSES.map(c => (
@@ -657,15 +657,15 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Zustand je Gewerk</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Zustand je Gewerk</label>
               <div className="grid grid-cols-2 gap-3">
                 {CONDITION_FIELDS.map(c => (
                   <div key={c.key}>
-                    <label className="block text-xs text-gray-500 mb-1">{c.label}</label>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{c.label}</label>
                     <select
                       value={conditions[c.key]}
                       onChange={e => setConditions(v => ({ ...v, [c.key]: e.target.value as PropertyConditionGrade | '' }))}
-                      className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">–</option>
                       {(Object.keys(PROPERTY_CONDITION_GRADE_LABELS) as PropertyConditionGrade[]).map(g => (
@@ -680,8 +680,8 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
             {field('Sanierungsnotiz', 'renovation_note', 'text', 'Optional – z.B. "Bad 2023 komplett neu", "Fenster noch original von 1985"')}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ortsübliche Vergleichsmiete (€/m², netto kalt)</label>
-              <p className="text-xs text-gray-400 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ortsübliche Vergleichsmiete (€/m², netto kalt)</label>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
                 Selbst recherchiert, z.B. aus dem Mietspiegel deiner Gemeinde (falls vorhanden) oder Vergleichsobjekten. Ohne Gewähr, ersetzt keine Rechtsberatung.
               </p>
               <div className="grid grid-cols-2 gap-3">
@@ -701,7 +701,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
                 <button
                   type="button"
                   onClick={goBack}
-                  className="px-5 py-3 rounded-xl font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                  className="px-5 py-3 rounded-xl font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                 >
                   Zurück
                 </button>
@@ -737,13 +737,13 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
       </Card>
 
       {property && (
-        <Card className="mt-6 border-red-200 bg-red-50">
-          <h2 className="text-sm font-semibold text-red-700 mb-1">Immobilie löschen</h2>
-          <p className="text-xs text-red-700/80 mb-3">
+        <Card className="mt-6 border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40">
+          <h2 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-1">Immobilie löschen</h2>
+          <p className="text-xs text-red-700/80 dark:text-red-400/80 mb-3">
             Löscht diese Immobilie unwiderruflich - inklusive aller Mieter, Mietverträge, Belege, Kredite,
             Sondertilgungen, Erinnerungen, Rücklagen und Nebenkosten dazu. Das kann nicht rückgängig gemacht werden.
           </p>
-          <label className="block text-xs font-medium text-red-700 mb-1">
+          <label className="block text-xs font-medium text-red-700 dark:text-red-400 mb-1">
             Gib zur Bestätigung die Adresse ein: <strong>{property.address}</strong>
           </label>
           <div className="flex gap-2">
@@ -751,7 +751,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
               type="text"
               value={deleteConfirm}
               onChange={e => setDeleteConfirm(e.target.value)}
-              className="flex-1 border border-red-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-400"
+              className="flex-1 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400"
             />
             <button
               type="button"

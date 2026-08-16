@@ -13,7 +13,7 @@ interface Item {
 export function StaffelmieteOverview({ items }: { items: Item[] }) {
   if (items.length === 0) {
     return (
-      <Card className="text-center py-8 text-gray-400">
+      <Card className="text-center py-8 text-gray-400 dark:text-gray-500">
         Noch keine Mietverhältnisse mit Staffelmiete hinterlegt. Beim Anlegen eines Mieters die Mietart "Staffelmiete" wählen.
       </Card>
     )
@@ -37,39 +37,39 @@ function StaffelmieteRow({ item }: { item: Item }) {
     <Card>
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <Link href={`/tenants/${item.tenant.id}`} className="font-semibold text-gray-900 hover:text-blue-700">{item.tenant.name}</Link>
-          <p className="text-xs text-gray-400">{propertyLabel(item.property)}</p>
+          <Link href={`/tenants/${item.tenant.id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-700 dark:hover:text-blue-400">{item.tenant.name}</Link>
+          <p className="text-xs text-gray-400 dark:text-gray-500">{propertyLabel(item.property)}</p>
         </div>
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${next ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${next ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}>
           {next ? `Nächste Stufe ab ${formatDate(next.start_date)}` : 'Letzte Stufe erreicht'}
         </span>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3 text-sm">
         <div>
-          <p className="text-gray-400 text-xs">Aktuelle Miete</p>
-          <p className="font-medium text-gray-900">{active ? euro(active.rent_amount) : '–'}</p>
+          <p className="text-gray-400 dark:text-gray-500 text-xs">Aktuelle Miete</p>
+          <p className="font-medium text-gray-900 dark:text-gray-100">{active ? euro(active.rent_amount) : '–'}</p>
         </div>
         <div>
-          <p className="text-gray-400 text-xs">Nächste Stufe</p>
-          <p className="font-medium text-blue-700">{next ? euro(next.rent_amount) : '–'}</p>
+          <p className="text-gray-400 dark:text-gray-500 text-xs">Nächste Stufe</p>
+          <p className="font-medium text-blue-700 dark:text-blue-400">{next ? euro(next.rent_amount) : '–'}</p>
         </div>
         <div>
-          <p className="text-gray-400 text-xs">Erhöhung zur nächsten Stufe</p>
-          <p className="font-medium text-green-700">
+          <p className="text-gray-400 dark:text-gray-500 text-xs">Erhöhung zur nächsten Stufe</p>
+          <p className="font-medium text-green-700 dark:text-green-400">
             {next && active ? `+${euro(next.rent_amount - active.rent_amount)}` : '–'}
           </p>
         </div>
       </div>
 
-      <div className="mt-3 border-t border-gray-100 pt-2">
-        <p className="text-xs text-gray-400 mb-1">Alle Staffelstufen</p>
+      <div className="mt-3 border-t border-gray-100 dark:border-gray-800 pt-2">
+        <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Alle Staffelstufen</p>
         <div className="flex flex-wrap gap-2">
           {sortedSteps.map(step => (
             <span
               key={step.id}
               className={`text-xs px-2 py-1 rounded-lg whitespace-nowrap ${
-                step.id === active?.id ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-600'
+                step.id === active?.id ? 'bg-blue-600 text-white' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
               }`}
             >
               {formatDate(step.start_date)}: {euro(step.rent_amount)}
@@ -78,7 +78,7 @@ function StaffelmieteRow({ item }: { item: Item }) {
         </div>
       </div>
 
-      <p className="text-xs text-gray-400 mt-2">
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
         Ohne Gewähr, auf Basis der hier hinterlegten Staffelvereinbarung – bitte gegen den Mietvertrag prüfen.
       </p>
     </Card>

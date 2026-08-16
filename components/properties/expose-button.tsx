@@ -10,16 +10,16 @@ export function ExposeButton({ propertyId }: { propertyId: string }) {
       <a
         href={`/api/properties/${propertyId}/expose/pdf?financing=${includeFinancing ? '1' : '0'}`}
         onClick={() => trackEvent('expose_pdf_generated', { includeFinancing })}
-        className="text-sm text-blue-600 hover:underline whitespace-nowrap"
+        className="text-sm text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap"
       >
         Exposé erstellen (PDF)
       </a>
-      <label className="flex items-center gap-1.5 text-xs text-gray-400 whitespace-nowrap">
+      <label className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
         <input
           type="checkbox"
           checked={includeFinancing}
           onChange={e => setIncludeFinancing(e.target.checked)}
-          className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600"
+          className="w-3.5 h-3.5 rounded border-gray-300 dark:border-gray-600 text-blue-600"
         />
         mit Finanzierungsdaten (für Bank)
       </label>

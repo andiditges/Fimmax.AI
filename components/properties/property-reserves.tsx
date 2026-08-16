@@ -55,30 +55,30 @@ export function PropertyReserves({
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-gray-800">Rücklagen</h2>
-        {!open && <button onClick={() => setOpen(true)} className="text-sm text-blue-600 hover:underline">+ Rücklage erfassen</button>}
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Rücklagen</h2>
+        {!open && <button onClick={() => setOpen(true)} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">+ Rücklage erfassen</button>}
       </div>
 
       {instandhaltungsruecklage > 0 && (
-        <Card className="mb-3 bg-blue-50 border-blue-100">
+        <Card className="mb-3 bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900">
           <CardTitle>Instandhaltungsrücklage (kumuliert, aus Nebenkosten)</CardTitle>
-          <p className="text-xl font-bold text-blue-700">{euro(instandhaltungsruecklage)}</p>
-          <p className="text-xs text-gray-500 mt-1">Summe aller "Zuführung Instandhaltungsrücklage"-Einträge aus der Nebenkosten-Erfassung, über alle Jahre.</p>
+          <p className="text-xl font-bold text-blue-700 dark:text-blue-400">{euro(instandhaltungsruecklage)}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Summe aller "Zuführung Instandhaltungsrücklage"-Einträge aus der Nebenkosten-Erfassung, über alle Jahre.</p>
         </Card>
       )}
 
       {reserves.length > 0 && (
         <Card className="mb-3">
-          <div className="flex justify-between text-sm font-semibold text-gray-800 mb-2">
+          <div className="flex justify-between text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
             <span>Eigene Rücklagen</span>
             <span>{euro(totalReserves)}</span>
           </div>
           <div className="space-y-1.5">
             {reserves.map(r => (
-              <div key={r.id} className="flex justify-between text-sm text-gray-600">
+              <div key={r.id} className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                 <span>
                   {RESERVE_CATEGORY_LABELS[r.category]}{r.name ? ` · ${r.name}` : ''}
-                  {r.funded_from_rent && <span className="text-xs text-amber-700"> (aus Kaltmiete)</span>}
+                  {r.funded_from_rent && <span className="text-xs text-amber-700 dark:text-amber-400"> (aus Kaltmiete)</span>}
                 </span>
                 <span>{euro(r.current_value)}</span>
               </div>
@@ -88,56 +88,56 @@ export function PropertyReserves({
       )}
 
       {reserves.length === 0 && instandhaltungsruecklage === 0 && !open && (
-        <Card className="text-center py-6 text-gray-400 text-sm">Noch keine Rücklagen hinterlegt</Card>
+        <Card className="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">Noch keine Rücklagen hinterlegt</Card>
       )}
 
       {open && (
         <Card>
           <form onSubmit={onSubmit} className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Art der Rücklage</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Art der Rücklage</label>
               <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as ReserveCategory }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {Object.entries(RESERVE_CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Bezeichnung (optional)</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Bezeichnung (optional)</label>
               <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Aktueller Stand (€)</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Aktueller Stand (€)</label>
                 <input type="number" step="0.01" value={form.current_value} onChange={e => setForm(f => ({ ...f, current_value: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Monatliche Zuführung (€)</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Monatliche Zuführung (€)</label>
                 <input type="number" step="0.01" value={form.monthly_contribution} onChange={e => setForm(f => ({ ...f, monthly_contribution: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
             <div className="flex items-center gap-2">
               <input type="checkbox" id="funded_from_rent" checked={form.funded_from_rent}
                 onChange={e => setForm(f => ({ ...f, funded_from_rent: e.target.checked }))}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600" />
-              <label htmlFor="funded_from_rent" className="text-sm text-gray-700">Wird aus der Kaltmiete gebildet</label>
+                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600" />
+              <label htmlFor="funded_from_rent" className="text-sm text-gray-700 dark:text-gray-300">Wird aus der Kaltmiete gebildet</label>
             </div>
-            <p className="text-xs text-gray-400 -mt-1">
+            <p className="text-xs text-gray-400 dark:text-gray-500 -mt-1">
               Wenn aktiv, wird die monatliche Zuführung im Cashflow (Finanzen-Übersicht, "Stand heute") als Abfluss berücksichtigt, statt als frei verfügbar zu gelten.
             </p>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Notiz (optional)</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Notiz (optional)</label>
               <input type="text" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={saving}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
                 {saving ? 'Speichert...' : 'Speichern'}
               </button>
-              <button type="button" onClick={() => setOpen(false)} className="text-sm text-gray-500 px-4 py-2 hover:text-gray-700">
+              <button type="button" onClick={() => setOpen(false)} className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2 hover:text-gray-700 dark:hover:text-gray-200">
                 Abbrechen
               </button>
             </div>

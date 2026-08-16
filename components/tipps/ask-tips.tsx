@@ -38,7 +38,7 @@ export function AskTips({ context }: { context: string }) {
   return (
     <Card>
       <CardTitle>Frag deine Zahlen</CardTitle>
-      <p className="text-xs text-gray-400 mt-1 mb-3">
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 mb-3">
         Beantwortet auf Basis deiner aktuellen Daten - Kredite, Immobilien, Vermögen, Kennzahlen.
       </p>
 
@@ -48,7 +48,7 @@ export function AskTips({ context }: { context: string }) {
             key={ex}
             type="button"
             onClick={() => { setQuestion(ex); ask(ex) }}
-            className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full hover:bg-gray-200"
+            className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 px-2.5 py-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
           >
             {ex}
           </button>
@@ -64,7 +64,7 @@ export function AskTips({ context }: { context: string }) {
           value={question}
           onChange={e => setQuestion(e.target.value)}
           placeholder="Was könnte ich jetzt optimieren?"
-          className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
           type="submit"
@@ -75,10 +75,10 @@ export function AskTips({ context }: { context: string }) {
         </button>
       </form>
 
-      {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400 mt-3">{error}</p>}
 
       {answer && (
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mt-3 text-sm text-gray-800 whitespace-pre-wrap">
+        <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-xl p-4 mt-3 text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
           {answer}
         </div>
       )}

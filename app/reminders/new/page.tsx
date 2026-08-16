@@ -57,15 +57,15 @@ export default function NewReminder() {
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Erinnerung / ToDo anlegen</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Erinnerung / ToDo anlegen</h1>
       <Card>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Immobilie *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Immobilie *</label>
             <select
               value={form.property_id}
               onChange={e => onPropertyChange(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
               <option value="">Bitte wählen...</option>
@@ -76,11 +76,11 @@ export default function NewReminder() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Kategorie *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kategorie *</label>
             <select
               value={form.category}
               onChange={e => setForm(f => ({ ...f, category: e.target.value as ReminderCategory }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {Object.entries(REMINDER_CATEGORY_LABELS).map(([k, v]) => (
                 <option key={k} value={k}>{v}</option>
@@ -89,31 +89,31 @@ export default function NewReminder() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Titel *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titel *</label>
             <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Beschreibung</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Beschreibung</label>
             <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={2} />
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" rows={2} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fälligkeitsdatum</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fälligkeitsdatum</label>
             <input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           {openReminders.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Hängt ab von</label>
-              <p className="text-xs text-gray-400 mb-1">Optional – z.B. Mieterhöhung erst nach Abschluss einer Reparatur</p>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hängt ab von</label>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Optional – z.B. Mieterhöhung erst nach Abschluss einer Reparatur</p>
               <select
                 value={form.depends_on_id}
                 onChange={e => setForm(f => ({ ...f, depends_on_id: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">– keine Abhängigkeit –</option>
                 {openReminders.map(r => (

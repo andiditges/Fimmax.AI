@@ -77,12 +77,12 @@ export function AddressAutocomplete({
         }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         autoComplete="off"
         required
       />
       {open && value.trim().length >= 3 && suggestions.length > 0 && (
-        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-100 rounded-xl shadow-md overflow-hidden">
+        <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-md overflow-hidden">
           {suggestions.map((s, i) => (
             <button
               key={i}
@@ -93,7 +93,7 @@ export function AddressAutocomplete({
                 setSuggestions([])
                 setOpen(false)
               }}
-              className="block w-full text-left px-3 py-2 text-sm hover:bg-blue-50 border-b border-gray-50 last:border-0"
+              className="block w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-blue-50 dark:hover:bg-blue-950/40 border-b border-gray-50 dark:border-gray-800 last:border-0"
             >
               {s.label}
             </button>

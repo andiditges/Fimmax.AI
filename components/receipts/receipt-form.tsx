@@ -300,9 +300,9 @@ export function ReceiptForm({
   if (nudges) {
     return (
       <div className="max-w-xl">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Beleg gespeichert</h1>
-        <Card className="mb-5 bg-blue-50 border-blue-100">
-          <p className="text-sm text-blue-800">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Beleg gespeichert</h1>
+        <Card className="mb-5 bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900">
+          <p className="text-sm text-blue-800 dark:text-blue-300">
             Dieser Beleg weicht deutlich von deiner bisherigen Nebenkosten-Schätzung ab. Jetzt aktualisieren?
           </p>
         </Card>
@@ -310,14 +310,14 @@ export function ReceiptForm({
           {nudges.map(n => (
             <Card key={n.property_id} className="flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <p className="font-medium text-gray-900">{n.label}</p>
-                <p className="text-sm text-gray-500">
+                <p className="font-medium text-gray-900 dark:text-gray-100">{n.label}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Bisheriger Richtwert {n.current.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €/Jahr
                   {' '}→ dieser Beleg deutet auf {n.suggested.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €/Jahr hin
                 </p>
               </div>
               {appliedNudges.has(n.property_id) ? (
-                <span className="text-sm text-green-600 font-medium">✓ Aktualisiert</span>
+                <span className="text-sm text-green-600 dark:text-green-500 font-medium">✓ Aktualisiert</span>
               ) : (
                 <button type="button" onClick={() => applyNudge(n)} className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-blue-700">
                   Aktualisieren
@@ -326,7 +326,7 @@ export function ReceiptForm({
             </Card>
           ))}
         </div>
-        <button type="button" onClick={finish} className="mt-5 w-full bg-gray-900 text-white py-3 rounded-xl font-medium hover:bg-gray-800 transition-colors">
+        <button type="button" onClick={finish} className="mt-5 w-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 py-3 rounded-xl font-medium hover:bg-gray-800 dark:hover:bg-gray-300 transition-colors">
           Fertig
         </button>
       </div>
@@ -335,13 +335,13 @@ export function ReceiptForm({
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">{mode === 'new' ? 'Beleg erfassen' : 'Beleg bearbeiten'}</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">{mode === 'new' ? 'Beleg erfassen' : 'Beleg bearbeiten'}</h1>
 
       {mode === 'new' && (
         <Card className="mb-5">
           <div
             onClick={() => { if (!preview) fileRef.current?.click() }}
-            className={`border-2 border-dashed border-gray-200 rounded-xl p-8 text-center transition-colors ${!preview ? 'cursor-pointer hover:border-blue-400 hover:bg-blue-50' : ''}`}
+            className={`border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center transition-colors ${!preview ? 'cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40' : ''}`}
           >
             {preview ? (
               <>
@@ -350,14 +350,14 @@ export function ReceiptForm({
                 ) : (
                   <div className="py-4">
                     <div className="text-4xl mb-2">📄</div>
-                    <p className="text-gray-600 font-medium truncate">{file?.name}</p>
-                    <p className="text-gray-400 text-xs mt-1">PDF – keine Bildvorschau möglich</p>
+                    <p className="text-gray-600 dark:text-gray-300 font-medium truncate">{file?.name}</p>
+                    <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">PDF – keine Bildvorschau möglich</p>
                   </div>
                 )}
                 <button
                   type="button"
                   onClick={e => { e.stopPropagation(); fileRef.current?.click() }}
-                  className="mt-3 text-sm text-blue-600 hover:underline"
+                  className="mt-3 text-sm text-blue-600 dark:text-blue-400 hover:underline"
                 >
                   Anderes Foto wählen
                 </button>
@@ -365,15 +365,15 @@ export function ReceiptForm({
             ) : (
               <>
                 <div className="text-4xl mb-2">📷</div>
-                <p className="text-gray-600 font-medium">Foto machen oder Datei auswählen</p>
-                <p className="text-gray-400 text-sm mt-1">JPG, PNG, PDF</p>
+                <p className="text-gray-600 dark:text-gray-300 font-medium">Foto machen oder Datei auswählen</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">JPG, PNG, PDF</p>
               </>
             )}
             {analyzing && (
-              <div className="mt-3 text-blue-600 text-sm font-medium animate-pulse">KI analysiert Beleg...</div>
+              <div className="mt-3 text-blue-600 dark:text-blue-400 text-sm font-medium animate-pulse">KI analysiert Beleg...</div>
             )}
             {ai && !analyzing && (
-              <div className="mt-3 text-green-600 text-sm font-medium">
+              <div className="mt-3 text-green-600 dark:text-green-500 text-sm font-medium">
                 ✓ Analysiert (Konfidenz: {Math.round(ai.confidence * 100)}%)
               </div>
             )}
@@ -390,8 +390,8 @@ export function ReceiptForm({
       )}
 
       {ai?.needs_review && ai.review_note && (
-        <Card className="mb-5 bg-amber-50 border-amber-100">
-          <p className="text-sm text-amber-800">
+        <Card className="mb-5 bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900">
+          <p className="text-sm text-amber-800 dark:text-amber-300">
             <strong>KI ist sich nicht sicher:</strong> {ai.review_note}
           </p>
         </Card>
@@ -401,34 +401,34 @@ export function ReceiptForm({
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Datum *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Datum *</label>
               <input type="date" value={receiptDate} onChange={e => setReceiptDate(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Lieferant / Firma</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lieferant / Firma</label>
               <input type="text" value={vendor} onChange={e => setVendor(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
 
           <div className="space-y-3">
             {lines.map((line, i) => (
-              <div key={line.key} className="border border-gray-100 rounded-xl p-3 space-y-3">
+              <div key={line.key} className="border border-gray-100 dark:border-gray-800 rounded-xl p-3 space-y-3">
                 {lines.length > 1 && (
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-gray-500">Position {i + 1}</span>
-                    <button type="button" onClick={() => removeLine(line.key)} className="text-xs text-red-500 hover:underline">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Position {i + 1}</span>
+                    <button type="button" onClick={() => removeLine(line.key)} className="text-xs text-red-500 dark:text-red-400 hover:underline">
                       Entfernen
                     </button>
                   </div>
                 )}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Immobilie *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Immobilie *</label>
                   <select
                     value={line.property_id}
                     onChange={e => updateLine(line.key, { property_id: e.target.value })}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   >
                     <option value="">Bitte wählen...</option>
@@ -440,33 +440,33 @@ export function ReceiptForm({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Kategorie *</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kategorie *</label>
                     <select value={line.category} onChange={e => updateLine(line.key, { category: e.target.value as ReceiptCategory })}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                       {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
                         <option key={k} value={k}>{v}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Betrag (€) *</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Betrag (€) *</label>
                     <input type="number" step="0.01" value={line.amount} onChange={e => updateLine(line.key, { amount: e.target.value })}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                      className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Beschreibung</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Beschreibung</label>
                   <input type="text" value={line.description} onChange={e => updateLine(line.key, { description: e.target.value })}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
 
                 {line.category === 'instandhaltung' && (
-                  <div className="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-xl p-3">
+                  <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900 rounded-xl p-3">
                     <input type="checkbox" id={`renovation-${line.key}`} checked={line.is_renovation}
                       onChange={e => updateLine(line.key, { is_renovation: e.target.checked })}
-                      className="w-4 h-4 rounded border-gray-300 text-amber-600" />
-                    <label htmlFor={`renovation-${line.key}`} className="text-sm text-amber-800">
+                      className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-amber-600" />
+                    <label htmlFor={`renovation-${line.key}`} className="text-sm text-amber-800 dark:text-amber-300">
                       Renovierungsmaßnahme (relevant für 15%-Grenze § 6 EStG)
                     </label>
                   </div>
@@ -475,12 +475,12 @@ export function ReceiptForm({
             ))}
           </div>
 
-          <button type="button" onClick={addLine} className="text-sm text-blue-600 hover:underline">
+          <button type="button" onClick={addLine} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
             + Position hinzufügen
           </button>
 
           {lines.length > 1 && (
-            <p className={`text-xs ${totalsMismatch ? 'text-amber-600' : 'text-gray-400'}`}>
+            <p className={`text-xs ${totalsMismatch ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-gray-500'}`}>
               Positionen: {linesTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
               {documentAmount != null && ` · Beleg-Gesamtbetrag laut KI: ${documentAmount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`}
               {totalsMismatch && ' – weicht ab, bitte prüfen'}
@@ -494,7 +494,7 @@ export function ReceiptForm({
             </button>
             {mode === 'edit' && (
               <button type="button" onClick={onDelete} disabled={saving || deleting}
-                className="px-4 py-3 rounded-xl font-medium text-red-600 border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50">
+                className="px-4 py-3 rounded-xl font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors disabled:opacity-50">
                 {deleting ? '...' : 'Löschen'}
               </button>
             )}

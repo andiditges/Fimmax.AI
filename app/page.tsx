@@ -6,13 +6,15 @@ import { NewsFeedAsync } from '@/components/news-feed-async'
 import { RemindersWidget } from '@/components/reminders/reminders-widget'
 import { PropertyList } from '@/components/properties/property-list'
 import { Rentenuhr } from '@/components/dashboard/rentenuhr'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
+import { PrivacyModeToggle } from '@/components/privacy/privacy-mode-toggle'
+import { SensitiveEuro } from '@/components/privacy/sensitive'
 import { calcAnnualAfa } from '@/lib/afa'
 import { aggregatePortfolioFinancials, aggregateLoanChains, totalDailyPrincipal } from '@/lib/amortization'
 import { sumRentForYear } from '@/lib/rent-schedule'
 import { sumMonthlyReserveFromRent, sumReserveCurrentValue } from '@/lib/reserves'
 import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
 import { aggregateNetWorth } from '@/lib/net-worth'
-import { euro } from '@/lib/format'
 import { Property, Receipt, ReceiptItem, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Reminder, PropertyReserve, Asset, OperatingCost } from '@/lib/types'
 
 export default async function Dashboard() {
@@ -81,9 +83,15 @@ export default async function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 text-sm mt-1">Steuerjahr {currentYear}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Steuerjahr {currentYear}</p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0 pt-1">
+          <PrivacyModeToggle />
+          <ThemeToggle />
+        </div>
       </div>
 
       {loanList.length > 0 && (
@@ -100,19 +108,19 @@ export default async function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardTitle className="min-h-10">Immobilien</CardTitle>
-          <p className="text-2xl md:text-3xl font-bold text-gray-900 break-words">{props.length}</p>
+          <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 break-words">{props.length}</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Einnahmen {currentYear}</CardTitle>
-          <p className="text-2xl md:text-3xl font-bold text-green-600 break-words">{euro(totalIncome)}</p>
+          <p className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-500 break-words"><SensitiveEuro seed="dashboard-income" amount={totalIncome} /></p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Ausgaben {currentYear}</CardTitle>
-          <p className="text-2xl md:text-3xl font-bold text-red-500 break-words">{euro(totalExpenses)}</p>
+          <p className="text-2xl md:text-3xl font-bold text-red-500 dark:text-red-400 break-words"><SensitiveEuro seed="dashboard-expenses" amount={totalExpenses} /></p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">AfA gesamt / Jahr</CardTitle>
-          <p className="text-2xl md:text-3xl font-bold text-blue-600 break-words">{euro(totalAfa)}</p>
+          <p className="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 break-words"><SensitiveEuro seed="dashboard-afa" amount={totalAfa} /></p>
         </Card>
       </div>
 
@@ -125,28 +133,28 @@ export default async function Dashboard() {
           {loanList.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-800">Finanz-Cockpit</h2>
-                <Link href="/finanzen" className="text-sm text-blue-600 hover:underline">Portfolio-Übersicht →</Link>
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Finanz-Cockpit</h2>
+                <Link href="/finanzen" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Portfolio-Übersicht →</Link>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Link href="/finanzen#kredite">
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardTitle className="min-h-10">Verbindlichkeiten (aktuell)</CardTitle>
-                    <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(portfolio.total_debt)}</p>
+                    <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words"><SensitiveEuro seed="dashboard-debt" amount={portfolio.total_debt} /></p>
                   </Card>
                 </Link>
                 <Card>
                   <CardTitle className="min-h-10">Kreditrate / Monat</CardTitle>
-                  <p className="text-lg md:text-2xl font-bold text-gray-900 break-words">{euro(portfolio.monthly_debt_service)}</p>
+                  <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100 break-words"><SensitiveEuro seed="dashboard-debt-service" amount={portfolio.monthly_debt_service} /></p>
                 </Card>
                 <Card>
                   <CardTitle className="min-h-10">Eigenkapital</CardTitle>
-                  <p className="text-lg md:text-2xl font-bold text-blue-600 break-words">{euro(portfolio.total_equity)}</p>
+                  <p className="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400 break-words"><SensitiveEuro seed="dashboard-equity" amount={portfolio.total_equity} /></p>
                 </Card>
                 <Card>
                   <CardTitle className="min-h-10">Cashflow / Monat</CardTitle>
-                  <p className={`text-lg md:text-2xl font-bold break-words ${portfolio.monthly_net_cashflow >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                    {euro(portfolio.monthly_net_cashflow)}
+                  <p className={`text-lg md:text-2xl font-bold break-words ${portfolio.monthly_net_cashflow >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500 dark:text-red-400'}`}>
+                    <SensitiveEuro seed="dashboard-cashflow" amount={portfolio.monthly_net_cashflow} />
                   </p>
                 </Card>
               </div>
@@ -156,18 +164,18 @@ export default async function Dashboard() {
           {/* Immobilien-Liste */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">Meine Immobilien</h2>
-              <Link href="/properties" className="text-sm text-blue-600 hover:underline">Alle anzeigen →</Link>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Meine Immobilien</h2>
+              <Link href="/properties" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Alle anzeigen →</Link>
             </div>
             <PropertyList properties={props} receipts={recs} receiptItems={recItems} tenants={tenantList} rentalAgreements={agreementList} rentAdjustments={adjustmentList} currentYear={currentYear} />
           </div>
 
           {/* Quick Action */}
-          <Card className="bg-blue-50 border-blue-100">
+          <Card className="bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold text-blue-900">Beleg erfassen</p>
-                <p className="text-sm text-blue-700 mt-0.5">Foto machen oder Datei hochladen – KI kategorisiert automatisch</p>
+                <p className="font-semibold text-blue-900 dark:text-blue-200">Beleg erfassen</p>
+                <p className="text-sm text-blue-700 dark:text-blue-300 mt-0.5">Foto machen oder Datei hochladen – KI kategorisiert automatisch</p>
               </div>
               <Link href="/receipts/new" className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap">
                 Jetzt erfassen

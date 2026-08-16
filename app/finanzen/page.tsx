@@ -299,17 +299,17 @@ export default async function Finanzen() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Finanzen</h1>
-        <p className="text-gray-500 text-sm mt-1">Portfolio-Übersicht über alle Immobilien und Kredite</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Finanzen</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Portfolio-Übersicht über alle Immobilien und Kredite</p>
       </div>
 
       {lastPayoffDate && <FreedomCountdown targetDate={lastPayoffDate} />}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-blue-50 border-blue-100 md:col-span-2">
+        <Card className="bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900 md:col-span-2">
           <CardTitle>Nettovermögen</CardTitle>
-          <p className="text-xl md:text-3xl font-bold text-blue-700 break-words">{euro(netWorth.net_worth)}</p>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-xl md:text-3xl font-bold text-blue-700 dark:text-blue-300 break-words">{euro(netWorth.net_worth)}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Immobilien-Eigenkapital {euro(netWorth.total_property_equity)} + sonstige Anlagen {euro(netWorth.total_assets)}
             {netWorth.total_reserves > 0 && <> + Rücklagen {euro(netWorth.total_reserves)}</>}
             {netWorth.monthly_savings_rate > 0 && <> · {euro(netWorth.monthly_savings_rate)} Sparrate/Monat</>}
@@ -321,15 +321,15 @@ export default async function Finanzen() {
               <summary className="flex items-center gap-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                 <TilgungRing percent={(totalPrincipalPaid / totalOriginalPrincipal) * 100} />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Gesamt-Tilgung</p>
-                  <p className="text-xs text-gray-400 mt-0.5">alle Immobilien</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Gesamt-Tilgung</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">alle Immobilien</p>
                 </div>
                 {propertyFinance.length > 0 && (
-                  <span className="text-gray-300 text-xs shrink-0 transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
+                  <span className="text-gray-300 dark:text-gray-600 text-xs shrink-0 transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
                 )}
               </summary>
               {propertyFinance.length > 0 && (
-                <div className="flex gap-5 overflow-x-auto mt-4 pt-4 border-t border-gray-100">
+                <div className="flex gap-5 overflow-x-auto mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                   {propertyFinance.map(({ property: p, tilgungPercent, principal, remaining }) => (
                     <Ring
                       key={p.id}
@@ -337,8 +337,8 @@ export default async function Finanzen() {
                       percent={tilgungPercent}
                       label={propertyLabel(p)}
                       detail={`${euro(principal - remaining)} / ${euro(principal)}`}
-                      color="#2563eb"
-                      trackColor="#dbeafe"
+                      colorClassName="text-blue-600 dark:text-blue-400"
+                      trackClassName="text-blue-100 dark:text-blue-950/60"
                       decimals={2}
                       ariaLabel={`${propertyLabel(p)}: ${tilgungPercent.toFixed(2)} Prozent getilgt`}
                     />
@@ -354,20 +354,20 @@ export default async function Finanzen() {
               <summary className="flex items-center gap-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                 <LtvRing percent={(portfolio.total_debt / portfolio.total_property_value) * 100} />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Beleihungs-auslauf</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Restschuld / Wert</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Beleihungs-auslauf</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Restschuld / Wert</p>
                 </div>
                 {propertyFinance.length > 0 && (
-                  <span className="text-gray-300 text-xs shrink-0 transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
+                  <span className="text-gray-300 dark:text-gray-600 text-xs shrink-0 transition-transform group-open:rotate-180" aria-hidden="true">▾</span>
                 )}
               </summary>
-              <p className="text-xs text-gray-400 mt-3">
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">
                 LTV = Loan-to-Value: Restschuld im Verhältnis zum aktuellen Immobilienwert. Je niedriger, desto weniger ist die Immobilie noch belastet.
               </p>
               {propertyFinance.length > 0 && (
-                <div className="flex gap-5 overflow-x-auto mt-3 pt-4 border-t border-gray-100">
+                <div className="flex gap-5 overflow-x-auto mt-3 pt-4 border-t border-gray-100 dark:border-gray-800">
                   {propertyFinance.map(({ property: p, ltvPercent, remaining, value }) => {
-                    const { color, trackColor } = ltvColor(ltvPercent)
+                    const { colorClassName, trackClassName } = ltvColor(ltvPercent)
                     return (
                       <Ring
                         key={p.id}
@@ -375,8 +375,8 @@ export default async function Finanzen() {
                         percent={ltvPercent}
                         label={propertyLabel(p)}
                         detail={`${euro(remaining)} / ${euro(value)}`}
-                        color={color}
-                        trackColor={trackColor}
+                        colorClassName={colorClassName}
+                        trackClassName={trackClassName}
                         ariaLabel={`${propertyLabel(p)}: Beleihungsauslauf ${ltvPercent.toFixed(0)} Prozent`}
                       />
                     )
@@ -391,19 +391,19 @@ export default async function Finanzen() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardTitle className="min-h-10">Immobilienwert</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-gray-900 break-words">{euro(portfolio.total_property_value)}</p>
+          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100 break-words">{euro(portfolio.total_property_value)}</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Verbindlichkeiten (aktuell)</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(portfolio.total_debt)}</p>
+          <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words">{euro(portfolio.total_debt)}</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Eigenkapital</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-blue-600 break-words">{euro(portfolio.total_equity)}</p>
+          <p className="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400 break-words">{euro(portfolio.total_equity)}</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Cashflow / Monat</CardTitle>
-          <p className={`text-lg md:text-2xl font-bold break-words ${portfolio.monthly_net_cashflow >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+          <p className={`text-lg md:text-2xl font-bold break-words ${portfolio.monthly_net_cashflow >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500 dark:text-red-400'}`}>
             {euro(portfolio.monthly_net_cashflow)}
           </p>
         </Card>
@@ -411,85 +411,85 @@ export default async function Finanzen() {
 
       <Card>
         <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm mb-2">
-          <span className="text-gray-500">Miete / Monat: <strong className="text-green-600">{euro(portfolio.monthly_rent_income)}</strong></span>
-          <span className="text-gray-500">Kreditrate / Monat: <strong className="text-gray-900">{euro(portfolio.monthly_debt_service)}</strong></span>
-          <span className="text-gray-500">Kosten-Laufrate / Monat: <strong className="text-red-500">{euro(portfolio.monthly_operating_cost_runrate)}</strong></span>
+          <span className="text-gray-500 dark:text-gray-400">Miete / Monat: <strong className="text-green-600 dark:text-green-500">{euro(portfolio.monthly_rent_income)}</strong></span>
+          <span className="text-gray-500 dark:text-gray-400">Kreditrate / Monat: <strong className="text-gray-900 dark:text-gray-100">{euro(portfolio.monthly_debt_service)}</strong></span>
+          <span className="text-gray-500 dark:text-gray-400">Kosten-Laufrate / Monat: <strong className="text-red-500 dark:text-red-400">{euro(portfolio.monthly_operating_cost_runrate)}</strong></span>
           {monthlyReserveFromRent > 0 && (
-            <span className="text-gray-500">Rücklagenbildung / Monat: <strong className="text-red-500">{euro(monthlyReserveFromRent)}</strong></span>
+            <span className="text-gray-500 dark:text-gray-400">Rücklagenbildung / Monat: <strong className="text-red-500 dark:text-red-400">{euro(monthlyReserveFromRent)}</strong></span>
           )}
         </div>
-        <p className="text-xs text-gray-400">Kosten-Laufrate = Belege der letzten 12 Monate / 12 (statt Einzelmonat, wegen unregelmäßiger Kosten wie Versicherung). AfA ist nicht enthalten, da nicht zahlungswirksam.</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">Kosten-Laufrate = Belege der letzten 12 Monate / 12 (statt Einzelmonat, wegen unregelmäßiger Kosten wie Versicherung). AfA ist nicht enthalten, da nicht zahlungswirksam.</p>
       </Card>
 
       {loanList.length > 0 && (
-        <Card className="bg-green-50 border-green-100">
+        <Card className="bg-green-50 dark:bg-green-950/40 border-green-100 dark:border-green-900">
           <CardTitle>Tilgung im Überblick</CardTitle>
-          <ul className="mt-2 space-y-1.5 text-sm text-gray-700 list-disc list-inside">
+          <ul className="mt-2 space-y-1.5 text-sm text-gray-700 dark:text-gray-300 list-disc list-inside">
             <li>
-              Bisher getilgt: <strong className="text-green-700">{euro(totalPrincipalPaid)}</strong>
+              Bisher getilgt: <strong className="text-green-700 dark:text-green-300">{euro(totalPrincipalPaid)}</strong>
               {totalSondertilgungenPaid > 0 && <> (davon {euro(totalSondertilgungenPaid)} Sondertilgungen)</>}
             </li>
-            <li>Monatlich aktuell: <strong className="text-green-700">{euro(monthlyPrincipalNow)}</strong> → in 12 Monaten <strong className="text-green-700">{euro(monthlyPrincipalIn12Months)}</strong></li>
-            <li>{thisYear - 1}: <strong className="text-green-700">{euro(principalLastYear)}</strong> · {thisYear}: <strong className="text-green-700">{euro(principalThisYear)}</strong> · {thisYear + 1}: <strong className="text-green-700">{euro(principalNextYear)}</strong></li>
+            <li>Monatlich aktuell: <strong className="text-green-700 dark:text-green-300">{euro(monthlyPrincipalNow)}</strong> → in 12 Monaten <strong className="text-green-700 dark:text-green-300">{euro(monthlyPrincipalIn12Months)}</strong></li>
+            <li>{thisYear - 1}: <strong className="text-green-700 dark:text-green-300">{euro(principalLastYear)}</strong> · {thisYear}: <strong className="text-green-700 dark:text-green-300">{euro(principalThisYear)}</strong> · {thisYear + 1}: <strong className="text-green-700 dark:text-green-300">{euro(principalNextYear)}</strong></li>
             {indexRentIncreasePotential > 0 && (
-              <li>Indexmieten-Erhöhung Jan. {thisYear + 1}: bis zu <strong className="text-green-700">{euro(indexRentIncreasePotential)}</strong> Mehreinnahme</li>
+              <li>Indexmieten-Erhöhung Jan. {thisYear + 1}: bis zu <strong className="text-green-700 dark:text-green-300">{euro(indexRentIncreasePotential)}</strong> Mehreinnahme</li>
             )}
           </ul>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             Jahreswerte ohne Sondertilgungen (planmäßige Tilgungskurve). "Bisher getilgt" enthält Sondertilgungen weiterhin.
           </p>
         </Card>
       )}
 
       {loanList.length > 0 && (
-        <Card className="bg-blue-50 border-blue-100">
+        <Card className="bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900">
           <CardTitle>Meilensteine</CardTitle>
-          <ul className="mt-2 space-y-1.5 text-sm text-gray-700 list-disc list-inside">
+          <ul className="mt-2 space-y-1.5 text-sm text-gray-700 dark:text-gray-300 list-disc list-inside">
             {breakEven.break_even_date && (
               <li>
                 {breakEven.already_reached ? (
-                  <>Du hast deinen Break-even für dein bisher eingesetztes Eigenkapital (<strong className="text-blue-700">{euro(breakEven.equity_invested)}</strong>) bereits am <strong className="text-blue-700">{formatDate(breakEven.break_even_date)}</strong> erreicht</>
+                  <>Du hast deinen Break-even für dein bisher eingesetztes Eigenkapital (<strong className="text-blue-700 dark:text-blue-300">{euro(breakEven.equity_invested)}</strong>) bereits am <strong className="text-blue-700 dark:text-blue-300">{formatDate(breakEven.break_even_date)}</strong> erreicht</>
                 ) : (
-                  <>An Tag <strong className="text-blue-700">{formatDate(breakEven.break_even_date)}</strong> wirst du deinen Break-even für dein bisher eingesetztes Eigenkapital (<strong className="text-blue-700">{euro(breakEven.equity_invested)}</strong>) erreicht haben</>
+                  <>An Tag <strong className="text-blue-700 dark:text-blue-300">{formatDate(breakEven.break_even_date)}</strong> wirst du deinen Break-even für dein bisher eingesetztes Eigenkapital (<strong className="text-blue-700 dark:text-blue-300">{euro(breakEven.equity_invested)}</strong>) erreicht haben</>
                 )}
               </li>
             )}
-            <li>Wären deine Immobilien fiktiv heute abbezahlt, bekämst du eine zu versteuernde Sofortrente von <strong className="text-blue-700">{euro(portfolio.monthly_rent_income)}</strong> / Monat</li>
+            <li>Wären deine Immobilien fiktiv heute abbezahlt, bekämst du eine zu versteuernde Sofortrente von <strong className="text-blue-700 dark:text-blue-300">{euro(portfolio.monthly_rent_income)}</strong> / Monat</li>
             {firstPropertyPayoff?.payoffDate && (
               <li>
                 Deine erste Immobilie ({propertyLabel(firstPropertyPayoff.property)}) wird voraussichtlich am{' '}
-                <strong className="text-blue-700">{formatDate(firstPropertyPayoff.payoffDate)}</strong> schuldenfrei sein
+                <strong className="text-blue-700 dark:text-blue-300">{formatDate(firstPropertyPayoff.payoffDate)}</strong> schuldenfrei sein
               </li>
             )}
             {lastPayoffDate && (
               <li>
                 Dein gesamtes Portfolio wird bei gleichbleibenden Konditionen voraussichtlich am{' '}
-                <strong className="text-blue-700">{formatDate(lastPayoffDate)}</strong> komplett schuldenfrei sein
+                <strong className="text-blue-700 dark:text-blue-300">{formatDate(lastPayoffDate)}</strong> komplett schuldenfrei sein
               </li>
             )}
             {halfDebtPoint && (
               <li>
-                Am <strong className="text-blue-700">{formatDate(halfDebtPoint.date)}</strong> hast du rechnerisch die Hälfte deiner ursprünglichen Kreditsumme ({euro(totalOriginalPrincipal)}) getilgt
+                Am <strong className="text-blue-700 dark:text-blue-300">{formatDate(halfDebtPoint.date)}</strong> hast du rechnerisch die Hälfte deiner ursprünglichen Kreditsumme ({euro(totalOriginalPrincipal)}) getilgt
               </li>
             )}
             {tilgungMilestones.map(m => (
               <li key={m.years}>
-                Nach {m.years} Jahren (bis {formatDate(m.date)}) hast du voraussichtlich <strong className="text-blue-700">{euro(m.paid)}</strong> getilgt
+                Nach {m.years} Jahren (bis {formatDate(m.date)}) hast du voraussichtlich <strong className="text-blue-700 dark:text-blue-300">{euro(m.paid)}</strong> getilgt
                 {' '}({percent(m.percent, 1)} deiner ursprünglichen Kreditsumme)
               </li>
             ))}
             {tilgungCagr !== null && (
               <li>
                 Deine Tilgung wächst bis zum jeweiligen Laufzeitende deiner Kredite im (nach Kreditsumme gewichteten) Schnitt um{' '}
-                <strong className="text-blue-700">{percent(tilgungCagr * 100, 1)}</strong> pro Jahr – wie eine durchgehende jährliche Gehaltserhöhung in dieser Höhe.
+                <strong className="text-blue-700 dark:text-blue-300">{percent(tilgungCagr * 100, 1)}</strong> pro Jahr – wie eine durchgehende jährliche Gehaltserhöhung in dieser Höhe.
                 Rechnerisch ist das die Bruttorendite, die dir dein aktueller Tilgungsplan bis zum fiktiven Laufzeitende verschafft
               </li>
             )}
           </ul>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             Break-even = kumulierter Cashflow (Miete abzüglich Zinsen, Tilgung, Kosten-Laufrate und Rücklagenbildung) seit dem frühesten Kaufdatum, verglichen mit dem eingesetzten Eigenkapital (Kaufpreis + Kaufnebenkosten abzüglich Kreditsumme je Objekt). Kosten-/Rücklagen-Laufrate werden dabei vereinfacht als konstant über die Zeit angenommen.
           </p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
             10/20/30-Jahres-Stand, Halbzeitmarke und Bruttorendite-Analogie schreiben den aktuellen Tilgungsplan (inkl. bereits erfolgter Sondertilgungen) unverändert fort – ohne Annahme weiterer Sondertilgungen, Zinsanpassungen oder Anschlussfinanzierungen zum Laufzeitende. Kredite in der tilgungsfreien Anlaufzeit sind aus der Bruttorendite-Berechnung ausgeklammert, da ihr Tilgungsanteil dort bei 0 startet.
           </p>
         </Card>
@@ -500,33 +500,33 @@ export default async function Finanzen() {
           <CardTitle>Stand heute ({formatDate(todayCashflow.as_of_date)})</CardTitle>
           <div className="mt-2 space-y-1.5 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-500">Miete bisher diesen Monat</span>
-              <strong className="text-green-600">+{euro(todayCashflow.rent_so_far)}</strong>
+              <span className="text-gray-500 dark:text-gray-400">Miete bisher diesen Monat</span>
+              <strong className="text-green-600 dark:text-green-500">+{euro(todayCashflow.rent_so_far)}</strong>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">./. Zinsen (bisher, tagesgenau)</span>
-              <strong className="text-gray-900">-{euro(todayCashflow.interest_so_far)}</strong>
+              <span className="text-gray-500 dark:text-gray-400">./. Zinsen (bisher, tagesgenau)</span>
+              <strong className="text-gray-900 dark:text-gray-100">-{euro(todayCashflow.interest_so_far)}</strong>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">./. Tilgung (bisher, tagesgenau)</span>
-              <strong className="text-gray-900">-{euro(todayCashflow.principal_so_far)}</strong>
+              <span className="text-gray-500 dark:text-gray-400">./. Tilgung (bisher, tagesgenau)</span>
+              <strong className="text-gray-900 dark:text-gray-100">-{euro(todayCashflow.principal_so_far)}</strong>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">./. Betriebskosten (anteilig)</span>
-              <strong className="text-gray-900">-{euro(todayCashflow.operating_cost_so_far)}</strong>
+              <span className="text-gray-500 dark:text-gray-400">./. Betriebskosten (anteilig)</span>
+              <strong className="text-gray-900 dark:text-gray-100">-{euro(todayCashflow.operating_cost_so_far)}</strong>
             </div>
             {todayCashflow.reserve_so_far > 0 && (
               <div className="flex justify-between">
-                <span className="text-gray-500">./. Rücklagenbildung aus Kaltmiete (anteilig)</span>
-                <strong className="text-gray-900">-{euro(todayCashflow.reserve_so_far)}</strong>
+                <span className="text-gray-500 dark:text-gray-400">./. Rücklagenbildung aus Kaltmiete (anteilig)</span>
+                <strong className="text-gray-900 dark:text-gray-100">-{euro(todayCashflow.reserve_so_far)}</strong>
               </div>
             )}
             <div className="flex justify-between border-t pt-1.5">
-              <span className="text-gray-700 font-medium">= übrig bisher diesen Monat</span>
-              <strong className={todayCashflow.remaining_so_far >= 0 ? 'text-green-600' : 'text-red-500'}>{euro(todayCashflow.remaining_so_far)}</strong>
+              <span className="text-gray-700 dark:text-gray-300 font-medium">= übrig bisher diesen Monat</span>
+              <strong className={todayCashflow.remaining_so_far >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500 dark:text-red-400'}>{euro(todayCashflow.remaining_so_far)}</strong>
             </div>
           </div>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             Tagessatz = aktuelle Monatsrate der laufenden Kreditperiode / Tage im Zeitraum, hochgerechnet auf die bereits vergangenen Tage des Monats.
             Betriebskosten als Kosten-Laufrate (siehe oben) – sobald Nebenkosten je Objekt gepflegt sind, fließen sie hier künftig genauer ein.
           </p>
@@ -542,7 +542,7 @@ export default async function Finanzen() {
         <Card>
           <CardTitle>Tägliche Tilgung & Zinsen – Entwicklung</CardTitle>
           <DailyTilgungChart data={dailyRateOverTime} />
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             Bei fester Annuität sinkt der Zinsanteil pro Tag über die Zeit, während die Tilgung pro Tag entsprechend wächst.
           </p>
         </Card>
@@ -553,10 +553,10 @@ export default async function Finanzen() {
         <Card>
           <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle>CapEx-Trend – Renovierung/Sanierung nach Jahr</CardTitle>
-            <span className="text-sm text-gray-500">Gesamt: <strong className="text-gray-900">{euro(totalCapex)}</strong></span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">Gesamt: <strong className="text-gray-900 dark:text-gray-100">{euro(totalCapex)}</strong></span>
           </div>
           <CapexChart data={capexData} />
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             Summe der als Renovierung/Sanierung markierten Belege je Steuerjahr, über alle Objekte hinweg.
           </p>
         </Card>
@@ -566,26 +566,26 @@ export default async function Finanzen() {
       {reservesByProperty.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-800">Rücklagen ({euro(totalReserves)})</h2>
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Rücklagen ({euro(totalReserves)})</h2>
           </div>
           <div className="space-y-2">
             {reservesByProperty.map(({ property: p, items, ruecklage }) => (
               <Card key={p.id}>
-                <Link href={`/properties/${p.id}`} className="text-sm font-semibold text-gray-800 hover:text-blue-700 block mb-2">
+                <Link href={`/properties/${p.id}`} className="text-sm font-semibold text-gray-800 dark:text-gray-200 hover:text-blue-700 hover:dark:text-blue-300 block mb-2">
                   {propertyLabel(p)}
                 </Link>
                 <div className="space-y-1.5">
                   {ruecklage > 0 && (
-                    <div className="flex justify-between text-sm text-gray-600">
+                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                       <span>Instandhaltungsrücklage (kumuliert)</span>
                       <span>{euro(ruecklage)}</span>
                     </div>
                   )}
                   {items.map(r => (
-                    <div key={r.id} className="flex justify-between text-sm text-gray-600">
+                    <div key={r.id} className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                       <span>
                         {RESERVE_CATEGORY_LABELS[r.category]}{r.name ? ` · ${r.name}` : ''}
-                        {r.funded_from_rent && <span className="text-xs text-amber-700"> (aus Kaltmiete)</span>}
+                        {r.funded_from_rent && <span className="text-xs text-amber-700 dark:text-amber-300"> (aus Kaltmiete)</span>}
                       </span>
                       <span>{euro(r.current_value)}</span>
                     </div>
@@ -594,7 +594,7 @@ export default async function Finanzen() {
               </Card>
             ))}
           </div>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             Wird wie Vermögen behandelt (fließt ins Nettovermögen oben ein), aber gesondert ausgewiesen – erfasst/bearbeitet wird pro Objekt.
           </p>
         </div>
@@ -603,28 +603,28 @@ export default async function Finanzen() {
       {/* Vermögensübersicht */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-800">Vermögensübersicht ({assets.length})</h2>
-          <Link href="/assets/new" className="text-sm text-blue-600 hover:underline">+ Vermögenswert erfassen</Link>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Vermögensübersicht ({assets.length})</h2>
+          <Link href="/assets/new" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">+ Vermögenswert erfassen</Link>
         </div>
         {assetsByCategory.length === 0 ? (
-          <Card className="text-center py-8 text-gray-400">
+          <Card className="text-center py-8 text-gray-400 dark:text-gray-500">
             Noch keine sonstigen Vermögenswerte (Wertpapiere, Tagesgeld, Bausparvertrag, …) hinterlegt.
           </Card>
         ) : (
           <div className="space-y-4">
             {assetsByCategory.map(c => (
               <Card key={c.cat}>
-                <div className="flex justify-between text-sm font-semibold text-gray-800 mb-2">
+                <div className="flex justify-between text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   <span>{c.label}</span>
                   <span>{euro(c.total)}</span>
                 </div>
                 <div className="space-y-1.5">
                   {c.items.map(a => (
-                    <Link key={a.id} href={`/assets/${a.id}/edit`} className="flex justify-between text-sm text-gray-600 hover:text-blue-700">
+                    <Link key={a.id} href={`/assets/${a.id}/edit`} className="flex justify-between text-sm text-gray-600 dark:text-gray-300 hover:text-blue-700 hover:dark:text-blue-300">
                       <span>
                         {a.name || c.label}{a.institution ? ` · ${a.institution}` : ''}
                         {a.monthly_contribution > 0 && projectedAssetValue(a) !== a.current_value && (
-                          <span className="text-xs text-gray-400"> (hochgerechnet ab {formatDate(a.valuation_date)})</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500"> (hochgerechnet ab {formatDate(a.valuation_date)})</span>
                         )}
                       </span>
                       <span>{euro(projectedAssetValue(a))}</span>
@@ -640,15 +640,15 @@ export default async function Finanzen() {
       {/* Abzahlungs-Übersicht */}
       {payoffOverview.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">Abzahlungs-Übersicht</h2>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Abzahlungs-Übersicht</h2>
           <Card>
             <div className="space-y-2">
               {payoffOverview.map(({ loan, payoffDate }) => (
                 <div key={loan.id} className="flex justify-between text-sm">
-                  <span className="text-gray-600">
+                  <span className="text-gray-600 dark:text-gray-300">
                     {loan.name} · {propertyById[loan.property_id] ? propertyLabel(propertyById[loan.property_id]) : ''}
                   </span>
-                  <strong className="text-gray-900 whitespace-nowrap">{payoffDate ? formatDate(payoffDate) : 'unbekannt'}</strong>
+                  <strong className="text-gray-900 dark:text-gray-100 whitespace-nowrap">{payoffDate ? formatDate(payoffDate) : 'unbekannt'}</strong>
                 </div>
               ))}
             </div>
@@ -659,7 +659,7 @@ export default async function Finanzen() {
       {/* Zinsbindungs-Übersicht */}
       {zinsbindungOverview.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">Zinsbindungs-Übersicht</h2>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Zinsbindungs-Übersicht</h2>
           <Card>
             <div className="space-y-2">
               {zinsbindungOverview.map(({ loan, endDate, remainingBalance }) => {
@@ -668,11 +668,11 @@ export default async function Finanzen() {
                 const past = monthsUntil < 0
                 return (
                   <div key={loan.id} className="flex justify-between items-center gap-3 text-sm">
-                    <span className="text-gray-600">
+                    <span className="text-gray-600 dark:text-gray-300">
                       {loan.name} · {propertyById[loan.property_id] ? propertyLabel(propertyById[loan.property_id]) : ''}
-                      {remainingBalance != null && <span className="text-xs text-gray-400"> · Restschuld dann ca. {euro(remainingBalance)}</span>}
+                      {remainingBalance != null && <span className="text-xs text-gray-400 dark:text-gray-500"> · Restschuld dann ca. {euro(remainingBalance)}</span>}
                     </span>
-                    <span className={`whitespace-nowrap font-medium ${past ? 'text-gray-400' : soon ? 'text-amber-700' : 'text-gray-900'}`}>
+                    <span className={`whitespace-nowrap font-medium ${past ? 'text-gray-400 dark:text-gray-500' : soon ? 'text-amber-700 dark:text-amber-300' : 'text-gray-900 dark:text-gray-100'}`}>
                       {formatDate(endDate)}
                       {soon && !past && ' · bald'}
                     </span>
@@ -680,7 +680,7 @@ export default async function Finanzen() {
                 )
               })}
             </div>
-            <p className="text-xs text-gray-400 mt-3 pt-2 border-t border-gray-100">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 pt-2 border-t border-gray-100 dark:border-gray-800">
               Frühestens 24 Monate vor Ablauf lohnt sich meist ein Vergleich für die Anschlussfinanzierung (Forward-Darlehen).
             </p>
           </Card>
@@ -692,11 +692,11 @@ export default async function Finanzen() {
 
       <div id="kredite">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-800">Kredite ({activeLoans.length})</h2>
-          <Link href="/loans/new" className="text-sm text-blue-600 hover:underline">+ Kredit erfassen</Link>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Kredite ({activeLoans.length})</h2>
+          <Link href="/loans/new" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">+ Kredit erfassen</Link>
         </div>
         {activeLoans.length === 0 ? (
-          <Card className="text-center py-12 text-gray-400">
+          <Card className="text-center py-12 text-gray-400 dark:text-gray-500">
             <p className="mb-4">Noch keine aktiven Kredite hinterlegt.</p>
             <Link href="/loans/new" className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors">
               Ersten Kredit anlegen
@@ -711,12 +711,12 @@ export default async function Finanzen() {
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{l.name}</p>
-                        <p className="text-sm text-gray-400 mt-0.5">
+                        <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{l.name}</p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
                           {propertyById[l.property_id] ? propertyLabel(propertyById[l.property_id]) : ''} · {l.nominal_interest_rate}% · {euro(status.current_annuity_amount)} / {l.payment_frequency}
                         </p>
                       </div>
-                      <span className="font-semibold text-gray-900 whitespace-nowrap">{euro(status.remaining_balance)}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">{euro(status.remaining_balance)}</span>
                     </div>
                   </Card>
                 </Link>
@@ -727,19 +727,19 @@ export default async function Finanzen() {
 
         {futureLoans.length > 0 && (
           <div className="mt-4">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Geplant / noch nicht aktiv ({futureLoans.length})</p>
+            <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">Geplant / noch nicht aktiv ({futureLoans.length})</p>
             <div className="space-y-2">
               {futureLoans.map(l => (
                 <Link key={l.id} href={`/loans/${l.id}`}>
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer bg-gray-50">
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer bg-gray-50 dark:bg-gray-950">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-700 truncate">{l.name}</p>
-                        <p className="text-sm text-gray-400 mt-0.5">
+                        <p className="font-medium text-gray-700 dark:text-gray-300 truncate">{l.name}</p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
                           {propertyById[l.property_id] ? propertyLabel(propertyById[l.property_id]) : ''} · {l.nominal_interest_rate}% · {euro(l.annuity_amount)} / {l.payment_frequency}
                         </p>
                       </div>
-                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 whitespace-nowrap">
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                         Aktiv ab {formatDate(l.disbursement_date)}
                       </span>
                     </div>
@@ -752,7 +752,7 @@ export default async function Finanzen() {
 
         {archivedLoans.length > 0 && (
           <details className="group mt-4">
-            <summary className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+            <summary className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
               Archiv – vollständig getilgt ({archivedLoans.length}) <span className="transition-transform inline-block group-open:rotate-180">▾</span>
             </summary>
             <div className="space-y-2 mt-2">
@@ -763,12 +763,12 @@ export default async function Finanzen() {
                     <Card className="hover:shadow-md transition-shadow cursor-pointer opacity-70">
                       <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-700 truncate">{l.name}</p>
-                          <p className="text-sm text-gray-400 mt-0.5">
+                          <p className="font-medium text-gray-700 dark:text-gray-300 truncate">{l.name}</p>
+                          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
                             {propertyById[l.property_id] ? propertyLabel(propertyById[l.property_id]) : ''} · {euro(l.principal)} ursprünglich
                           </p>
                         </div>
-                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 whitespace-nowrap">
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300 whitespace-nowrap">
                           Getilgt {schedule?.payoffDate ? formatDate(schedule.payoffDate) : ''}
                         </span>
                       </div>

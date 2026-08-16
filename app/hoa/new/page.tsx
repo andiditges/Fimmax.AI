@@ -81,17 +81,17 @@ export default function NewHoaDocument() {
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">WEG-Dokument hochladen</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">WEG-Dokument hochladen</h1>
 
       <Card className="mb-5">
         <form onSubmit={onSubmitDocument} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Immobilie *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Immobilie *</label>
             <select
               value={propertyId}
               onChange={e => setPropertyId(e.target.value)}
               disabled={!!docId}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:dark:bg-gray-950"
               required
             >
               <option value="">Bitte wählen...</option>
@@ -102,29 +102,29 @@ export default function NewHoaDocument() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Titel *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titel *</label>
             <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
               disabled={!!docId} placeholder="z.B. Protokoll Eigentümerversammlung 2025"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50" required />
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:dark:bg-gray-950" required />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Versammlungsdatum</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Versammlungsdatum</label>
               <input type="date" value={form.meeting_date} onChange={e => setForm(f => ({ ...f, meeting_date: e.target.value }))}
                 disabled={!!docId}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50" />
+                className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:dark:bg-gray-950" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Jahr *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jahr *</label>
               <input type="number" value={form.year} onChange={e => setForm(f => ({ ...f, year: e.target.value }))}
                 disabled={!!docId}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50" required />
+                className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:dark:bg-gray-950" required />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Protokoll (PDF/Bild)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Protokoll (PDF/Bild)</label>
             <input type="file" accept={ALLOWED_DOCUMENT_TYPES.join(',')} disabled={!!docId}
               onChange={e => {
                 const f = e.target.files?.[0] ?? null
@@ -149,21 +149,21 @@ export default function NewHoaDocument() {
 
       {docId && (
         <Card>
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">Beschlüsse erfassen</h2>
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Beschlüsse erfassen</h2>
           {resolutionsAdded.length > 0 && (
-            <ul className="text-sm text-green-700 mb-3 space-y-1">
+            <ul className="text-sm text-green-700 dark:text-green-300 mb-3 space-y-1">
               {resolutionsAdded.map((t, i) => <li key={i}>✓ {t}</li>)}
             </ul>
           )}
           <form onSubmit={onAddResolution} className="space-y-3">
             <input type="text" value={resolution.title} onChange={e => setResolution(r => ({ ...r, title: e.target.value }))}
               placeholder="Titel des Beschlusses" required
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <input type="text" value={resolution.description} onChange={e => setResolution(r => ({ ...r, description: e.target.value }))}
               placeholder="Beschreibung (optional)"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <select value={resolution.status} onChange={e => setResolution(r => ({ ...r, status: e.target.value as HoaResolutionStatus }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
               {Object.entries(HOA_RESOLUTION_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
             <div className="flex gap-2">
@@ -172,7 +172,7 @@ export default function NewHoaDocument() {
                 {savingResolution ? 'Speichert...' : '+ Beschluss hinzufügen'}
               </button>
               <button type="button" onClick={() => router.push(`/properties/${propertyId}`)}
-                className="px-4 py-2.5 rounded-xl text-sm text-gray-600 hover:text-gray-900">
+                className="px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 hover:dark:text-gray-100">
                 Fertig
               </button>
             </div>

@@ -128,15 +128,15 @@ export default function NewLoan() {
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Neuer Kredit</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Neuer Kredit</h1>
       <Card>
         <form onSubmit={onSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Immobilie *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Immobilie *</label>
             <select
               value={form.property_id}
               onChange={e => setForm(f => ({ ...f, property_id: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
               <option value="">Bitte wählen...</option>
@@ -147,54 +147,54 @@ export default function NewLoan() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bezeichnung</label>
-            <p className="text-xs text-gray-400 mb-1">Optional – nur nötig, um mehrere Kredite auseinanderzuhalten. Ohne Eingabe wird &bdquo;Kreditgeber + Kredit&ldquo; verwendet.</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bezeichnung</label>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Optional – nur nötig, um mehrere Kredite auseinanderzuhalten. Ohne Eingabe wird &bdquo;Kreditgeber + Kredit&ldquo; verwendet.</p>
             <input type="text" placeholder="z.B. Volksbank Baufinanzierung 1" value={form.name}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Kreditgeber</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kreditgeber</label>
             <input type="text" value={form.lender} onChange={e => setForm(f => ({ ...f, lender: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Darlehenssumme (€) *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Darlehenssumme (€) *</label>
               <input type="number" step="0.01" value={form.principal}
                 onChange={e => setForm(f => ({ ...f, principal: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sollzins p.a. (%) *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sollzins p.a. (%) *</label>
               <input type="number" step="0.01" value={form.nominal_interest_rate}
                 onChange={e => setForm(f => ({ ...f, nominal_interest_rate: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
             </div>
           </div>
 
           {showOverageFields && (
-            <div className="space-y-3 bg-amber-50 border border-amber-100 rounded-xl p-4">
-              <p className="text-sm text-amber-800">
+            <div className="space-y-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900 rounded-xl p-4">
+              <p className="text-sm text-amber-800 dark:text-amber-200">
                 Die Darlehenssumme liegt {euro(overage)} über dem Kaufpreis dieser Immobilie. Wofür ist die Differenz?
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">davon Kaufnebenkosten (€)</label>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">davon Kaufnebenkosten (€)</label>
                   <input type="number" step="0.01" value={form.incidental_costs_amount}
                     onChange={e => setForm(f => ({ ...f, incidental_costs_amount: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">davon Renovierung/Sanierung (€)</label>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">davon Renovierung/Sanierung (€)</label>
                   <input type="number" step="0.01" value={form.renovation_amount}
                     onChange={e => setForm(f => ({ ...f, renovation_amount: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
-              <p className="text-xs text-amber-700">
+              <p className="text-xs text-amber-700 dark:text-amber-300">
                 Kaufnebenkosten werden bei der Immobilie hinterlegt. Der Renovierungsbetrag wird als geplantes Budget
                 auf der Objektseite angezeigt – zählt aber erst zur 15%-Hürde, sobald du die tatsächlichen Belege erfasst.
               </p>
@@ -203,28 +203,28 @@ export default function NewLoan() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Auszahlungsdatum *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Auszahlungsdatum *</label>
               <input type="date" value={form.disbursement_date}
                 onChange={e => setForm(f => ({ ...f, disbursement_date: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Zinsbindung (Jahre)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Zinsbindung (Jahre)</label>
               <input type="number" value={form.initial_fixed_period_years}
                 onChange={e => setForm(f => ({ ...f, initial_fixed_period_years: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
 
           {loansForProperty.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Löst ab (Anschlussfinanzierung von)</label>
-              <p className="text-xs text-gray-400 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Löst ab (Anschlussfinanzierung von)</label>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
                 Optional – nur ausfüllen, wenn dieser Kredit die Restschuld eines bestehenden Kredits derselben Immobilie fortführt (z.B. nach Ende der Zinsbindung). Verhindert, dass beide Kreditsummen doppelt in Tilgungsquote und Restschuld gezählt werden.
               </p>
               <select value={form.replaces_loan_id}
                 onChange={e => setForm(f => ({ ...f, replaces_loan_id: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">– keiner –</option>
                 {loansForProperty.map(l => (
                   <option key={l.id} value={l.id}>{l.name}{l.lender ? ` · ${l.lender}` : ''}</option>
@@ -234,29 +234,29 @@ export default function NewLoan() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tilgungsfreie Zeit (Monate)</label>
-            <p className="text-xs text-gray-400 mb-1">Optional – z.B. bei KfW-Darlehen oder während der Bauzeit. Ab Auszahlung werden für diese Anzahl Monate nur Zinsen fällig, danach beginnt die reguläre Tilgung mit der unten eingegebenen Rate.</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tilgungsfreie Zeit (Monate)</label>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Optional – z.B. bei KfW-Darlehen oder während der Bauzeit. Ab Auszahlung werden für diese Anzahl Monate nur Zinsen fällig, danach beginnt die reguläre Tilgung mit der unten eingegebenen Rate.</p>
             <input type="number" value={form.interest_only_months}
               onChange={e => setForm(f => ({ ...f, interest_only_months: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-sm font-medium text-gray-700">Rate je Zahlung</label>
-                <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs shrink-0">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Rate je Zahlung</label>
+                <div className="flex rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden text-xs shrink-0">
                   <button
                     type="button"
                     onClick={() => setRateMode('eur')}
-                    className={`px-2.5 py-1 transition-colors ${rateMode === 'eur' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                    className={`px-2.5 py-1 transition-colors ${rateMode === 'eur' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 hover:dark:bg-gray-950'}`}
                   >
                     €
                   </button>
                   <button
                     type="button"
                     onClick={() => setRateMode('percent')}
-                    className={`px-2.5 py-1 border-l border-gray-200 transition-colors ${rateMode === 'percent' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                    className={`px-2.5 py-1 border-l border-gray-200 dark:border-gray-800 transition-colors ${rateMode === 'percent' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 hover:dark:bg-gray-950'}`}
                   >
                     %
                   </button>
@@ -264,29 +264,29 @@ export default function NewLoan() {
               </div>
               {rateMode === 'eur' ? (
                 <>
-                  <p className="text-xs text-gray-400 mb-1">Laut Tilgungsplan der Bank</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Laut Tilgungsplan der Bank</p>
                   <input type="number" step="0.01" value={form.annuity_amount}
                     onChange={e => setForm(f => ({ ...f, annuity_amount: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                    className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                 </>
               ) : (
                 <>
-                  <p className="text-xs text-gray-400 mb-1">Anfängliche Tilgungsrate p.a., steht im Vertrag – die Rate in € wird daraus berechnet</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Anfängliche Tilgungsrate p.a., steht im Vertrag – die Rate in € wird daraus berechnet</p>
                   <div className="relative">
                     <input type="number" step="0.01" value={repaymentRatePercent}
                       onChange={e => setRepaymentRatePercent(e.target.value)}
                       placeholder="z.B. 2"
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+                      className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm">%</span>
                   </div>
                 </>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Zahlungsrhythmus</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Zahlungsrhythmus</label>
               <select value={form.payment_frequency}
                 onChange={e => setForm(f => ({ ...f, payment_frequency: e.target.value as PaymentFrequency }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="monatlich">Monatlich</option>
                 <option value="vierteljährlich">Vierteljährlich</option>
                 <option value="jährlich">Jährlich</option>
@@ -295,7 +295,7 @@ export default function NewLoan() {
           </div>
 
           {rateMode === 'percent' && (
-            <p className="text-sm text-gray-500 bg-gray-50 rounded-xl px-3 py-2 -mt-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-950 rounded-xl px-3 py-2 -mt-2">
               {computedAnnuity !== null
                 ? <>Rechnerische Rate je Zahlung: <strong>{euro(computedAnnuity)}</strong></>
                 : 'Für die Berechnung Darlehenssumme, Sollzins und Tilgungsrate ausfüllen.'}
@@ -303,56 +303,56 @@ export default function NewLoan() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Zinsmethode</label>
-            <p className="text-xs text-gray-400 mb-1">30/360 ist der Standard bei deutschen Annuitätendarlehen und liefert einen gleichmäßig steigenden Tilgungsanteil wie im Bank-Tilgungsplan. Bei Abweichung von der echten Bank-Tilgung hier umstellen.</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Zinsmethode</label>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">30/360 ist der Standard bei deutschen Annuitätendarlehen und liefert einen gleichmäßig steigenden Tilgungsanteil wie im Bank-Tilgungsplan. Bei Abweichung von der echten Bank-Tilgung hier umstellen.</p>
             <select value={form.day_count_convention}
               onChange={e => setForm(f => ({ ...f, day_count_convention: e.target.value as DayCountConvention }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="30/360">30/360 (kaufmännisch)</option>
               <option value="act/365">act/365 (kalendertagsgenau)</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sondertilgungsgrenze pro Jahr (%)</label>
-            <p className="text-xs text-gray-400 mb-1">Optional – üblich sind 5% der Darlehenssumme pro Jahr ohne Vorfälligkeitsentschädigung. Steht im Darlehensvertrag. Ohne Angabe wird kein Limit geprüft.</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sondertilgungsgrenze pro Jahr (%)</label>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Optional – üblich sind 5% der Darlehenssumme pro Jahr ohne Vorfälligkeitsentschädigung. Steht im Darlehensvertrag. Ohne Angabe wird kein Limit geprüft.</p>
             <input type="number" step="0.01" value={form.special_payment_limit_percent}
               onChange={e => setForm(f => ({ ...f, special_payment_limit_percent: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
-          <div className="border-t border-gray-100 pt-5 space-y-5">
+          <div className="border-t border-gray-100 dark:border-gray-800 pt-5 space-y-5">
             <div>
-              <h2 className="text-sm font-semibold text-gray-800 mb-1">Bereitstellungszinsen</h2>
-              <p className="text-xs text-gray-400">
+              <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Bereitstellungszinsen</h2>
+              <p className="text-xs text-gray-400 dark:text-gray-500">
                 Optional – falls zwischen Vertragsabschluss und Auszahlung Zinsen auf den noch nicht abgerufenen Betrag anfielen (üblich bei Bauzeit/verzögerter Auszahlung). Steht im Darlehensvertrag unter "bereitstellungsfreie Zeit" und "Bereitstellungszins".
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Vertragsdatum</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vertragsdatum</label>
               <input type="date" value={form.contract_date}
                 onChange={e => setForm(f => ({ ...f, contract_date: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bereitstellungsfreie Zeit (Monate)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bereitstellungsfreie Zeit (Monate)</label>
                 <input type="number" value={form.bereitstellungsfreie_monate}
                   onChange={e => setForm(f => ({ ...f, bereitstellungsfreie_monate: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bereitstellungszins p.a. (%)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bereitstellungszins p.a. (%)</label>
                 <input type="number" step="0.01" value={form.bereitstellungszins_rate}
                   onChange={e => setForm(f => ({ ...f, bereitstellungszins_rate: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
 
             {bereitstellungszinsen !== null && (
-              <p className="text-sm text-gray-500 bg-gray-50 rounded-xl px-3 py-2">
+              <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-950 rounded-xl px-3 py-2">
                 Rechnerische Bereitstellungszinsen: <strong>{euro(bereitstellungszinsen)}</strong>
                 {bereitstellungszinsen === 0 && ' (Auszahlung lag innerhalb der bereitstellungsfreien Zeit)'}
               </p>
@@ -360,20 +360,20 @@ export default function NewLoan() {
           </div>
 
           {suggestedRate !== null && (
-            <p className="text-sm text-gray-500 bg-gray-50 rounded-xl px-3 py-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-950 rounded-xl px-3 py-2">
               Rechnerische anfängliche Tilgungsrate: <strong>{suggestedRate.toFixed(2)}%</strong> p.a.
             </p>
           )}
 
           {assets.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Wird finanziert durch Vermögenswert</label>
-              <p className="text-xs text-gray-400 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wird finanziert durch Vermögenswert</label>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
                 Optional – z.B. bei einer geplanten Anschlussfinanzierung über einen Bausparvertrag. Zeigt auf der Kredit-Detailseite, ob der hochgerechnete Stand des Vermögenswerts bis zum Auszahlungsdatum ausreicht.
               </p>
               <select value={form.funded_by_asset_id}
                 onChange={e => setForm(f => ({ ...f, funded_by_asset_id: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">– keiner –</option>
                 {assets.map(a => (
                   <option key={a.id} value={a.id}>

@@ -5,14 +5,14 @@ export default function Haftungsausschluss() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <Link href="/" className="text-sm text-gray-400 hover:text-gray-600 mb-1 block">← Zurück</Link>
-        <h1 className="text-2xl font-bold text-gray-900">Haftungsausschluss</h1>
-        <p className="text-gray-500 text-sm mt-1">Bitte aufmerksam lesen, bevor du Fimmax.AI nutzt</p>
+        <Link href="/" className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:dark:text-gray-300 mb-1 block">← Zurück</Link>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Haftungsausschluss</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Bitte aufmerksam lesen, bevor du Fimmax.AI nutzt</p>
       </div>
 
       <Card>
         <CardTitle>Keine Steuerberatung</CardTitle>
-        <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+        <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 leading-relaxed">
           Fimmax.AI ist kein Steuerberater und erbringt keine Steuerberatung im Sinne des
           Steuerberatungsgesetzes (StBerG). Darstellungen zu AfA, der 15%-Grenze nach § 6 Abs. 1 Nr. 1a
           EStG, Werbungskosten, Anlage-V-Aufbereitung oder sonstigen steuerlichen Sachverhalten sind
@@ -26,7 +26,7 @@ export default function Haftungsausschluss() {
 
       <Card>
         <CardTitle>Keine Finanz- oder Anlageberatung</CardTitle>
-        <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+        <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 leading-relaxed">
           Ebenso wenig erbringt Fimmax.AI Finanz-, Anlage- oder Rechtsberatung. Darstellungen zu
           Tilgung, Restschuld, Cashflow, Eigenkapital oder Portfoliokennzahlen sind rein informativer,
           rechnerischer Natur auf Basis der von dir eingegebenen Daten. Sie stellen keine Empfehlung
@@ -37,7 +37,7 @@ export default function Haftungsausschluss() {
 
       <Card>
         <CardTitle>Zweck des Produkts</CardTitle>
-        <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+        <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 leading-relaxed">
           Fimmax.AI ist darauf ausgelegt, die Aufbereitung, Darstellung und Verarbeitung der von dir
           eingespeisten Daten (u. a. Belege, Kaufverträge, Kredit- und Mietdaten) möglichst effizient
           zu gestalten, unter anderem mithilfe KI-gestützter Funktionen (z. B. automatische
@@ -48,7 +48,7 @@ export default function Haftungsausschluss() {
 
       <Card>
         <CardTitle>Zu unserem Slogan</CardTitle>
-        <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+        <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 leading-relaxed">
           "Fimmax.AI gibt dir deine Zeit zurück" ist bildlich und umgangssprachlich gemeint. Niemand
           kann dir tatsächlich verlorene Zeit zurückgeben – gemeint ist, dass administrative Arbeit
           (Belege, Abgleich, Suchen) durch Fimmax.AI reduziert wird, wodurch dir rechnerisch mehr Zeit
@@ -56,9 +56,9 @@ export default function Haftungsausschluss() {
         </p>
       </Card>
 
-      <Card className="bg-amber-50 border-amber-100">
+      <Card className="bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900">
         <CardTitle>Haftungsausschluss</CardTitle>
-        <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+        <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 leading-relaxed">
           Für die Richtigkeit, Vollständigkeit und Aktualität der von dir eingegebenen oder von
           Fimmax.AI berechneten, dargestellten bzw. KI-generierten Daten, Zahlen und Inhalte wird
           keine Gewähr übernommen. Eine Haftung für Schäden, die aus der Nutzung oder Nichtnutzung der
@@ -68,7 +68,7 @@ export default function Haftungsausschluss() {
           Lebens, des Körpers oder der Gesundheit sowie für Schäden, die auf Vorsatz oder grober
           Fahrlässigkeit beruhen.
         </p>
-        <p className="text-sm text-gray-700 mt-3 leading-relaxed">
+        <p className="text-sm text-gray-700 dark:text-gray-300 mt-3 leading-relaxed">
           Das gilt insbesondere für sämtliche durch die Website generierten Daten und Dokumente (z. B.
           Steuer-Exporte, Nebenkostenabrechnungen, Objekt-Exposés), für den Inhalt der von dir
           hochgeladenen Bilder und Dokumente sowie für durch KI verarbeitete oder erzeugte Inhalte (z. B.
@@ -77,14 +77,14 @@ export default function Haftungsausschluss() {
           Käufer:innen, Mieter:innen oder sonstigen Dritten – eigenständig auf ihre Richtigkeit zu
           prüfen und gegenzurechnen bzw. durch eine fachkundige Person prüfen zu lassen.
         </p>
-        <p className="text-sm text-gray-700 mt-3 leading-relaxed">
+        <p className="text-sm text-gray-700 dark:text-gray-300 mt-3 leading-relaxed">
           Bitte prüfe alle von Fimmax.AI erzeugten Auswertungen (insbesondere den Steuer-Export und das
           Objekt-Exposé) vor Weitergabe an Finanzamt, Bank oder Dritte eigenständig auf Richtigkeit oder
           lasse sie von einer fachkundigen Person gegenprüfen.
         </p>
       </Card>
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-gray-400 dark:text-gray-500">
         Stand: {new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
       </p>
     </div>

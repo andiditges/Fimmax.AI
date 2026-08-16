@@ -25,14 +25,15 @@ import { euro, formatDate, propertyLabel, propertyValue } from '@/lib/format'
 import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, PropertyImage, Receipt, ReceiptItem, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost, PROPERTY_CONDITION_GRADE_LABELS, PropertyConditionGrade } from '@/lib/types'
 
 const HOA_STATUS_COLORS: Record<HoaResolutionStatus, string> = {
-  offen: 'bg-gray-100 text-gray-700',
-  in_umsetzung: 'bg-yellow-100 text-yellow-800',
-  umgesetzt: 'bg-green-100 text-green-800',
+  offen: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
+  in_umsetzung: 'bg-yellow-100 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-200',
+  umgesetzt: 'bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200',
 }
 
-export default async function PropertyDetail({ params }: { params: Promise<{ id: string }> }) {
+export default async function PropertyDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ steuerjahr?: string }> }) {
   await requireUser()
   const { id } = await params
+  const { steuerjahr } = await searchParams
   const supabase = await createClient()
   const currentYear = new Date().getFullYear()
 
@@ -156,26 +157,62 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
     const sp = (allSpecialPayments ?? []).filter(x => x.loan_id === l.id)
     return s + interestPaidInYear(generateAmortizationSchedule(l, sp).entries, currentYear)
   }, 0)
-  const taxExportRow = buildTaxExportRow(p, currentYear, propAllocations, yearIncome, loanInterestThisYear, operatingCostList)
-  const taxExportDetailRows = buildTaxExportDetailRows(p, currentYear, propAllocations, annualAfa, loanInterestThisYear, operatingCostList)
   const openReminders = reminderList.filter(r => r.status !== 'erledigt')
   const receiptYears = [...new Set(recs.map(r => r.tax_year))].sort((a, b) => b - a)
+
+  // Steuer-Export-Jahr: unabhängig vom laufenden Kalenderjahr wählbar, sonst
+  // liefert der Export für ein frisch erworbenes Objekt (noch keine Belege im
+  // aktuellen Jahr) eine praktisch leere Datei, obwohl z.B. 28 Belege aus dem
+  // Kaufjahr vorliegen. Default: das jüngste Jahr mit tatsächlichen Belegen,
+  // sonst das laufende Jahr.
+  const exportYearOptions = [...new Set([...receiptYears, currentYear])].sort((a, b) => b - a)
+  const exportYear = steuerjahr ? parseInt(steuerjahr) : (receiptYears[0] ?? currentYear)
+  const exportYearIncome = tenantList.reduce((sum, t) => {
+    const schedule = generateRentSchedule(
+      t,
+      agreementsByTenant[t.id] ?? [],
+      adjustmentsByTenant[t.id] ?? [],
+      new Date(exportYear, 0, 1),
+      new Date(exportYear, 11, 1)
+    )
+    return sum + schedule.reduce((s, e) => s + e.amount, 0)
+  }, 0)
+  const exportLoanInterest = propertyLoans.reduce((s, l) => {
+    const sp = (allSpecialPayments ?? []).filter(x => x.loan_id === l.id)
+    return s + interestPaidInYear(generateAmortizationSchedule(l, sp).entries, exportYear)
+  }, 0)
+  const taxExportRow = buildTaxExportRow(p, exportYear, propAllocations, exportYearIncome, exportLoanInterest, operatingCostList)
+  const taxExportDetailRows = buildTaxExportDetailRows(p, exportYear, propAllocations, annualAfa, exportLoanInterest, operatingCostList)
 
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <Link href="/properties" className="text-sm text-gray-400 hover:text-gray-600 mb-1 block">← Immobilien</Link>
-          <h1 className="text-2xl font-bold text-gray-900">{propertyLabel(p)}</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <Link href="/properties" className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:dark:text-gray-300 mb-1 block">← Immobilien</Link>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{propertyLabel(p)}</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
             Baujahr {p.build_year} · AfA {p.afa_rate}% · {p.is_self_managed ? 'Selbst verwaltet' : 'Fremd verwaltet'} · Besitzübergang {formatDate(p.purchase_date)}
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
           <ThresholdBadge status={threshold} />
-          <Link href={`/properties/${id}/edit`} className="text-sm text-blue-600 hover:underline">Bearbeiten</Link>
-          <TaxExportButton csv={rowsToCsv([taxExportRow])} filename={`steuer-export-${p.address.replace(/\s+/g, '-')}-${currentYear}.csv`} label={`Steuer-Export ${currentYear} (CSV)`} />
-          <TaxExportButton csv={detailRowsToCsv(p, currentYear, taxExportDetailRows)} filename={`steuer-positionen-${p.address.replace(/\s+/g, '-')}-${currentYear}.csv`} label={`Alle Positionen ${currentYear} (CSV)`} />
+          <Link href={`/properties/${id}/edit`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Bearbeiten</Link>
+          {exportYearOptions.length > 1 && (
+            <div className="flex items-center gap-1 flex-wrap justify-end">
+              <span className="text-xs text-gray-400 dark:text-gray-500">Steuer-Export-Jahr:</span>
+              {exportYearOptions.map(y => (
+                <Link
+                  key={y}
+                  href={`/properties/${id}?steuerjahr=${y}`}
+                  className={`text-xs px-2 py-1 rounded-lg font-medium transition-colors ${y === exportYear ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 hover:dark:bg-gray-800'}`}
+                >
+                  {y}
+                </Link>
+              ))}
+            </div>
+          )}
+          <TaxExportButton csv={rowsToCsv([taxExportRow])} filename={`steuer-export-${p.address.replace(/\s+/g, '-')}-${exportYear}.csv`} label={`Steuer-Export ${exportYear} (CSV)`} />
+          <TaxExportButton csv={detailRowsToCsv(p, exportYear, taxExportDetailRows)} filename={`steuer-positionen-${p.address.replace(/\s+/g, '-')}-${exportYear}.csv`} label={`Alle Positionen ${exportYear} (CSV)`} />
           <ExposeButton propertyId={id} />
         </div>
       </div>
@@ -184,19 +221,19 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardTitle className="min-h-10">Einnahmen {currentYear}</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-green-600 break-words">{euro(yearIncome)}</p>
+          <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-500 break-words">{euro(yearIncome)}</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Ausgaben {currentYear}</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(yearExpenses)}</p>
+          <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words">{euro(yearExpenses)}</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">AfA / Jahr</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-blue-600 break-words">{euro(annualAfa)}</p>
+          <p className="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400 break-words">{euro(annualAfa)}</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Ergebnis vor AfA</CardTitle>
-          <p className={`text-lg md:text-2xl font-bold break-words ${yearIncome - yearExpenses >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+          <p className={`text-lg md:text-2xl font-bold break-words ${yearIncome - yearExpenses >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500 dark:text-red-400'}`}>
             {euro(yearIncome - yearExpenses)}
           </p>
         </Card>
@@ -209,34 +246,34 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
           <div className="mt-2 space-y-2 text-sm">
             {p.living_area_sqm && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Wohnfläche</span>
-                <span className="font-medium text-gray-900">{p.living_area_sqm} m²</span>
+                <span className="text-gray-500 dark:text-gray-400">Wohnfläche</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{p.living_area_sqm} m²</span>
               </div>
             )}
             {conditionEntries.length > 0 && (
               <div className="flex justify-between flex-wrap gap-x-4">
-                <span className="text-gray-500">Zustand</span>
-                <span className="font-medium text-gray-900 text-right">
+                <span className="text-gray-500 dark:text-gray-400">Zustand</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100 text-right">
                   {conditionEntries.map(([label, grade]) => `${label}: ${PROPERTY_CONDITION_GRADE_LABELS[grade]}`).join(' · ')}
                 </span>
               </div>
             )}
             {p.renovation_note && (
               <div className="flex justify-between gap-4">
-                <span className="text-gray-500">Notiz</span>
-                <span className="font-medium text-gray-900 text-right">{p.renovation_note}</span>
+                <span className="text-gray-500 dark:text-gray-400">Notiz</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100 text-right">{p.renovation_note}</span>
               </div>
             )}
             {currentRentPerSqm != null && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Aktuelle Kaltmiete</span>
-                <span className="font-medium text-gray-900">{euro(currentColdRent)} ({currentRentPerSqm.toFixed(2)} €/m²)</span>
+                <span className="text-gray-500 dark:text-gray-400">Aktuelle Kaltmiete</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{euro(currentColdRent)} ({currentRentPerSqm.toFixed(2)} €/m²)</span>
               </div>
             )}
             {(p.comparable_rent_min || p.comparable_rent_max) && (
               <div className="flex justify-between border-t pt-2">
-                <span className="text-gray-500">Ortsübliche Vergleichsmiete</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-gray-500 dark:text-gray-400">Ortsübliche Vergleichsmiete</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">
                   {euro(p.comparable_rent_min ?? p.comparable_rent_max ?? 0)}–{euro(p.comparable_rent_max ?? p.comparable_rent_min ?? 0)} /m²
                 </span>
               </div>
@@ -247,7 +284,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
               </p>
             )}
             {(p.comparable_rent_source || p.comparable_rent_as_of) && (
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-400 dark:text-gray-500">
                 Quelle: {p.comparable_rent_source || '–'}{p.comparable_rent_as_of ? ` · Stand ${formatDate(p.comparable_rent_as_of)}` : ''}
               </p>
             )}
@@ -259,9 +296,9 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
       <Ehegattenschaukel property={p} />
 
       {shouldRecommendNutzungsdauergutachten(p) && (
-        <Card className="bg-blue-50 border-blue-100">
+        <Card className="bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900">
           <CardTitle>Nutzungsdauergutachten empfohlen</CardTitle>
-          <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+          <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 leading-relaxed">
             {p.build_year < 2000
               ? `Baujahr ${p.build_year} liegt deutlich vor dem gesetzlichen Standard-Zeitraum – `
               : 'Mehrere als "alt" erfasste Ausstattungsmerkmale legen nahe, dass '}
@@ -274,7 +311,7 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
 
       {/* Standortrisiko */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">Standortrisiko</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Standortrisiko</h2>
         <RiskOverview properties={[p]} />
       </div>
 
@@ -291,11 +328,11 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
       {/* To-Dos & Erinnerungen */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-800">To-Dos & Erinnerungen ({openReminders.length} offen)</h2>
-          <Link href={`/reminders/new?property=${id}`} className="text-sm text-blue-600 hover:underline">+ Erinnerung</Link>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">To-Dos & Erinnerungen ({openReminders.length} offen)</h2>
+          <Link href={`/reminders/new?property=${id}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">+ Erinnerung</Link>
         </div>
         {reminderList.length === 0 ? (
-          <Card className="text-center py-8 text-gray-400">Noch keine Erinnerungen</Card>
+          <Card className="text-center py-8 text-gray-400 dark:text-gray-500">Noch keine Erinnerungen</Card>
         ) : (
           <div className="space-y-2">
             {reminderList.map(r => (
@@ -337,8 +374,8 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
           <div className="mt-3 space-y-2">
             {categoryTotals.map(c => (
               <div key={c.cat} className="flex justify-between text-sm">
-                <span className="text-gray-600">{c.label}</span>
-                <span className="font-medium text-gray-900">{euro(c.total)}</span>
+                <span className="text-gray-600 dark:text-gray-300">{c.label}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{euro(c.total)}</span>
               </div>
             ))}
             <div className="border-t pt-2 flex justify-between text-sm font-semibold">
@@ -352,11 +389,11 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
       {/* Finanzierung */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-800">Finanzierung ({propertyLoans.length})</h2>
-          <Link href={`/loans/new?property=${id}`} className="text-sm text-blue-600 hover:underline">+ Kredit erfassen</Link>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Finanzierung ({propertyLoans.length})</h2>
+          <Link href={`/loans/new?property=${id}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">+ Kredit erfassen</Link>
         </div>
         {loanStatuses.length === 0 ? (
-          <Card className="text-center py-8 text-gray-400">Noch keine Kredite hinterlegt</Card>
+          <Card className="text-center py-8 text-gray-400 dark:text-gray-500">Noch keine Kredite hinterlegt</Card>
         ) : (
           <div className="space-y-2">
             {totalLoanPrincipal > 0 && (
@@ -364,17 +401,17 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
                 <div className="flex items-center gap-4">
                   <TilgungRing percent={totalTilgungPercent} />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Bereits getilgt</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Bereits getilgt</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                       {euro(totalLoanPrincipal - totalLoanRemaining)} von ursprünglich {euro(totalLoanPrincipal)} Kreditsumme
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 sm:border-l sm:border-gray-100 sm:pl-4">
+                <div className="flex items-center gap-4 sm:border-l sm:border-gray-100 sm:dark:border-gray-800 sm:pl-4">
                   <LtvRing percent={ltvPercent} />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Beleihungsauslauf (LTV)</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Beleihungsauslauf (LTV)</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                       {euro(totalLoanRemaining)} Restschuld / {euro(propertyValue(p))} Wert
                     </p>
                   </div>
@@ -386,13 +423,13 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
                 <Card className="hover:shadow-md transition-shadow cursor-pointer py-3">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{loan.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{loan.nominal_interest_rate}% Sollzins · {euro(status.current_annuity_amount)} / {loan.payment_frequency}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{loan.name}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{loan.nominal_interest_rate}% Sollzins · {euro(status.current_annuity_amount)} / {loan.payment_frequency}</p>
                       {loan.planned_renovation_amount && (
-                        <p className="text-xs text-amber-700 mt-0.5">Davon {euro(loan.planned_renovation_amount)} für Renovierung/Sanierung eingeplant</p>
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">Davon {euro(loan.planned_renovation_amount)} für Renovierung/Sanierung eingeplant</p>
                       )}
                     </div>
-                    <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">{euro(status.remaining_balance)}</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">{euro(status.remaining_balance)}</span>
                   </div>
                 </Card>
               </Link>
@@ -404,11 +441,11 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
       {/* Mieter & Miete */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-800">Mieter & Miete ({tenantList.length})</h2>
-          <Link href={`/tenants/new?property=${id}`} className="text-sm text-blue-600 hover:underline">+ Mieter erfassen</Link>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Mieter & Miete ({tenantList.length})</h2>
+          <Link href={`/tenants/new?property=${id}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">+ Mieter erfassen</Link>
         </div>
         {tenantList.length === 0 ? (
-          <Card className="text-center py-8 text-gray-400">Noch keine Mieter hinterlegt</Card>
+          <Card className="text-center py-8 text-gray-400 dark:text-gray-500">Noch keine Mieter hinterlegt</Card>
         ) : (
           <div className="space-y-2">
             {tenantList.map(t => {
@@ -420,15 +457,15 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
                   <Card className="hover:shadow-md transition-shadow cursor-pointer py-3">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                           {t.name}{t.unit && t.unit !== 'Wohnung' ? ` · ${t.unit}` : ''}
                         </p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                           {activeAgreement ? `seit ${formatDate(activeAgreement.start_date)}` : `Einzug ${formatDate(t.move_in_date)}`}
                           {t.move_out_date ? ` · Auszug ${formatDate(t.move_out_date)}` : ''}
                         </p>
                       </div>
-                      <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">{rent !== null ? euro(rent) : '–'}</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">{rent !== null ? euro(rent) : '–'}</span>
                     </div>
                   </Card>
                 </Link>
@@ -441,18 +478,18 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
       {/* Belegliste */}
       <div>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h2 className="text-lg font-semibold text-gray-800">Belege ({recs.length})</h2>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Belege ({recs.length})</h2>
           <div className="flex items-center gap-3 flex-wrap">
             {receiptYears.map(y => (
-              <a key={y} href={`/api/receipts/zip?propertyId=${id}&year=${y}`} className="text-sm text-gray-500 hover:text-blue-600 hover:underline whitespace-nowrap">
+              <a key={y} href={`/api/receipts/zip?propertyId=${id}&year=${y}`} className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:dark:text-blue-400 hover:underline whitespace-nowrap">
                 ZIP {y}
               </a>
             ))}
-            <Link href={`/receipts/new?property=${id}`} className="text-sm text-blue-600 hover:underline whitespace-nowrap">+ Beleg erfassen</Link>
+            <Link href={`/receipts/new?property=${id}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap">+ Beleg erfassen</Link>
           </div>
         </div>
         {recs.length === 0 ? (
-          <Card className="text-center py-8 text-gray-400">Noch keine Belege</Card>
+          <Card className="text-center py-8 text-gray-400 dark:text-gray-500">Noch keine Belege</Card>
         ) : (
           <Card>
             <ReceiptBrowser receipts={recs} items={allReceiptItems} />
@@ -463,11 +500,11 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
       {/* WEG-Dokumente & Beschlüsse */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-800">WEG-Dokumente & Beschlüsse</h2>
-          <Link href={`/hoa/new?property=${id}`} className="text-sm text-blue-600 hover:underline">+ Dokument hochladen</Link>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">WEG-Dokumente & Beschlüsse</h2>
+          <Link href={`/hoa/new?property=${id}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">+ Dokument hochladen</Link>
         </div>
         {hoaDocs.length === 0 && hoaResolutionList.length === 0 ? (
-          <Card className="text-center py-8 text-gray-400">Noch keine WEG-Dokumente hinterlegt</Card>
+          <Card className="text-center py-8 text-gray-400 dark:text-gray-500">Noch keine WEG-Dokumente hinterlegt</Card>
         ) : (
           <div className="space-y-4">
             {hoaDocs.length > 0 && (
@@ -476,13 +513,13 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
                   <Card key={doc.id} className="py-3">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{doc.title}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{doc.title}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                           {doc.year}{doc.meeting_date ? ` · ${formatDate(doc.meeting_date)}` : ''}
                         </p>
                       </div>
                       {doc.file_url && (
-                        <span className="text-xs text-gray-400 whitespace-nowrap">📄 Protokoll hinterlegt</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">📄 Protokoll hinterlegt</span>
                       )}
                     </div>
                     {doc.file_url && (
@@ -502,9 +539,9 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
                   {hoaResolutionList.map(res => (
                     <div key={res.id} className="flex items-start justify-between gap-3 flex-wrap text-sm">
                       <div className="min-w-0">
-                        <p className="text-gray-900">{res.title}</p>
-                        {res.description && <p className="text-xs text-gray-500 mt-0.5">{res.description}</p>}
-                        <p className="text-xs text-gray-400 mt-0.5">{res.year}</p>
+                        <p className="text-gray-900 dark:text-gray-100">{res.title}</p>
+                        {res.description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{res.description}</p>}
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{res.year}</p>
                       </div>
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${HOA_STATUS_COLORS[res.status]}`}>
                         {HOA_RESOLUTION_STATUS_LABELS[res.status]}

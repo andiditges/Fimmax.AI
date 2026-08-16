@@ -79,27 +79,27 @@ export function PropertyImages({ propertyId, images }: { propertyId: string; ima
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-gray-800">Bilder ({images.length})</h2>
-        <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-sm text-blue-600 hover:underline disabled:opacity-50">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Bilder ({images.length})</h2>
+        <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-sm text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50">
           {uploading ? 'Wird hochgeladen...' : '+ Bilder hochladen'}
         </button>
         <input ref={fileRef} type="file" accept={ALLOWED_IMAGE_TYPES.join(',')} multiple onChange={onFilesChange} className="hidden" />
       </div>
 
       {images.length === 0 ? (
-        <Card className="text-center py-8 text-gray-400">
+        <Card className="text-center py-8 text-gray-400 dark:text-gray-500">
           Noch keine Bilder hinterlegt – für das Objekt-Exposé empfehlenswert.
         </Card>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {images.map(img => (
             <Card key={img.id} className="p-2">
-              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-2 relative">
+              <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden mb-2 relative">
                 {urls[img.id] ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={urls[img.id]} alt={img.caption ?? 'Immobilienbild'} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Lädt...</div>
+                  <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-gray-600 text-xs">Lädt...</div>
                 )}
                 {img.is_cover && (
                   <span className="absolute top-1.5 left-1.5 bg-blue-600 text-white text-[10px] font-medium px-1.5 py-0.5 rounded-full">
@@ -112,15 +112,15 @@ export function PropertyImages({ propertyId, images }: { propertyId: string; ima
                 defaultValue={img.caption ?? ''}
                 onBlur={e => saveCaption(img.id, e.target.value)}
                 placeholder="Bildunterschrift..."
-                className="w-full border border-gray-200 rounded-lg px-2 py-1 text-xs mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-2 py-1 text-xs mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <div className="flex items-center justify-between gap-1">
                 {!img.is_cover && (
-                  <button type="button" onClick={() => setCover(img.id)} disabled={busyId === img.id} className="text-[11px] text-blue-600 hover:underline disabled:opacity-50">
+                  <button type="button" onClick={() => setCover(img.id)} disabled={busyId === img.id} className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50">
                     Als Titelbild
                   </button>
                 )}
-                <button type="button" onClick={() => deleteImage(img)} disabled={busyId === img.id} className="text-[11px] text-red-500 hover:underline disabled:opacity-50 ml-auto">
+                <button type="button" onClick={() => deleteImage(img)} disabled={busyId === img.id} className="text-[11px] text-red-500 dark:text-red-400 hover:underline disabled:opacity-50 ml-auto">
                   Löschen
                 </button>
               </div>

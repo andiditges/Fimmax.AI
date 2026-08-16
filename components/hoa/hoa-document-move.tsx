@@ -66,21 +66,21 @@ export function HoaDocumentMove({ doc, propertyId }: { doc: HoaDocument; propert
         {open ? 'Abbrechen' : 'Falsch abgelegt? → Nebenkostenassistent'}
       </button>
       {open && (
-        <form onSubmit={onSubmit} className="mt-2 flex items-center gap-2 flex-wrap bg-blue-50 border border-blue-100 rounded-lg p-2">
+        <form onSubmit={onSubmit} className="mt-2 flex items-center gap-2 flex-wrap bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-lg p-2">
           <select
             value={action}
             onChange={e => setAction(e.target.value as 'move' | 'copy')}
-            className="border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white"
+            className="border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 text-xs bg-white dark:bg-gray-900 dark:text-gray-100"
           >
             <option value="move">Verschieben</option>
             <option value="copy">Duplizieren</option>
           </select>
-          <span className="text-xs text-gray-500">Jahr</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">Jahr</span>
           <input
             type="number"
             value={year}
             onChange={e => setYear(e.target.value)}
-            className="w-20 border border-gray-200 rounded-lg px-2 py-1 text-xs"
+            className="w-20 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-2 py-1 text-xs"
           />
           <button
             type="submit"

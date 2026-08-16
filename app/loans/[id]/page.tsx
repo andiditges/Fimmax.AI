@@ -64,24 +64,24 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
   return (
     <div className="space-y-6">
       <div>
-        <Link href={`/properties/${l.property_id}`} className="text-sm text-gray-400 hover:text-gray-600 mb-1 block">
+        <Link href={`/properties/${l.property_id}`} className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:dark:text-gray-300 mb-1 block">
           ← {p ? propertyLabel(p) : 'Immobilie'}
         </Link>
         <div className="flex items-start justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">{l.name}</h1>
-          <Link href={`/loans/${l.id}/edit`} className="text-sm text-blue-600 hover:underline">Bearbeiten</Link>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{l.name}</h1>
+          <Link href={`/loans/${l.id}/edit`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Bearbeiten</Link>
         </div>
-        <p className="text-gray-500 text-sm mt-1">
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
           {l.lender ? `${l.lender} · ` : ''}{euro(l.principal)} · {l.nominal_interest_rate}% Sollzins · {l.payment_frequency}
         </p>
         {l.planned_renovation_amount && (
-          <p className="text-sm text-amber-700 mt-1">Davon {euro(l.planned_renovation_amount)} für Renovierung/Sanierung eingeplant</p>
+          <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">Davon {euro(l.planned_renovation_amount)} für Renovierung/Sanierung eingeplant</p>
         )}
         {l.interest_only_months && (
-          <p className="text-sm text-gray-500 mt-1">{l.interest_only_months} Monate tilgungsfrei ab Auszahlung</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{l.interest_only_months} Monate tilgungsfrei ab Auszahlung</p>
         )}
         {bereitstellungszinsen !== null && bereitstellungszinsen > 0 && (
-          <p className="text-sm text-amber-700 mt-1">
+          <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
             {euro(bereitstellungszinsen)} Bereitstellungszinsen bis zur Auszahlung ({l.bereitstellungszins_rate}% p.a. nach {l.bereitstellungsfreie_monate ?? 0} Monaten bereitstellungsfreier Zeit)
           </p>
         )}
@@ -89,8 +89,8 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
       </div>
 
       {schedule.warning === 'negative_amortization' && (
-        <Card className="bg-red-50 border-red-100">
-          <p className="text-sm text-red-700">
+        <Card className="bg-red-50 dark:bg-red-950/40 border-red-100 dark:border-red-900">
+          <p className="text-sm text-red-700 dark:text-red-300">
             Die eingegebene Rate deckt nicht einmal die Zinsen dieser Periode – bitte Eingaben prüfen (Sollzins, Rate).
           </p>
         </Card>
@@ -99,38 +99,38 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardTitle className="min-h-10">Restschuld heute</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-gray-900 break-words">{euro(status.remaining_balance)}</p>
+          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100 break-words">{euro(status.remaining_balance)}</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Rate je Zahlung</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-blue-600 break-words">{euro(status.current_annuity_amount)}</p>
+          <p className="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400 break-words">{euro(status.current_annuity_amount)}</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Zinsen kumuliert</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(status.cumulative_interest_paid)}</p>
+          <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words">{euro(status.cumulative_interest_paid)}</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Tilgung kumuliert</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-green-600 break-words">{euro(status.cumulative_principal_paid)}</p>
+          <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-500 break-words">{euro(status.cumulative_principal_paid)}</p>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card>
           <CardTitle className="min-h-10">Anfängliche Tilgungsrate</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-gray-900 break-words">{initialRepaymentRate.toFixed(2)}% p.a.</p>
-          <p className="text-xs text-gray-400 mt-1">Rechnerisch aus Rate je Zahlung, Sollzins und Kreditsumme bei Auszahlung.</p>
+          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100 break-words">{initialRepaymentRate.toFixed(2)}% p.a.</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Rechnerisch aus Rate je Zahlung, Sollzins und Kreditsumme bei Auszahlung.</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Aktuelle Tilgungsrate</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-blue-600 break-words">{currentRepaymentRate.toFixed(2)}% p.a.</p>
-          <p className="text-xs text-gray-400 mt-1">Steigt bei fester Rate je Zahlung monatlich, da der Zinsanteil mit sinkender Restschuld schrumpft.</p>
+          <p className="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400 break-words">{currentRepaymentRate.toFixed(2)}% p.a.</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Steigt bei fester Rate je Zahlung monatlich, da der Zinsanteil mit sinkender Restschuld schrumpft.</p>
         </Card>
       </div>
 
       {l.initial_fixed_period_years && schedule.balance_at_fixed_period_end !== null && (
-        <Card className="bg-gray-50">
-          <p className="text-sm text-gray-600">
+        <Card className="bg-gray-50 dark:bg-gray-950">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             Zinsbindung endet nach {l.initial_fixed_period_years} Jahren am{' '}
             <strong>{formatDate(addYearsIso(l.disbursement_date, l.initial_fixed_period_years))}</strong>
             {' '}– Restschuld zu diesem Zeitpunkt voraussichtlich <strong>{euro(schedule.balance_at_fixed_period_end)}</strong>.
@@ -139,18 +139,18 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
       )}
 
       {asset && fundingCheck && (
-        <Card className={fundingCheck.sufficient ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100'}>
+        <Card className={fundingCheck.sufficient ? 'bg-green-50 dark:bg-green-950/40 border-green-100 dark:border-green-900' : 'bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900'}>
           <CardTitle>Finanzierung durch {asset.name || 'Vermögenswert'}{asset.institution ? ` (${asset.institution})` : ''}</CardTitle>
-          <p className="text-sm text-gray-700 mt-1">
+          <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
             Hochgerechneter Stand am Auszahlungsdatum ({formatDate(l.disbursement_date)}): <strong>{euro(fundingCheck.projected_value)}</strong>
             {' '}· benötigt für diesen Kredit: <strong>{euro(fundingCheck.required_amount)}</strong>
           </p>
-          <p className={`text-sm mt-1 font-medium ${fundingCheck.sufficient ? 'text-green-700' : 'text-amber-700'}`}>
+          <p className={`text-sm mt-1 font-medium ${fundingCheck.sufficient ? 'text-green-700 dark:text-green-300' : 'text-amber-700 dark:text-amber-300'}`}>
             {fundingCheck.sufficient
               ? '✓ Voraussichtlich ausreichend.'
               : `Voraussichtlich noch ${euro(fundingCheck.shortfall)} zu wenig – Sparrate erhöhen oder Auszahlungsdatum prüfen.`}
           </p>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             Hochrechnung auf Basis der monatlichen Sparrate des Vermögenswerts, angewendet zu jedem 01.01. – rein rechnerisch, ersetzt keine Beratung durch deine Bausparkasse/Bank.
           </p>
         </Card>
@@ -166,7 +166,7 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
           <CardTitle>Sondertilgungen ({sp.length})</CardTitle>
         </div>
         {allowanceRemaining !== null && (
-          <p className={`text-sm mb-3 ${allowanceRemaining > 0.01 ? 'text-gray-600' : 'text-amber-700'}`}>
+          <p className={`text-sm mb-3 ${allowanceRemaining > 0.01 ? 'text-gray-600 dark:text-gray-300' : 'text-amber-700 dark:text-amber-300'}`}>
             {allowanceRemaining > 0.01
               ? `Noch ${euro(allowanceRemaining)} kostenloses Sondertilgungskontingent für ${new Date().getFullYear()} (${l.special_payment_limit_percent}% p.a.).`
               : `Sondertilgungsgrenze für ${new Date().getFullYear()} ausgeschöpft (${l.special_payment_limit_percent}% p.a.) – weitere Sondertilgung erst wieder ab ${new Date().getFullYear() + 1} ohne Vorfälligkeitsentschädigung.`}
@@ -175,9 +175,9 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
         {sp.length > 0 && (
           <div className="space-y-2 mb-4">
             {sp.map(s => (
-              <div key={s.id} className="flex justify-between text-sm py-1.5 border-b border-gray-50 last:border-0">
-                <span className="text-gray-600">{formatDate(s.payment_date)}{s.note ? ` · ${s.note}` : ''}</span>
-                <span className="font-medium text-gray-900">{euro(s.amount)}</span>
+              <div key={s.id} className="flex justify-between text-sm py-1.5 border-b border-gray-50 dark:border-gray-800 last:border-0">
+                <span className="text-gray-600 dark:text-gray-300">{formatDate(s.payment_date)}{s.note ? ` · ${s.note}` : ''}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{euro(s.amount)}</span>
               </div>
             ))}
           </div>
@@ -193,7 +193,7 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-gray-400 border-b border-gray-100">
+              <tr className="text-left text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-gray-800">
                 <th className="pb-2 font-medium">Datum</th>
                 <th className="pb-2 font-medium text-right">Zinsen</th>
                 <th className="pb-2 font-medium text-right">Tilgung</th>
@@ -203,21 +203,21 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
             </thead>
             <tbody>
               {schedule.entries.slice(0, 60).map((e, i) => (
-                <tr key={i} className="border-b border-gray-50">
-                  <td className="py-1.5 text-gray-600">{formatDate(e.date)}</td>
-                  <td className="py-1.5 text-right text-red-500">{euro(e.interest_accrued)}</td>
-                  <td className="py-1.5 text-right text-green-600">{euro(e.scheduled_principal)}</td>
-                  <td className="py-1.5 text-right text-blue-600">{e.special_payment > 0 ? euro(e.special_payment) : '–'}</td>
-                  <td className="py-1.5 text-right font-medium text-gray-900">{euro(e.remaining_balance)}</td>
+                <tr key={i} className="border-b border-gray-50 dark:border-gray-800">
+                  <td className="py-1.5 text-gray-600 dark:text-gray-300">{formatDate(e.date)}</td>
+                  <td className="py-1.5 text-right text-red-500 dark:text-red-400">{euro(e.interest_accrued)}</td>
+                  <td className="py-1.5 text-right text-green-600 dark:text-green-500">{euro(e.scheduled_principal)}</td>
+                  <td className="py-1.5 text-right text-blue-600 dark:text-blue-400">{e.special_payment > 0 ? euro(e.special_payment) : '–'}</td>
+                  <td className="py-1.5 text-right font-medium text-gray-900 dark:text-gray-100">{euro(e.remaining_balance)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           {schedule.entries.length > 60 && (
-            <p className="text-xs text-gray-400 mt-2">Zeige die ersten 60 von {schedule.entries.length} Einträgen.</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Zeige die ersten 60 von {schedule.entries.length} Einträgen.</p>
           )}
           {schedule.payoff_date && (
-            <p className="text-sm text-green-600 mt-3">Voraussichtlich vollständig getilgt am {formatDate(schedule.payoff_date)}.</p>
+            <p className="text-sm text-green-600 dark:text-green-500 mt-3">Voraussichtlich vollständig getilgt am {formatDate(schedule.payoff_date)}.</p>
           )}
         </div>
       </Card>

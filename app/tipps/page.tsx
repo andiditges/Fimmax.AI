@@ -136,12 +136,12 @@ export default async function TippsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Tipps</h1>
-        <p className="text-gray-500 text-sm mt-1">Was du anhand deiner Daten jetzt optimieren könntest, plus Standortrisiko je Immobilie. Marktnews findest du im Dashboard.</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Tipps</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Was du anhand deiner Daten jetzt optimieren könntest, plus Standortrisiko je Immobilie. Marktnews findest du im Dashboard.</p>
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">Für dich erkannt</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Für dich erkannt</h2>
         <TipsList tips={tips} />
       </div>
 
@@ -149,7 +149,7 @@ export default async function TippsPage() {
 
       {props.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">Standortrisiko je Immobilie</h2>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Standortrisiko je Immobilie</h2>
           <RiskOverview properties={props} />
         </div>
       )}

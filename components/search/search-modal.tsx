@@ -121,42 +121,42 @@ export function SearchModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[100] bg-black/30 flex items-start justify-center pt-24 px-4" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden"
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center gap-2 border-b border-gray-100 px-4 py-3">
+        <div className="flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 px-4 py-3">
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Immobilie, Mieter, Kredit, Erinnerung suchen..."
-            className="flex-1 text-sm focus:outline-none"
+            className="flex-1 text-sm dark:text-gray-100 dark:placeholder-gray-500 bg-transparent focus:outline-none"
           />
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1" aria-label="Suche schließen">
+          <button type="button" onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-1" aria-label="Suche schließen">
             <X size={18} />
           </button>
         </div>
 
         <div className="max-h-96 overflow-y-auto">
-          {loading && <p className="text-sm text-gray-400 px-4 py-4">Suche...</p>}
+          {loading && <p className="text-sm text-gray-400 dark:text-gray-500 px-4 py-4">Suche...</p>}
 
           {!loading && trimmedQuery.length >= 2 && groups.length === 0 && (
-            <p className="text-sm text-gray-400 px-4 py-4">Keine Treffer für &bdquo;{query}&ldquo;.</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 px-4 py-4">Keine Treffer für &bdquo;{query}&ldquo;.</p>
           )}
 
           {!loading && trimmedQuery.length >= 2 && groups.map(group => (
             <div key={group.label} className="py-2">
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide px-4 py-1">{group.label}</p>
+              <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide px-4 py-1">{group.label}</p>
               {group.items.map(item => (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => goTo(item.href)}
-                  className="block w-full text-left px-4 py-2 hover:bg-blue-50"
+                  className="block w-full text-left px-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-950/40"
                 >
-                  <p className="text-sm text-gray-800">{item.title}</p>
-                  {item.subtitle && <p className="text-xs text-gray-400">{item.subtitle}</p>}
+                  <p className="text-sm text-gray-800 dark:text-gray-200">{item.title}</p>
+                  {item.subtitle && <p className="text-xs text-gray-400 dark:text-gray-500">{item.subtitle}</p>}
                 </button>
               ))}
             </div>

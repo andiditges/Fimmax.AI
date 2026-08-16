@@ -31,7 +31,7 @@ export default function EditReceipt() {
     })
   }, [params.id, supabase])
 
-  if (!loaded || !receipt) return <p className="text-sm text-gray-400">Lädt...</p>
+  if (!loaded || !receipt) return <p className="text-sm text-gray-400 dark:text-gray-500">Lädt...</p>
 
   return (
     <ReceiptForm

@@ -21,7 +21,7 @@ export function Ehegattenschaukel({ property }: { property: Property }) {
   return (
     <Card>
       <CardTitle>Ehegattenschaukel-Potenzial</CardTitle>
-      <p className="text-xs text-gray-400 mt-1 mb-2">
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 mb-2">
         Verkauf an den Ehepartner zum aktuellen Marktwert kann AfA-Bemessungsgrundlage und Restnutzungsdauer neu starten lassen.
         Grunderwerbsteuer ist unter Ehegatten idR befreit (§3 Nr. 4 GrEStG), Notar-/Grundbuchkosten fallen trotzdem an - nur mit Steuerberater final prüfen.
       </p>
@@ -44,16 +44,16 @@ export function Ehegattenschaukel({ property }: { property: Property }) {
 
       {hasPotential ? (
         <div className="text-sm text-center space-y-1">
-          <p className="text-gray-600">
-            Aktuell <strong className="text-gray-900">{euro(potential.current_annual_afa)}</strong> AfA/Jahr
-            {' '}&rarr; nach Schaukel potenziell <strong className="text-green-700">{euro(potential.potential_annual_afa)}</strong> AfA/Jahr
+          <p className="text-gray-600 dark:text-gray-300">
+            Aktuell <strong className="text-gray-900 dark:text-gray-100">{euro(potential.current_annual_afa)}</strong> AfA/Jahr
+            {' '}&rarr; nach Schaukel potenziell <strong className="text-green-700 dark:text-green-400">{euro(potential.potential_annual_afa)}</strong> AfA/Jahr
           </p>
-          <p className="text-green-700 font-semibold">
+          <p className="text-green-700 dark:text-green-400 font-semibold">
             +{euro(potential.delta_annual_afa)} mehr AfA pro Jahr (neue Restnutzungsdauer {potential.new_usage_duration} Jahre)
           </p>
         </div>
       ) : (
-        <p className="text-sm text-center text-gray-400">
+        <p className="text-sm text-center text-gray-400 dark:text-gray-500">
           Aktuell kaum Potenzial - der Marktwert liegt nah am ursprünglich abgeschriebenen Kaufpreis, eine Schaukel würde die AfA kaum erhöhen.
         </p>
       )}

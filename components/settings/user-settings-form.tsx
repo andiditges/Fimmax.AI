@@ -50,40 +50,40 @@ export function UserSettingsForm({ settings }: { settings: UserSettings | null }
       <CardTitle>Vermieter-Stammdaten</CardTitle>
       <div className="mt-3 space-y-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
           <input
             value={name}
             onChange={e => { setName(e.target.value); markDirty() }}
             placeholder="Max Mustermann"
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Straße und Hausnummer</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Straße und Hausnummer</label>
           <input
             value={addressLine}
             onChange={e => { setAddressLine(e.target.value); markDirty() }}
             placeholder="Musterstraße 1"
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div className="flex gap-3">
           <div className="w-32">
-            <label className="block text-sm font-medium text-gray-700 mb-1">PLZ</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">PLZ</label>
             <input
               value={postalCode}
               onChange={e => { setPostalCode(e.target.value); markDirty() }}
               placeholder="12345"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ort</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ort</label>
             <input
               value={city}
               onChange={e => { setCity(e.target.value); markDirty() }}
               placeholder="Musterstadt"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>

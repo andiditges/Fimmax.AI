@@ -15,13 +15,13 @@ export default function Warum() {
         />
       </div>
 
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Warum es Fimmax.AI gibt</h1>
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">Warum es Fimmax.AI gibt</h1>
 
       <p className="brick-text text-xl font-semibold mb-6">
         Ich glaube, dass die Zeit eines Investors in Entscheidungen gehört – nicht in Ordner.
       </p>
 
-      <div className="space-y-5 text-gray-700 leading-relaxed">
+      <div className="space-y-5 text-gray-700 dark:text-gray-300 leading-relaxed">
         <p>
           Ich bin Andreas Ditges, privater Immobilieninvestor. Ich habe meine Wohnungen selbst gekauft,
           selbst finanziert, selbst vermietet. Und ich habe dabei etwas gelernt, das mir vorher niemand
@@ -44,7 +44,7 @@ export default function Warum() {
           wirklich zusammenführt – Dokumente, Rechnungen, Kaufverträge, Finanzierung, Steuer. Und schon
           gar keines, das die Arbeit mit KI tatsächlich abnimmt, statt sie nur digital umzuschichten.
         </p>
-        <p className="font-semibold text-gray-900">Wenn es das nicht gibt, dann baue ich es.</p>
+        <p className="font-semibold text-gray-900 dark:text-gray-100">Wenn es das nicht gibt, dann baue ich es.</p>
 
         <h2 className="brick-text text-xl font-bold pt-4">Wie</h2>
         <p>

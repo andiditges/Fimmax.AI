@@ -32,7 +32,7 @@ export function ArchiveYearButton({ year, receiptCount, archivedCount }: { year:
       type="button"
       onClick={archive}
       disabled={archiving}
-      className="text-sm text-gray-500 hover:text-red-600 hover:underline disabled:opacity-50"
+      className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:underline disabled:opacity-50"
     >
       {archiving ? 'Wird archiviert...' : `Belege ${year} archivieren (Steuererklärung durch)`}
     </button>

@@ -29,8 +29,8 @@ export default async function PropertiesOverview() {
     <div className="space-y-8">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Meine Immobilien</h1>
-          <p className="text-gray-500 text-sm mt-1">{props.length} Immobilie{props.length !== 1 ? 'n' : ''} im Portfolio</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Meine Immobilien</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{props.length} Immobilie{props.length !== 1 ? 'n' : ''} im Portfolio</p>
         </div>
         <Link href="/properties/new" className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap">
           + Neue Immobilie

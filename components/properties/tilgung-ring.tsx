@@ -3,13 +3,13 @@
 // nebeneinander (Portfolio-Übersicht je Immobilie) kompakter wirken - analog
 // zu gängigen Loan-to-Value-Dashboards.
 export function Ring({
-  percent, size = 96, label, color = '#2563eb', trackColor = '#dbeafe', ariaLabel, detail, decimals = 0,
+  percent, size = 96, label, colorClassName = 'text-blue-600 dark:text-blue-400', trackClassName = 'text-blue-100 dark:text-blue-950/60', ariaLabel, detail, decimals = 0,
 }: {
   percent: number
   size?: number
   label: string
-  color?: string
-  trackColor?: string
+  colorClassName?: string
+  trackClassName?: string
   ariaLabel: string
   detail?: string
   decimals?: number
@@ -35,13 +35,15 @@ export function Ring({
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
           <circle
             cx={size / 2} cy={size / 2} r={radius}
-            fill="none" stroke={trackColor} strokeWidth={strokeWidth}
+            fill="none" stroke="currentColor" strokeWidth={strokeWidth}
+            className={trackClassName}
             strokeDasharray={`${half} ${circumference - half}`}
             strokeDashoffset={half}
           />
           <circle
             cx={size / 2} cy={size / 2} r={radius}
-            fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
+            fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round"
+            className={colorClassName}
             strokeDasharray={`${fillLength} ${circumference - fillLength}`}
             strokeDashoffset={half}
             style={{ transition: 'stroke-dasharray 0.3s ease, stroke 0.3s ease' }}
@@ -49,9 +51,9 @@ export function Ring({
         </svg>
       </div>
       <div className="flex flex-col items-center text-center w-full -mt-1">
-        <span className="font-bold text-gray-900" style={{ fontSize: size * (decimals > 0 ? 0.19 : 0.24) }}>{clamped.toFixed(decimals)}%</span>
-        <span className="text-gray-400 truncate max-w-full" style={{ fontSize: size * 0.1 }}>{label}</span>
-        {detail && <span className="text-gray-400 truncate max-w-full" style={{ fontSize: size * 0.085 }}>{detail}</span>}
+        <span className="font-bold text-gray-900 dark:text-gray-100" style={{ fontSize: size * (decimals > 0 ? 0.19 : 0.24) }}>{clamped.toFixed(decimals)}%</span>
+        <span className="text-gray-400 dark:text-gray-500 truncate max-w-full" style={{ fontSize: size * 0.1 }}>{label}</span>
+        {detail && <span className="text-gray-400 dark:text-gray-500 truncate max-w-full" style={{ fontSize: size * 0.085 }}>{detail}</span>}
       </div>
     </div>
   )
@@ -63,8 +65,8 @@ export function TilgungRing({ percent, size = 96 }: { percent: number; size?: nu
       percent={percent}
       size={size}
       label="getilgt"
-      color="#2563eb"
-      trackColor="#dbeafe"
+      colorClassName="text-blue-600 dark:text-blue-400"
+      trackClassName="text-blue-100 dark:text-blue-950/60"
       decimals={2}
       ariaLabel={`${Math.max(0, Math.min(100, percent)).toFixed(2)} Prozent des ursprünglichen Kreditvolumens getilgt`}
     />
@@ -77,21 +79,21 @@ export function TilgungRing({ percent, size = 96 }: { percent: number; size?: nu
 // grün bis 60% (typ. Grenze für die besten Konditionen), gelb bis 80%
 // (normale Finanzierung), rot darüber (höheres Risiko bei Wertverfall/
 // Anschlussfinanzierung). Faustregel, keine Bankvorgabe.
-export function ltvColor(ltvPercent: number): { color: string; trackColor: string } {
-  if (ltvPercent <= 60) return { color: '#16a34a', trackColor: '#dcfce7' }
-  if (ltvPercent <= 80) return { color: '#d97706', trackColor: '#fef3c7' }
-  return { color: '#dc2626', trackColor: '#fee2e2' }
+export function ltvColor(ltvPercent: number): { colorClassName: string; trackClassName: string } {
+  if (ltvPercent <= 60) return { colorClassName: 'text-green-600 dark:text-green-500', trackClassName: 'text-green-100 dark:text-green-950/60' }
+  if (ltvPercent <= 80) return { colorClassName: 'text-amber-600 dark:text-amber-400', trackClassName: 'text-amber-100 dark:text-amber-950/60' }
+  return { colorClassName: 'text-red-600 dark:text-red-400', trackClassName: 'text-red-100 dark:text-red-950/60' }
 }
 
 export function LtvRing({ percent, size = 96 }: { percent: number; size?: number }) {
-  const { color, trackColor } = ltvColor(percent)
+  const { colorClassName, trackClassName } = ltvColor(percent)
   return (
     <Ring
       percent={percent}
       size={size}
       label="LTV"
-      color={color}
-      trackColor={trackColor}
+      colorClassName={colorClassName}
+      trackClassName={trackClassName}
       ariaLabel={`Beleihungsauslauf (LTV) ${Math.max(0, Math.min(100, percent)).toFixed(0)} Prozent`}
     />
   )

@@ -11,8 +11,8 @@ export default async function EinstellungenPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Einstellungen</h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Einstellungen</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
           Deine Vermieter-Stammdaten – werden als Absender für generierte Schreiben verwendet (z.B. die Nebenkostenabrechnung im Nebenkostenassistenten).
         </p>
       </div>

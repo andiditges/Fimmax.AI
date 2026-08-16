@@ -7,19 +7,19 @@ import { Reminder, ReminderStatus, REMINDER_CATEGORY_LABELS, REMINDER_STATUS_LAB
 import { formatDate } from '@/lib/format'
 
 const CATEGORY_COLORS: Record<string, string> = {
-  mieterhoehung: 'bg-blue-100 text-blue-800',
-  eigentuemerversammlung: 'bg-purple-100 text-purple-800',
-  hausverwaltung: 'bg-amber-100 text-amber-800',
-  instandhaltung: 'bg-orange-100 text-orange-800',
-  sonstiges: 'bg-gray-100 text-gray-700',
+  mieterhoehung: 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300',
+  eigentuemerversammlung: 'bg-purple-100 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300',
+  hausverwaltung: 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300',
+  instandhaltung: 'bg-orange-100 dark:bg-orange-950/50 text-orange-800 dark:text-orange-300',
+  sonstiges: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
 }
 
 function dueDateColor(dueDate: string | null, status: ReminderStatus): string {
-  if (status === 'erledigt' || !dueDate) return 'text-gray-400'
+  if (status === 'erledigt' || !dueDate) return 'text-gray-400 dark:text-gray-500'
   const days = (new Date(dueDate).getTime() - Date.now()) / 86400000
-  if (days < 0) return 'text-red-600 font-semibold'
-  if (days <= 7) return 'text-orange-600 font-medium'
-  return 'text-gray-500'
+  if (days < 0) return 'text-red-600 dark:text-red-400 font-semibold'
+  if (days <= 7) return 'text-orange-600 dark:text-orange-400 font-medium'
+  return 'text-gray-500 dark:text-gray-400'
 }
 
 export function ReminderRow({
@@ -53,16 +53,16 @@ export function ReminderRow({
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[reminder.category]}`}>
               {REMINDER_CATEGORY_LABELS[reminder.category]}
             </span>
-            {propertyLabel && <span className="text-xs text-gray-400">{propertyLabel}</span>}
+            {propertyLabel && <span className="text-xs text-gray-400 dark:text-gray-500">{propertyLabel}</span>}
           </div>
-          <p className={`text-sm font-medium mt-1 ${status === 'erledigt' ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+          <p className={`text-sm font-medium mt-1 ${status === 'erledigt' ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-900 dark:text-gray-100'}`}>
             {reminder.title}
           </p>
           {reminder.description && (
-            <p className="text-xs text-gray-500 mt-0.5">{reminder.description}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{reminder.description}</p>
           )}
           {dependsOnTitle && status !== 'erledigt' && (
-            <p className="text-xs text-amber-700 mt-1">⏳ hängt ab von: {dependsOnTitle}</p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">⏳ hängt ab von: {dependsOnTitle}</p>
           )}
           {reminder.due_date && (
             <p className={`text-xs mt-1 ${dueDateColor(reminder.due_date, status)}`}>
@@ -74,7 +74,7 @@ export function ReminderRow({
           value={status}
           disabled={saving}
           onChange={e => onStatusChange(e.target.value as ReminderStatus)}
-          className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          className="text-xs border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
         >
           {Object.entries(REMINDER_STATUS_LABELS).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>

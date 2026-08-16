@@ -44,9 +44,9 @@ export default async function NebenkostenPage({
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <Link href={`/properties/${id}`} className="text-sm text-gray-400 hover:text-gray-600 mb-1 block">← {propertyLabel(p)}</Link>
-          <h1 className="text-2xl font-bold text-gray-900">Nebenkostenassistent {year}</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <Link href={`/properties/${id}`} className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:dark:text-gray-300 mb-1 block">← {propertyLabel(p)}</Link>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Nebenkostenassistent {year}</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
             {p.is_self_managed
               ? 'Selbst verwaltet – alle Kostenarten hier eintragen, damit nichts vergessen wird.'
               : 'Fremd verwaltet – Summen aus der Jahresabrechnung der Hausverwaltung übertragen.'}
@@ -58,7 +58,7 @@ export default async function NebenkostenPage({
             <Link
               key={y}
               href={`/properties/${id}/nebenkosten?year=${y}`}
-              className={`text-sm px-3 py-1.5 rounded-lg font-medium transition-colors ${y === year ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+              className={`text-sm px-3 py-1.5 rounded-lg font-medium transition-colors ${y === year ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 hover:dark:bg-gray-950'}`}
             >
               {y}
             </Link>
@@ -67,10 +67,10 @@ export default async function NebenkostenPage({
       </div>
 
       {!hasLandlordAddress && (
-        <Card className="bg-amber-50 border-amber-100">
-          <p className="text-sm text-gray-700">
+        <Card className="bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900">
+          <p className="text-sm text-gray-700 dark:text-gray-300">
             Für ein fertiges Abrechnungsschreiben fehlen noch deine Absenderdaten.{' '}
-            <Link href="/einstellungen" className="text-blue-600 hover:underline font-medium">Jetzt in den Einstellungen eintragen →</Link>
+            <Link href="/einstellungen" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">Jetzt in den Einstellungen eintragen →</Link>
           </p>
         </Card>
       )}

@@ -100,11 +100,11 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
     <div className="space-y-8">
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Steuerübersicht</h1>
-          <p className="text-gray-500 text-sm mt-1">Alles für die Steuererklärung (Anlage V) auf einen Blick</p>
-          <p className="text-xs text-gray-400 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Steuerübersicht</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Alles für die Steuererklärung (Anlage V) auf einen Blick</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
             Ohne Gewähr, rein rechnerische Aufbereitung deiner Daten, ersetzt keine Steuerberatung – vor Abgabe bitte prüfen bzw. von einer Steuerberatung gegenprüfen lassen. Siehe auch{' '}
-            <Link href="/haftungsausschluss" className="text-blue-600 hover:underline">Haftungsausschluss</Link>.
+            <Link href="/haftungsausschluss" className="text-blue-600 dark:text-blue-400 hover:underline">Haftungsausschluss</Link>.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -112,7 +112,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
             <Link
               key={y}
               href={`/steuer?year=${y}`}
-              className={`text-sm px-3 py-1.5 rounded-lg font-medium transition-colors ${y === year ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+              className={`text-sm px-3 py-1.5 rounded-lg font-medium transition-colors ${y === year ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 hover:dark:bg-gray-950'}`}
             >
               {y}
             </Link>
@@ -130,24 +130,24 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardTitle className="min-h-10">Einnahmen {year}</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-green-600 break-words">{euro(totalEinnahmen)}</p>
+          <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-500 break-words">{euro(totalEinnahmen)}</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Ausgaben {year}</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(totalAusgaben)}</p>
+          <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words">{euro(totalAusgaben)}</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Werbungskosten {year} (inkl. AfA)</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-red-500 break-words">{euro(totalWerbungskosten)}</p>
+          <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words">{euro(totalWerbungskosten)}</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Ergebnis {year} (Anlage V)</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-green-600 break-words">{euro(totalErgebnis)}</p>
+          <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-500 break-words">{euro(totalErgebnis)}</p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Steuer-Export</CardTitle>
           {rows.length === 0 ? (
-            <p className="text-sm text-gray-400 mt-1">Keine Objekte</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Keine Objekte</p>
           ) : (
             <div className="mt-1">
               <TaxExportButton csv={rowsToCsv(rows.map(r => r.taxRow))} filename={`steuer-export-portfolio-${year}.csv`} label="Portfolio (CSV)" />
@@ -158,17 +158,17 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
 
       {/* 15%-Grenze Warnungen */}
       {relevantThresholds.length > 0 && (
-        <Card className="bg-amber-50 border-amber-100">
+        <Card className="bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900">
           <CardTitle>15%-Hürde – Achtung bei {relevantThresholds.length} Objekt{relevantThresholds.length !== 1 ? 'en' : ''}</CardTitle>
           <div className="mt-2 space-y-1">
             {relevantThresholds.map(r => (
               <Link key={r.property.id} href={`/properties/${r.property.id}`} className="flex items-center justify-between text-sm hover:underline">
-                <span className="text-gray-700">{propertyLabel(r.property)}</span>
+                <span className="text-gray-700 dark:text-gray-300">{propertyLabel(r.property)}</span>
                 <ThresholdBadge status={r.threshold} />
               </Link>
             ))}
           </div>
-          <p className="text-xs text-amber-700 mt-2">
+          <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
             Renovierungskosten innerhalb von 3 Jahren nach Kauf über 15% des Gebäudewerts müssen aktiviert statt sofort abgesetzt werden (§ 6 Abs. 1 Nr. 1a EStG).
           </p>
         </Card>
@@ -176,28 +176,28 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
 
       {/* Pro Objekt */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">Nach Objekt ({rows.length})</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Nach Objekt ({rows.length})</h2>
         {rows.length === 0 ? (
-          <Card className="text-center py-12 text-gray-400">Noch keine Immobilien hinterlegt.</Card>
+          <Card className="text-center py-12 text-gray-400 dark:text-gray-500">Noch keine Immobilien hinterlegt.</Card>
         ) : (
           <div className="space-y-2">
             {rows.map(r => (
               <Card key={r.property.id}>
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div className="min-w-0">
-                    <Link href={`/properties/${r.property.id}`} className="font-semibold text-gray-900 hover:text-blue-700 truncate block">
+                    <Link href={`/properties/${r.property.id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-700 hover:dark:text-blue-300 truncate block">
                       {propertyLabel(r.property)}
                     </Link>
-                    <p className="text-xs text-gray-400 mt-0.5">{r.receiptCount} Belege in {year}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{r.receiptCount} Belege in {year}</p>
                   </div>
                   <ThresholdBadge status={r.threshold} />
                 </div>
                 <div className="mt-3 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-                  <span className="text-gray-500">Einnahmen: <strong className="text-green-600">{euro(r.taxRow.einnahmen)}</strong></span>
-                  <span className="text-gray-500">Ausgaben: <strong className="text-red-500">{euro(r.yearExpenses)}</strong></span>
-                  <span className="text-gray-500">Werbungskosten: <strong className="text-red-500">{euro(r.taxRow.werbungskosten_gesamt)}</strong></span>
-                  <span className="text-gray-500">AfA: <strong className="text-blue-600">{euro(r.taxRow.afa)}</strong></span>
-                  <span className="text-gray-500">Ergebnis: <strong className="text-green-600">{euro(r.taxRow.ergebnis)}</strong></span>
+                  <span className="text-gray-500 dark:text-gray-400">Einnahmen: <strong className="text-green-600 dark:text-green-500">{euro(r.taxRow.einnahmen)}</strong></span>
+                  <span className="text-gray-500 dark:text-gray-400">Ausgaben: <strong className="text-red-500 dark:text-red-400">{euro(r.yearExpenses)}</strong></span>
+                  <span className="text-gray-500 dark:text-gray-400">Werbungskosten: <strong className="text-red-500 dark:text-red-400">{euro(r.taxRow.werbungskosten_gesamt)}</strong></span>
+                  <span className="text-gray-500 dark:text-gray-400">AfA: <strong className="text-blue-600 dark:text-blue-400">{euro(r.taxRow.afa)}</strong></span>
+                  <span className="text-gray-500 dark:text-gray-400">Ergebnis: <strong className="text-green-600 dark:text-green-500">{euro(r.taxRow.ergebnis)}</strong></span>
                 </div>
                 <div className="mt-3 flex items-center gap-4 flex-wrap">
                   <TaxExportButton csv={rowsToCsv([r.taxRow])} filename={`steuer-export-${r.property.address.replace(/\s+/g, '-')}-${year}.csv`} label="CSV-Export" />
@@ -205,7 +205,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
                   {r.receiptCount > 0 && (
                     <a
                       href={`/api/receipts/zip?propertyId=${r.property.id}&year=${year}`}
-                      className="text-sm text-blue-600 hover:underline"
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       Belege {year} als ZIP
                     </a>
@@ -219,7 +219,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
 
       {/* Beleg-Suche */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">Belege durchsuchen (alle Objekte, alle Jahre)</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Belege durchsuchen (alle Objekte, alle Jahre)</h2>
         <Card>
           <ReceiptBrowser receipts={recs} items={recItems} properties={props} showPropertyColumn />
         </Card>

@@ -46,34 +46,34 @@ export function FeedbackButton() {
 
       {open && (
         <div className="fixed inset-0 z-[100] bg-black/30 flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0" onClick={close}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-              <p className="text-sm font-semibold text-gray-800">Feedback & Problem melden</p>
-              <button type="button" onClick={close} className="text-gray-400 hover:text-gray-600 p-1" aria-label="Schließen">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 px-4 py-3">
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Feedback & Problem melden</p>
+              <button type="button" onClick={close} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-1" aria-label="Schließen">
                 <X size={18} />
               </button>
             </div>
 
             {sent ? (
               <div className="px-4 py-8 flex flex-col items-center text-center gap-2">
-                <CheckCircle2 className="text-green-600" size={32} />
-                <p className="text-sm text-gray-700">Danke! Ist angekommen.</p>
-                <button type="button" onClick={close} className="mt-2 text-sm text-blue-600 hover:underline">Schließen</button>
+                <CheckCircle2 className="text-green-600 dark:text-green-500" size={32} />
+                <p className="text-sm text-gray-700 dark:text-gray-300">Danke! Ist angekommen.</p>
+                <button type="button" onClick={close} className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">Schließen</button>
               </div>
             ) : (
               <form onSubmit={onSubmit} className="p-4 space-y-3">
-                <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
+                <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-sm">
                   <button
                     type="button"
                     onClick={() => setType('feedback')}
-                    className={`flex-1 py-2 transition-colors ${type === 'feedback' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                    className={`flex-1 py-2 transition-colors ${type === 'feedback' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                   >
                     Feedback / Idee
                   </button>
                   <button
                     type="button"
                     onClick={() => setType('problem')}
-                    className={`flex-1 py-2 border-l border-gray-200 transition-colors ${type === 'problem' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                    className={`flex-1 py-2 border-l border-gray-200 dark:border-gray-700 transition-colors ${type === 'problem' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                   >
                     Problem melden
                   </button>
@@ -84,7 +84,7 @@ export function FeedbackButton() {
                   placeholder={type === 'problem' ? 'Was ist schiefgelaufen?' : 'Was fehlt dir, oder was sollten wir besser machen?'}
                   rows={5}
                   autoFocus
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   required
                 />
                 <button type="submit" disabled={sending}

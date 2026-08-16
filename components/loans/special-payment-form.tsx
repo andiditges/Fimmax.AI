@@ -58,7 +58,7 @@ export function SpecialPaymentForm({ loan, existingPayments }: { loan: Loan; exi
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-sm text-blue-600 hover:underline"
+        className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
       >
         + Sondertilgung erfassen
       </button>
@@ -66,35 +66,35 @@ export function SpecialPaymentForm({ loan, existingPayments }: { loan: Loan; exi
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3 bg-gray-50 border border-gray-100 rounded-xl p-4">
+    <form onSubmit={onSubmit} className="space-y-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-4">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Datum *</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Datum *</label>
           <input type="date" value={date} onChange={e => { setDate(e.target.value); setConfirmOverLimit(false) }}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+            className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Betrag (€) *</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Betrag (€) *</label>
           <input type="number" step="0.01" value={amount} onChange={e => { setAmount(e.target.value); setConfirmOverLimit(false) }}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+            className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
         </div>
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">Notiz</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Notiz</label>
         <input type="text" value={note} onChange={e => setNote(e.target.value)}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
 
       {isOverLimit && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
-          <p className="text-xs text-amber-800">
+        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-lg p-3 space-y-2">
+          <p className="text-xs text-amber-800 dark:text-amber-300">
             Diese Sondertilgung liegt {euro(overLimitBy)} über dem für {new Date(date).getFullYear()} vereinbarten kostenlosen Kontingent
             ({loan.special_payment_limit_percent}% p.a. der Darlehenssumme) – zusammen mit ggf. bereits erfassten Sondertilgungen desselben Jahres.
             Die Bank kann für den übersteigenden Teil eine Vorfälligkeitsentschädigung verlangen.
           </p>
-          <label className="flex items-center gap-2 text-xs text-amber-800">
+          <label className="flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300">
             <input type="checkbox" checked={confirmOverLimit} onChange={e => setConfirmOverLimit(e.target.checked)}
-              className="w-3.5 h-3.5 rounded border-amber-300 text-amber-600" />
+              className="w-3.5 h-3.5 rounded border-amber-300 dark:border-amber-700 text-amber-600" />
             Trotzdem in dieser Höhe erfassen
           </label>
         </div>
@@ -106,7 +106,7 @@ export function SpecialPaymentForm({ loan, existingPayments }: { loan: Loan; exi
           {saving ? 'Speichert...' : 'Speichern'}
         </button>
         <button type="button" onClick={() => setOpen(false)}
-          className="text-sm text-gray-500 px-4 py-2 hover:text-gray-700">
+          className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2 hover:text-gray-700 dark:hover:text-gray-200">
           Abbrechen
         </button>
       </div>

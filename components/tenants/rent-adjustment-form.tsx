@@ -35,37 +35,37 @@ export function RentAdjustmentForm({ tenantId }: { tenantId: string }) {
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="text-sm text-blue-600 hover:underline">
+      <button onClick={() => setOpen(true)} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
         + Abweichende Miete für einen Monat erfassen
       </button>
     )
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3 bg-gray-50 border border-gray-100 rounded-xl p-4">
+    <form onSubmit={onSubmit} className="space-y-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-4">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Monat *</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Monat *</label>
           <input type="month" value={month} onChange={e => setMonth(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+            className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Miete in diesem Monat (€) *</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Miete in diesem Monat (€) *</label>
           <input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+            className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
         </div>
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">Notiz</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Notiz</label>
         <input type="text" placeholder="z.B. Nachlass wegen Heizungsausfall" value={note} onChange={e => setNote(e.target.value)}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
       <div className="flex gap-2">
         <button type="submit" disabled={saving}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
           {saving ? 'Speichert...' : 'Speichern'}
         </button>
-        <button type="button" onClick={() => setOpen(false)} className="text-sm text-gray-500 px-4 py-2 hover:text-gray-700">
+        <button type="button" onClick={() => setOpen(false)} className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2 hover:text-gray-700 dark:hover:text-gray-200">
           Abbrechen
         </button>
       </div>

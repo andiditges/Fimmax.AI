@@ -149,15 +149,15 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">{tenant ? 'Mieter bearbeiten' : 'Neuer Mieter'}</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">{tenant ? 'Mieter bearbeiten' : 'Neuer Mieter'}</h1>
       <Card>
         <form onSubmit={onSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Immobilie *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Immobilie *</label>
             <select
               value={form.property_id}
               onChange={e => setForm(f => ({ ...f, property_id: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
               disabled={!!tenant}
             >
@@ -169,49 +169,49 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Was wird vermietet?</label>
-            <p className="text-xs text-gray-400 mb-1">Falls z.B. eine Garage separat von der Wohnung vermietet wird (auch an einen anderen Mieter)</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Was wird vermietet?</label>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Falls z.B. eine Garage separat von der Wohnung vermietet wird (auch an einen anderen Mieter)</p>
             <select
               value={form.unit}
               onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {UNIT_TYPES.map(u => <option key={u} value={u}>{u}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
             <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Einzugsdatum *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Einzugsdatum *</label>
               <input type="date" value={form.move_in_date} onChange={e => setForm(f => ({ ...f, move_in_date: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Auszugsdatum</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Auszugsdatum</label>
               <input type="date" value={form.move_out_date} onChange={e => setForm(f => ({ ...f, move_out_date: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
 
           {tenant && (
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 <input type="checkbox" checked={form.has_furnishing_surcharge}
                   onChange={e => setForm(f => ({ ...f, has_furnishing_surcharge: e.target.checked }))}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600" />
+                  className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600" />
                 Enthält Zuschlag für Küche, Stellplatz, Möbel o.ä.
               </label>
               {form.has_furnishing_surcharge && (
                 <>
-                  <p className="text-xs text-gray-400 mb-1">Anteil der Kaltmiete, der nicht auf die reine Wohnraummiete entfällt</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Anteil der Kaltmiete, der nicht auf die reine Wohnraummiete entfällt</p>
                   <input type="number" step="0.01" value={form.furnishing_surcharge} onChange={e => setForm(f => ({ ...f, furnishing_surcharge: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                    className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                 </>
               )}
             </div>
@@ -220,41 +220,41 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
           {!tenant && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Miete (€) ab Einzugsdatum *</label>
-                <p className="text-xs text-gray-400 mb-1">Gilt automatisch fortlaufend jeden Monat, bis du eine Mieterhöhung oder Abweichung erfasst</p>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Miete (€) ab Einzugsdatum *</label>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Gilt automatisch fortlaufend jeden Monat, bis du eine Mieterhöhung oder Abweichung erfasst</p>
                 <input type="number" step="0.01" value={form.rent_amount} onChange={e => setForm(f => ({ ...f, rent_amount: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                  className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
               </div>
 
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   <input type="checkbox" checked={form.has_furnishing_surcharge}
                     onChange={e => setForm(f => ({ ...f, has_furnishing_surcharge: e.target.checked }))}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600" />
+                    className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600" />
                   Enthält Zuschlag für Küche, Stellplatz, Möbel o.ä.
                 </label>
                 {form.has_furnishing_surcharge && (
                   <>
-                    <p className="text-xs text-gray-400 mb-1">Anteil der Kaltmiete oben, der nicht auf die reine Wohnraummiete entfällt</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Anteil der Kaltmiete oben, der nicht auf die reine Wohnraummiete entfällt</p>
                     <input type="number" step="0.01" value={form.furnishing_surcharge} onChange={e => setForm(f => ({ ...f, furnishing_surcharge: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                      className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                   </>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Miete im ersten Monat, falls abweichend (€)</label>
-                <p className="text-xs text-gray-400 mb-1">Nur ausfüllen, wenn der erste Monat nicht der volle Betrag oben ist – z.B. bei Einzug zur Monatsmitte</p>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Miete im ersten Monat, falls abweichend (€)</label>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Nur ausfüllen, wenn der erste Monat nicht der volle Betrag oben ist – z.B. bei Einzug zur Monatsmitte</p>
                 <input type="number" step="0.01" value={form.first_month_amount} onChange={e => setForm(f => ({ ...f, first_month_amount: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mietart</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mietart</label>
                 <select
                   value={form.rent_type}
                   onChange={e => setForm(f => ({ ...f, rent_type: e.target.value as RentType }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="fest">Feste Miete</option>
                   <option value="staffel">Staffelmiete</option>
@@ -263,27 +263,27 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
               </div>
 
               {form.rent_type === 'staffel' && (
-                <div className="grid grid-cols-2 gap-4 bg-gray-50 border border-gray-100 rounded-xl p-4">
+                <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Jährliche Erhöhung (%) *</label>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Jährliche Erhöhung (%) *</label>
                     <input type="number" step="0.01" value={form.staffel_percent} onChange={e => setForm(f => ({ ...f, staffel_percent: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                      className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Anzahl Jahre der Staffel *</label>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Anzahl Jahre der Staffel *</label>
                     <input type="number" value={form.staffel_years} onChange={e => setForm(f => ({ ...f, staffel_years: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                      className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                   </div>
-                  <p className="col-span-2 text-xs text-gray-500">
+                  <p className="col-span-2 text-xs text-gray-500 dark:text-gray-400">
                     Legt automatisch alle Staffelstufen ab Einzugsdatum an (Miete oben = Jahr 1), jeweils +{form.staffel_percent || 'X'}% gegenüber dem Vorjahr.
                   </p>
                 </div>
               )}
 
               {form.rent_type === 'index' && (
-                <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Basis-Indexstand (VPI, optional)</label>
-                  <p className="text-xs text-gray-400 mb-2">
+                <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-4">
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Basis-Indexstand (VPI, optional)</label>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
                     Der Verbraucherpreisindex (VPI) ist die amtliche Inflationszahl des Statistischen Bundesamts (Basis: Jahr 2020 = 100 Punkte).
                     Bei einer Indexmiete ist die Miete an diesen Wert gekoppelt – damit die App später berechnen kann, wie stark du erhöhen darfst,
                     braucht sie den Indexstand zum Vertragsbeginn. Wird zum Einzugsdatum automatisch aus einer eingebauten Tabelle vorgeschlagen
@@ -291,17 +291,17 @@ export function TenantForm({ tenant }: { tenant?: Tenant }) {
                     kannst du später auf /indexmiete nachtragen.
                   </p>
                   <input type="number" step="0.001" value={form.index_base_value} onChange={e => setForm(f => ({ ...f, index_base_value: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               )}
             </>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notiz</label>
-            <p className="text-xs text-gray-400 mb-1">Freitext, z.B. Kaution oder sonstige Vermerke</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notiz</label>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Freitext, z.B. Kaution oder sonstige Vermerke</p>
             <textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} rows={2}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <button type="submit" disabled={loading}

@@ -17,7 +17,7 @@ interface Item {
 export function IndexmieteOverview({ items, latestReading }: { items: Item[]; latestReading: VpiReading | null }) {
   if (items.length === 0) {
     return (
-      <Card className="text-center py-8 text-gray-400">
+      <Card className="text-center py-8 text-gray-400 dark:text-gray-500">
         Noch keine Mietverhältnisse mit Indexmiete hinterlegt. Beim Anlegen eines Mieters oder bei "+ Neue Miethöhe erfassen" die Mietart "Indexmiete" wählen.
       </Card>
     )
@@ -25,7 +25,7 @@ export function IndexmieteOverview({ items, latestReading }: { items: Item[]; la
 
   if (!latestReading) {
     return (
-      <Card className="text-center py-8 text-gray-400">
+      <Card className="text-center py-8 text-gray-400 dark:text-gray-500">
         {items.length} Mietverhältnis{items.length !== 1 ? 'se' : ''} mit Indexmiete hinterlegt, aber noch kein aktueller VPI-Indexstand oben erfasst.
       </Card>
     )
@@ -71,20 +71,20 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
       <Card>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <Link href={`/tenants/${item.tenant.id}`} className="font-semibold text-gray-900 hover:text-blue-700">{item.tenant.name}</Link>
-            <p className="text-xs text-gray-400">{propertyLabel(item.property)}</p>
+            <Link href={`/tenants/${item.tenant.id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-700 dark:hover:text-blue-400">{item.tenant.name}</Link>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{propertyLabel(item.property)}</p>
           </div>
-          <span className="text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-amber-100 text-amber-800">
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300">
             Basis-Index fehlt noch
           </span>
         </div>
         <form onSubmit={onSaveBase} className="mt-3 flex items-end gap-2">
           <div className="flex-1">
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
               Basis-Indexstand (VPI) zum {formatDate(item.agreement.start_date)}
             </label>
             <input type="number" step="0.001" value={baseValue} onChange={e => setBaseValue(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
           <button type="submit" disabled={savingBase}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
@@ -120,57 +120,57 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
     <Card>
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <Link href={`/tenants/${item.tenant.id}`} className="font-semibold text-gray-900 hover:text-blue-700">{item.tenant.name}</Link>
-          <p className="text-xs text-gray-400">{propertyLabel(item.property)}</p>
+          <Link href={`/tenants/${item.tenant.id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-700 dark:hover:text-blue-400">{item.tenant.name}</Link>
+          <p className="text-xs text-gray-400 dark:text-gray-500">{propertyLabel(item.property)}</p>
         </div>
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${status.eligible ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${status.eligible ? 'bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}>
           {status.eligible ? 'Erhöhung möglich' : `Erst ab ${formatDate(status.earliest_next_date)}`}
         </span>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3 text-sm">
         <div>
-          <p className="text-gray-400 text-xs">Aktuelle Miete</p>
-          <p className="font-medium text-gray-900">{euro(status.current_rent)}</p>
+          <p className="text-gray-400 dark:text-gray-500 text-xs">Aktuelle Miete</p>
+          <p className="font-medium text-gray-900 dark:text-gray-100">{euro(status.current_rent)}</p>
         </div>
         <div>
-          <p className="text-gray-400 text-xs">Basis-Index ({formatDate(status.base_date)})</p>
-          <p className="font-medium text-gray-900">{status.base_value.toFixed(3)}</p>
+          <p className="text-gray-400 dark:text-gray-500 text-xs">Basis-Index ({formatDate(status.base_date)})</p>
+          <p className="font-medium text-gray-900 dark:text-gray-100">{status.base_value.toFixed(3)}</p>
         </div>
         <div>
-          <p className="text-gray-400 text-xs">Aktueller Index ({formatDate(status.latest_month)})</p>
-          <p className="font-medium text-gray-900">{status.latest_value.toFixed(3)} ({status.percent_change >= 0 ? '+' : ''}{status.percent_change.toFixed(2)}%)</p>
+          <p className="text-gray-400 dark:text-gray-500 text-xs">Aktueller Index ({formatDate(status.latest_month)})</p>
+          <p className="font-medium text-gray-900 dark:text-gray-100">{status.latest_value.toFixed(3)} ({status.percent_change >= 0 ? '+' : ''}{status.percent_change.toFixed(2)}%)</p>
         </div>
         <div>
-          <p className="text-gray-400 text-xs">Rechnerisch möglich</p>
-          <p className="font-medium text-blue-700">{euro(status.possible_new_rent)}</p>
+          <p className="text-gray-400 dark:text-gray-500 text-xs">Rechnerisch möglich</p>
+          <p className="font-medium text-blue-700 dark:text-blue-400">{euro(status.possible_new_rent)}</p>
         </div>
         <div>
-          <p className="text-gray-400 text-xs">Erhöhung heute möglich</p>
-          <p className={`font-medium ${status.eligible ? 'text-green-700' : 'text-gray-400'}`}>
+          <p className="text-gray-400 dark:text-gray-500 text-xs">Erhöhung heute möglich</p>
+          <p className={`font-medium ${status.eligible ? 'text-green-700 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
             {status.eligible ? `+${euro(status.possible_new_rent - status.current_rent)}` : '– noch nicht'}
           </p>
         </div>
         <div>
-          <p className="text-gray-400 text-xs">Erhöhung inkl. zukünftig möglich</p>
-          <p className="font-medium text-blue-700">+{euro(status.possible_new_rent - status.current_rent)}</p>
+          <p className="text-gray-400 dark:text-gray-500 text-xs">Erhöhung inkl. zukünftig möglich</p>
+          <p className="font-medium text-blue-700 dark:text-blue-400">+{euro(status.possible_new_rent - status.current_rent)}</p>
         </div>
       </div>
 
-      <p className="text-xs text-gray-400 mt-2">
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
         Ohne Gewähr, rein rechnerisch, ersetzt keine Rechtsberatung – die Erhöhung muss dem Mieter aktiv in Textform erklärt werden.
       </p>
 
       {status.eligible && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
           {!applying && (
-            <button onClick={() => setApplying(true)} className="text-sm text-blue-600 hover:underline">
+            <button onClick={() => setApplying(true)} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
               + Erhöhung erfassen
             </button>
           )}
           <a
             href={`/api/mieterhoehung/pdf?tenantId=${item.tenant.id}&agreementId=${item.agreement.id}`}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
           >
             Erhöhungsschreiben (PDF)
           </a>
@@ -178,7 +178,7 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
             href="https://www.letterxpress.de/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
+            className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:underline"
           >
             Bei letterxpress per Post versenden ↗
           </a>
@@ -186,19 +186,19 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
       )}
 
       {applying && (
-        <form onSubmit={onApply} className="mt-3 bg-gray-50 border border-gray-100 rounded-xl p-4 space-y-3">
+        <form onSubmit={onApply} className="mt-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-4 space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Gilt ab</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Gilt ab</label>
             <input type="date" value={effectiveDate} onChange={e => setEffectiveDate(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
-          <p className="text-sm text-gray-600">Neue Miete: <strong>{euro(status.possible_new_rent)}</strong> (Basis-Index wird auf {status.latest_value.toFixed(3)} zurückgesetzt)</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300">Neue Miete: <strong>{euro(status.possible_new_rent)}</strong> (Basis-Index wird auf {status.latest_value.toFixed(3)} zurückgesetzt)</p>
           <div className="flex gap-2">
             <button type="submit" disabled={saving}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
               {saving ? 'Speichert...' : 'Bestätigen'}
             </button>
-            <button type="button" onClick={() => setApplying(false)} className="text-sm text-gray-500 px-4 py-2 hover:text-gray-700">
+            <button type="button" onClick={() => setApplying(false)} className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2 hover:text-gray-700 dark:hover:text-gray-200">
               Abbrechen
             </button>
           </div>

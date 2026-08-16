@@ -66,33 +66,33 @@ export function RentChangeForm({ tenantId, propertyId }: { tenantId: string; pro
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="text-sm text-blue-600 hover:underline">
+      <button onClick={() => setOpen(true)} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
         + Neue Miethöhe erfassen
       </button>
     )
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3 bg-gray-50 border border-gray-100 rounded-xl p-4">
+    <form onSubmit={onSubmit} className="space-y-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-4">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Gilt ab *</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Gilt ab *</label>
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+            className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Neue Miete (€) *</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Neue Miete (€) *</label>
           <input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+            className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
         </div>
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">Mietart</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Mietart</label>
         <select
           value={rentType}
           onChange={e => setRentType(e.target.value as RentType)}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="fest">Feste Miete</option>
           <option value="staffel">Staffelmiete</option>
@@ -103,24 +103,24 @@ export function RentChangeForm({ tenantId, propertyId }: { tenantId: string; pro
       {rentType === 'staffel' && (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Jährliche Erhöhung (%) *</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Jährliche Erhöhung (%) *</label>
             <input type="number" step="0.01" value={staffelPercent} onChange={e => setStaffelPercent(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Anzahl Jahre *</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Anzahl Jahre *</label>
             <input type="number" value={staffelYears} onChange={e => setStaffelYears(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
         </div>
       )}
 
       {rentType === 'index' && (
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Basis-Indexstand (VPI, optional)</label>
-          <p className="text-xs text-gray-400 mb-1">Wird zum Datum oben automatisch vorgeschlagen, bei Bedarf mit dem Wert aus dem Mietvertrag überschreiben</p>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Basis-Indexstand (VPI, optional)</label>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Wird zum Datum oben automatisch vorgeschlagen, bei Bedarf mit dem Wert aus dem Mietvertrag überschreiben</p>
           <input type="number" step="0.001" value={indexBaseValue} onChange={e => setIndexBaseValue(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
       )}
 
@@ -129,7 +129,7 @@ export function RentChangeForm({ tenantId, propertyId }: { tenantId: string; pro
           className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
           {saving ? 'Speichert...' : 'Speichern'}
         </button>
-        <button type="button" onClick={() => setOpen(false)} className="text-sm text-gray-500 px-4 py-2 hover:text-gray-700">
+        <button type="button" onClick={() => setOpen(false)} className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2 hover:text-gray-700 dark:hover:text-gray-200">
           Abbrechen
         </button>
       </div>

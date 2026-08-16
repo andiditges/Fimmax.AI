@@ -7,7 +7,7 @@ import { calcAnnualAfa } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
 import { getReceiptAllocations } from '@/lib/receipt-allocations'
 import { sumRentForYear } from '@/lib/rent-schedule'
-import { euro, propertyLabel } from '@/lib/format'
+import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
 import { Property, Receipt, ReceiptItem, Tenant, RentalAgreement, RentAdjustment } from '@/lib/types'
 
 export function PropertyList({
@@ -32,7 +32,7 @@ export function PropertyList({
   if (properties.length === 0) {
     return (
       <Card className="text-center py-12">
-        <p className="text-gray-400 mb-4">Noch keine Immobilien hinterlegt.</p>
+        <p className="text-gray-400 dark:text-gray-500 mb-4">Noch keine Immobilien hinterlegt.</p>
         <Link href="/properties/new" className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors">
           Erste Immobilie anlegen
         </Link>
@@ -60,30 +60,33 @@ export function PropertyList({
         const receiptCount = new Set(propAllocations.map(a => a.receipt_id)).size
         const propTenants = tenants.filter(t => t.property_id === p.id)
         const yearIncome = sumRentForYear(propTenants, agreementsByTenant, adjustmentsByTenant, currentYear)
+        const unitLabel = p.unit_label || p.unit
 
         return (
           <div key={p.id} onClick={() => router.push(`/properties/${p.id}`)}>
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{propertyLabel(p)}</p>
-                  <p className="text-sm text-gray-500 mt-0.5">AfA: {euro(calcAnnualAfa(p))} / Jahr · {p.afa_rate}% · Bj. {p.build_year}</p>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                    <Sensitive kind="address" seed={p.id} value={p.address} />{unitLabel ? ` · ${unitLabel}` : ''}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">AfA: <SensitiveEuro seed={`${p.id}-afa`} amount={calcAnnualAfa(p)} /> / Jahr · {p.afa_rate}% · Bj. {p.build_year}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <ThresholdBadge status={threshold} />
                   <Link
                     href={`/properties/${p.id}/nebenkosten`}
                     onClick={e => e.stopPropagation()}
-                    className="text-xs text-blue-600 hover:underline whitespace-nowrap"
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap"
                   >
                     Nebenkostenassistent →
                   </Link>
                 </div>
               </div>
               <div className="mt-3 flex gap-6 text-sm">
-                <span className="text-green-600">Einnahmen: <strong>{euro(yearIncome)}</strong></span>
-                <span className="text-red-500">Ausgaben: <strong>{euro(yearExpenses)}</strong></span>
-                <span className="text-gray-500">{receiptCount} Belege</span>
+                <span className="text-green-600 dark:text-green-500">Einnahmen: <strong><SensitiveEuro seed={`${p.id}-income`} amount={yearIncome} /></strong></span>
+                <span className="text-red-500 dark:text-red-400">Ausgaben: <strong><SensitiveEuro seed={`${p.id}-expenses`} amount={yearExpenses} /></strong></span>
+                <span className="text-gray-500 dark:text-gray-400">{receiptCount} Belege</span>
               </div>
             </Card>
           </div>

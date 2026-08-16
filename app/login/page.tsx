@@ -58,11 +58,11 @@ export default function Login() {
             priority
           />
         </div>
-        <p className="text-xs text-gray-400 mt-3 uppercase tracking-wide">Warum es Fimmax.AI gibt</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 uppercase tracking-wide">Warum es Fimmax.AI gibt</p>
         <p className="brick-text text-lg font-semibold mt-1">
           „Ich glaube, dass die Zeit eines Investors in Entscheidungen gehört – nicht in Ordner.“
         </p>
-        <p className="text-gray-500 text-sm mt-2">
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
           Fimmax.AI gibt dir deine Zeit zurück. Verbring sie mit dem, was wirklich zählt.
         </p>
       </div>
@@ -70,7 +70,7 @@ export default function Login() {
       <div className="max-w-sm w-full mx-auto">
         <div className="text-center mb-8">
           <h1 className="brick-text text-3xl font-bold tracking-tight">Immobilien, aber richtig.</h1>
-          <p className="text-gray-500 mt-2">
+          <p className="text-gray-500 dark:text-gray-400 mt-2">
             Belege, Kredite, Steuern, Nachrichten und Erinnerungen – alles an einem Ort für Vermieter, egal ob privat, geschäftlich oder irgendwas dazwischen.
           </p>
         </div>
@@ -80,50 +80,50 @@ export default function Login() {
         <Card>
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">E-Mail</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-Mail</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Passwort</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Passwort</label>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 minLength={6}
                 required
               />
             </div>
 
             {mode === 'signup' && (
-              <label className="flex items-start gap-2 text-xs text-gray-600">
+              <label className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
                 <input
                   type="checkbox"
                   checked={acceptedTerms}
                   onChange={e => setAcceptedTerms(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600"
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 dark:border-gray-700 text-blue-600 dark:text-blue-400"
                   required
                 />
                 <span>
                   Ich habe die{' '}
-                  <Link href="/agb" target="_blank" className="text-blue-600 hover:underline">AGB</Link>,
+                  <Link href="/agb" target="_blank" className="text-blue-600 dark:text-blue-400 hover:underline">AGB</Link>,
                   den{' '}
-                  <Link href="/haftungsausschluss" target="_blank" className="text-blue-600 hover:underline">Haftungsausschluss</Link>{' '}
+                  <Link href="/haftungsausschluss" target="_blank" className="text-blue-600 dark:text-blue-400 hover:underline">Haftungsausschluss</Link>{' '}
                   und die{' '}
-                  <Link href="/datenschutz" target="_blank" className="text-blue-600 hover:underline">Datenschutzerklärung</Link>{' '}
+                  <Link href="/datenschutz" target="_blank" className="text-blue-600 dark:text-blue-400 hover:underline">Datenschutzerklärung</Link>{' '}
                   gelesen und akzeptiere sie.
                 </span>
               </label>
             )}
 
             {error && <p className="text-sm text-red-600">{error}</p>}
-            {info && <p className="text-sm text-green-600">{info}</p>}
+            {info && <p className="text-sm text-green-600 dark:text-green-500">{info}</p>}
 
             <button
               type="submit"
@@ -137,7 +137,7 @@ export default function Login() {
           <button
             type="button"
             onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); setInfo(null) }}
-            className="w-full text-center text-sm text-blue-600 hover:underline mt-4"
+            className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:underline mt-4"
           >
             {mode === 'signin' ? 'Noch kein Konto? Registrieren' : 'Schon ein Konto? Anmelden'}
           </button>

@@ -31,7 +31,7 @@ export function NewsFeedAsync() {
     return (
       <Card>
         <CardTitle>Markt & Immobilien-Nachrichten</CardTitle>
-        <p className="text-sm text-gray-400 mt-2">Lädt...</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Lädt...</p>
       </Card>
     )
   }

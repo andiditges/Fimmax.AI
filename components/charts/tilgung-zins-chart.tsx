@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { euro, formatDate } from '@/lib/format'
+import { useTheme } from '@/components/theme/theme-provider'
 
 interface Point {
   date: string
@@ -15,10 +16,10 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: { valu
   if (!active || !payload?.length) return null
   const point = payload[0].payload
   return (
-    <div className="bg-white border border-gray-100 rounded-xl shadow-sm px-3 py-2 text-xs space-y-0.5">
-      <p className="text-gray-400">{formatDate(point.date)}</p>
-      <p className="text-red-500">Zinsen: <strong>{euro(point.interest)}</strong></p>
-      <p className="text-green-600">Tilgung: <strong>{euro(point.principal)}</strong></p>
+    <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm px-3 py-2 text-xs space-y-0.5">
+      <p className="text-gray-400 dark:text-gray-500">{formatDate(point.date)}</p>
+      <p className="text-red-500 dark:text-red-400">Zinsen: <strong>{euro(point.interest)}</strong></p>
+      <p className="text-green-600 dark:text-green-500">Tilgung: <strong>{euro(point.principal)}</strong></p>
     </div>
   )
 }
@@ -87,9 +88,12 @@ function SmileyOverlay({ hover }: { hover: HoverState }) {
 
 export function TilgungZinsChart({ data }: { data: Point[] }) {
   const [hover, setHover] = useState<HoverState | null>(null)
+  const { theme } = useTheme()
+  const gridStroke = theme === 'dark' ? '#374151' : '#f3f4f6'
+  const tickFill = theme === 'dark' ? '#6b7280' : '#9ca3af'
 
   if (data.length === 0) {
-    return <p className="text-sm text-gray-400 py-8 text-center">Keine Daten für den Verlauf.</p>
+    return <p className="text-sm text-gray-400 dark:text-gray-500 py-8 text-center">Keine Daten für den Verlauf.</p>
   }
 
   return (
@@ -115,18 +119,18 @@ export function TilgungZinsChart({ data }: { data: Point[] }) {
             }}
             onMouseLeave={() => setHover(null)}
           >
-            <CartesianGrid strokeDasharray="0" vertical={false} stroke="#f3f4f6" />
+            <CartesianGrid strokeDasharray="0" vertical={false} stroke={gridStroke} />
             <XAxis
               dataKey="date"
               tickFormatter={d => new Date(d).toLocaleDateString('de-DE', { month: 'short', year: '2-digit' })}
-              tick={{ fontSize: 11, fill: '#9ca3af' }}
-              axisLine={{ stroke: '#f3f4f6' }}
+              tick={{ fontSize: 11, fill: tickFill }}
+              axisLine={{ stroke: gridStroke }}
               tickLine={false}
               minTickGap={40}
             />
             <YAxis
               tickFormatter={v => euro(v)}
-              tick={{ fontSize: 11, fill: '#9ca3af' }}
+              tick={{ fontSize: 11, fill: tickFill }}
               axisLine={false}
               tickLine={false}
               width={55}
@@ -138,10 +142,10 @@ export function TilgungZinsChart({ data }: { data: Point[] }) {
         </ResponsiveContainer>
         {hover && <SmileyOverlay hover={hover} />}
       </div>
-      <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs text-gray-400 mt-1 px-1">
+      <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs text-gray-400 dark:text-gray-500 mt-1 px-1">
         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> Zinsen</span>
         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-600 inline-block" /> Tilgung</span>
-        <span className="text-gray-300">· zum Durchhovern: das Gesicht freut sich mehr, je weiter der Kredit getilgt ist</span>
+        <span className="text-gray-300 dark:text-gray-600">· zum Durchhovern: das Gesicht freut sich mehr, je weiter der Kredit getilgt ist</span>
       </div>
     </div>
   )

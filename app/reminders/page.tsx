@@ -32,8 +32,8 @@ export default async function RemindersPage() {
     <div className="space-y-8">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Erinnerungen & ToDos</h1>
-          <p className="text-gray-500 text-sm mt-1">Mieterhöhungen, Eigentümerversammlungen, offene Aufgaben je Wohnung</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Erinnerungen & ToDos</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Mieterhöhungen, Eigentümerversammlungen, offene Aufgaben je Wohnung</p>
         </div>
         <Link href="/reminders/new" className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap">
           + Erinnerung
@@ -41,9 +41,9 @@ export default async function RemindersPage() {
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">Offen ({open.length})</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Offen ({open.length})</h2>
         {open.length === 0 ? (
-          <Card className="text-center py-12 text-gray-400">Keine offenen Erinnerungen.</Card>
+          <Card className="text-center py-12 text-gray-400 dark:text-gray-500">Keine offenen Erinnerungen.</Card>
         ) : (
           <div className="space-y-2">
             {open.map(r => (
@@ -60,7 +60,7 @@ export default async function RemindersPage() {
 
       {done.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">Erledigt ({done.length})</h2>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Erledigt ({done.length})</h2>
           <div className="space-y-2">
             {done.map(r => (
               <ReminderRow key={r.id} reminder={r} propertyLabel={propertyLabelFor(r.property_id)} />

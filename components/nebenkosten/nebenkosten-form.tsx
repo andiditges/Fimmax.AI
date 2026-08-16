@@ -112,9 +112,9 @@ export function NebenkostenForm({
   return (
     <div className="space-y-6">
       {!property.is_self_managed && (
-        <Card className="bg-blue-50 border-blue-100">
+        <Card className="bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900">
           <CardTitle>Jahresabrechnung der Hausverwaltung</CardTitle>
-          <p className="text-sm text-gray-600 mt-1 mb-3">
+          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 mb-3">
             Lade die Jahresabrechnung als Beleg ab und trag die Summen unten aus den einzelnen Positionen ein.
             Automatisches Auslesen per KI ist technisch vorbereitet, aber erst mit aktivem KI-Zugang live – bis dahin bitte manuell übertragen.
           </p>
@@ -130,15 +130,15 @@ export function NebenkostenForm({
               }
               setFile(f)
             }}
-            className="w-full text-sm"
+            className="w-full text-sm dark:text-gray-300"
           />
-          {fileUrl && !file && <p className="text-xs text-gray-400 mt-2">✓ Jahresabrechnung bereits hinterlegt</p>}
+          {fileUrl && !file && <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">✓ Jahresabrechnung bereits hinterlegt</p>}
         </Card>
       )}
 
-      <Card className="bg-amber-50 border-amber-100">
+      <Card className="bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900">
         <CardTitle>Nicht vergessen</CardTitle>
-        <ul className="text-sm text-gray-700 mt-1 space-y-1.5 list-disc list-inside">
+        <ul className="text-sm text-gray-700 dark:text-gray-300 mt-1 space-y-1.5 list-disc list-inside">
           <li><strong>Grundsteuer</strong> wird in Hausgeld-/WEG-Abrechnungen oft nicht separat ausgewiesen – auf der Jahresabrechnung gezielt danach suchen.</li>
           <li><strong>Restmüll</strong> für die eigene Tonne läuft nicht immer über das Hausgeld – falls du dafür direkt an Stadt/Gemeinde zahlst, trägst du diese Kosten oft selbst, statt sie umzulegen.</li>
           <li><strong>Rauchwarnmelder</strong> und <strong>Verbrauchserfassung</strong> (Wärme-/Wasserzähler-Miete, Ablesedienst) laufen oft über separate Dienstleister und gehen dadurch unter.</li>
@@ -151,7 +151,7 @@ export function NebenkostenForm({
       <Card>
         <CardTitle>Umlagefähige Betriebskosten (an Mieter weiterberechenbar)</CardTitle>
         {tenants.length > 1 && (
-          <p className="text-xs text-gray-400 -mt-0.5 mb-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500 -mt-0.5 mb-2">
             Mehrere Mietparteien bei diesem Objekt (z.B. Wohnung + separat vermietete Garage) – bei Bedarf je Position zuordnen, wem die Kosten weiterberechnet werden. Ohne Auswahl gilt die Position für alle.
           </p>
         )}
@@ -173,7 +173,7 @@ export function NebenkostenForm({
 
       <Card>
         <CardTitle>Nicht umlagefähige Kosten (trägst du selbst)</CardTitle>
-        <p className="text-xs text-gray-400 -mt-0.5 mb-2">Für Wohnraum gesetzlich nicht auf Mieter umlegbar (§ 556 BGB), aber relevant, damit nichts vergessen wird.</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 -mt-0.5 mb-2">Für Wohnraum gesetzlich nicht auf Mieter umlegbar (§ 556 BGB), aber relevant, damit nichts vergessen wird.</p>
         <div className="space-y-3">
           {nichtUmlagefaehig.map(c => (
             <CostRow
@@ -192,23 +192,23 @@ export function NebenkostenForm({
         <CardTitle>Zusammenfassung {year}</CardTitle>
         <div className="mt-2 space-y-1.5 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-500">Umlagefähig gesamt</span>
-            <strong className="text-gray-900">{euro(totalAllocable)}</strong>
+            <span className="text-gray-500 dark:text-gray-400">Umlagefähig gesamt</span>
+            <strong className="text-gray-900 dark:text-gray-100">{euro(totalAllocable)}</strong>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">Selbst getragen</span>
-            <strong className="text-gray-900">{euro(totalNotAllocable)}</strong>
+            <span className="text-gray-500 dark:text-gray-400">Selbst getragen</span>
+            <strong className="text-gray-900 dark:text-gray-100">{euro(totalNotAllocable)}</strong>
           </div>
-          <div className="flex justify-between border-t pt-1.5">
-            <span className="text-gray-500">Nebenkostenvorauszahlungen der Mieter (geschätzt)</span>
-            <strong className="text-gray-900">{euro(advancePaymentsForYear)}</strong>
+          <div className="flex justify-between border-t dark:border-gray-800 pt-1.5">
+            <span className="text-gray-500 dark:text-gray-400">Nebenkostenvorauszahlungen der Mieter (geschätzt)</span>
+            <strong className="text-gray-900 dark:text-gray-100">{euro(advancePaymentsForYear)}</strong>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">{diff >= 0 ? 'Nachzahlung von Mieter zu erwarten' : 'Guthaben – Rückzahlung an Mieter fällig'}</span>
-            <strong className={diff >= 0 ? 'text-red-500' : 'text-green-600'}>{euro(Math.abs(diff))}</strong>
+            <span className="text-gray-500 dark:text-gray-400">{diff >= 0 ? 'Nachzahlung von Mieter zu erwarten' : 'Guthaben – Rückzahlung an Mieter fällig'}</span>
+            <strong className={diff >= 0 ? 'text-red-500 dark:text-red-400' : 'text-green-600 dark:text-green-500'}>{euro(Math.abs(diff))}</strong>
           </div>
         </div>
-        <p className="text-xs text-gray-400 mt-2">
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
           Grobe Schätzung auf Basis der hinterlegten Vorauszahlung je Mieter – ersetzt keine korrekte Umlage nach Wohnfläche/Verbrauch.
         </p>
       </Card>
@@ -236,22 +236,22 @@ function CostRow({ config, row, showAllocableToggle, tenants, onAmount, onAlloca
   return (
     <div>
       <div className="flex items-center gap-3">
-        <label className="flex-1 text-sm text-gray-700">{config.label}</label>
+        <label className="flex-1 text-sm text-gray-700 dark:text-gray-300">{config.label}</label>
         <input
           type="number"
           step="0.01"
           value={row.amount}
           onChange={e => onAmount(e.target.value)}
           placeholder="0,00"
-          className="w-28 border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-28 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-2.5 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         {showAllocableToggle && (
-          <label className="flex items-center gap-1.5 text-xs text-gray-400 whitespace-nowrap">
+          <label className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
             <input
               type="checkbox"
               checked={row.allocable}
               onChange={e => onAllocable(e.target.checked)}
-              className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600"
+              className="w-3.5 h-3.5 rounded border-gray-300 dark:border-gray-600 text-blue-600"
             />
             umlagefähig
           </label>
@@ -261,13 +261,13 @@ function CostRow({ config, row, showAllocableToggle, tenants, onAmount, onAlloca
         <select
           value={row.tenant_id}
           onChange={e => onTenant(e.target.value)}
-          className="mt-1.5 w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="mt-1.5 w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 rounded-lg px-2.5 py-1.5 text-xs text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Für: alle Mieter</option>
           {tenants.map(t => <option key={t.id} value={t.id}>Für: {t.name}{t.unit ? ` (${t.unit})` : ''}</option>)}
         </select>
       )}
-      {config.highlight && <p className="text-xs text-amber-700 mt-1">{config.highlight}</p>}
+      {config.highlight && <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{config.highlight}</p>}
     </div>
   )
 }

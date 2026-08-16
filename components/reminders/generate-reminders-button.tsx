@@ -44,12 +44,12 @@ export function GenerateRemindersButton({ label, suggestions }: { label: string;
         type="button"
         onClick={onClick}
         disabled={state === 'saving'}
-        className="text-sm bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
+        className="text-sm bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors disabled:opacity-50"
       >
         {state === 'saving' ? 'Wird angelegt...' : label}
       </button>
       {state === 'done' && (
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-gray-400 dark:text-gray-500">
           {createdCount > 0 ? `${createdCount} Erinnerung${createdCount === 1 ? '' : 'en'} angelegt.` : 'Bereits alle angelegt.'}
         </span>
       )}

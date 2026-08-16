@@ -2,14 +2,14 @@ import Link from 'next/link'
 
 export function Footer() {
   return (
-    <footer className="border-t border-gray-100 mt-12">
-      <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400">
+    <footer className="border-t border-gray-100 dark:border-gray-800 mt-12">
+      <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400 dark:text-gray-500">
         <p>© {new Date().getFullYear()} Fimmax.AI. Alle Rechte vorbehalten.</p>
         <div className="flex items-center gap-4">
-          <Link href="/impressum" className="hover:text-gray-600 transition-colors">Impressum</Link>
-          <Link href="/datenschutz" className="hover:text-gray-600 transition-colors">Datenschutz</Link>
-          <Link href="/agb" className="hover:text-gray-600 transition-colors">AGB</Link>
-          <Link href="/haftungsausschluss" className="hover:text-gray-600 transition-colors">Haftungsausschluss</Link>
+          <Link href="/impressum" className="hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Impressum</Link>
+          <Link href="/datenschutz" className="hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Datenschutz</Link>
+          <Link href="/agb" className="hover:text-gray-600 dark:hover:text-gray-300 transition-colors">AGB</Link>
+          <Link href="/haftungsausschluss" className="hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Haftungsausschluss</Link>
         </div>
       </div>
     </footer>

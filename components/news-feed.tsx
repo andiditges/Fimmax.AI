@@ -15,20 +15,20 @@ export function NewsFeed({ items }: { items: NewsItem[] }) {
     <Card>
       <CardTitle>Markt & Immobilien-Nachrichten</CardTitle>
       {items.length === 0 ? (
-        <p className="text-sm text-gray-400 mt-2">Aktuell keine Nachrichten verfügbar.</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Aktuell keine Nachrichten verfügbar.</p>
       ) : (
         <ul className="mt-2 space-y-3">
           {items.map((item, i) => (
-            <li key={i} className="pb-3 border-b border-gray-100 last:border-0 last:pb-0">
+            <li key={i} className="pb-3 border-b border-gray-100 dark:border-gray-800 last:border-0 last:pb-0">
               <a
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-gray-800 hover:text-blue-700 leading-snug block"
+                className="text-sm text-gray-800 dark:text-gray-200 hover:text-blue-700 dark:hover:text-blue-400 leading-snug block"
               >
                 {item.title}
               </a>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                 {item.source}{item.source && item.pub_date ? ' · ' : ''}{timeAgo(item.pub_date)}
               </p>
             </li>
