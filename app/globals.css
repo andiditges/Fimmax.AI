@@ -80,7 +80,8 @@ html {
   border: 3px solid #f8fafc;
   background-clip: padding-box;
   background-image:
-    radial-gradient(circle 2.5px at center 10px, #ffd479 2.5px, transparent 3px),
+    radial-gradient(circle 1.8px at 35% 8px, #ffd479 1.8px, transparent 2.6px),
+    radial-gradient(circle 1.8px at 65% 8px, #ffd479 1.8px, transparent 2.6px),
     linear-gradient(to right, transparent 46%, rgba(0, 0, 0, 0.25) 46%, rgba(0, 0, 0, 0.25) 54%, transparent 54%),
     linear-gradient(180deg, #c1652f, #8f3a1a);
 }
@@ -91,7 +92,8 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
   background-image:
-    radial-gradient(circle 2.5px at center 10px, #ffe4a3 2.5px, transparent 3px),
+    radial-gradient(circle 1.8px at 35% 8px, #ffe4a3 1.8px, transparent 2.6px),
+    radial-gradient(circle 1.8px at 65% 8px, #ffe4a3 1.8px, transparent 2.6px),
     linear-gradient(to right, transparent 46%, rgba(0, 0, 0, 0.25) 46%, rgba(0, 0, 0, 0.25) 54%, transparent 54%),
     linear-gradient(180deg, #d1753f, #9f4a2a);
 }
