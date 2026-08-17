@@ -21,6 +21,13 @@ export async function POST(req: NextRequest) {
 
   if (!file) return NextResponse.json({ error: 'Keine Datei' }, { status: 400 })
 
+  // HEIC/HEIF (iPhone-Standardformat) kann die Anthropic-Vision-API nicht
+  // lesen - der Upload wird trotzdem angenommen (siehe upload-validation.ts),
+  // aber hier klar kommuniziert statt einen kaputten Bild-Block zu senden.
+  if (file.type === 'image/heic' || file.type === 'image/heif') {
+    return NextResponse.json({ error: 'HEIC-Fotos können aktuell nicht automatisch analysiert werden - bitte Felder manuell ausfüllen oder das Foto als JPEG teilen.' }, { status: 400 })
+  }
+
   const bytes = await file.arrayBuffer()
   const base64 = Buffer.from(bytes).toString('base64')
   const mediaType = file.type as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' | 'application/pdf'
