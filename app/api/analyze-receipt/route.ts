@@ -62,7 +62,13 @@ hervorgeht.
 
 is_renovation = true nur für Positionen der Kategorie instandhaltung, wenn es
 sich um Renovierungs- oder Instandsetzungsarbeiten handelt (relevant für
-15%-Grenze).`
+15%-Grenze).
+
+Wenn eine Position zu keiner der Kategorien wirklich passt und du sie deshalb
+als "sonstiges" einordnest, gib zusätzlich in "unmapped_label" die auf dem
+Beleg verwendete Original-Bezeichnung der Kostenart an (z.B. "Hausmeisterservice",
+"Schädlingsbekämpfung") - das hilft, später eine passende Kategorie zu
+ergänzen. Bei allen anderen Kategorien bleibt "unmapped_label" null.`
 
   const userPrompt = `Analysiere diesen Beleg. Antworte NUR mit JSON, kein anderer Text:
 {
@@ -75,7 +81,8 @@ sich um Renovierungs- oder Instandsetzungsarbeiten handelt (relevant für
       "amount": Betrag dieser Position als Zahl,
       "description": "kurze Beschreibung der Leistung",
       "suggested_property_id": "UUID der wahrscheinlichsten Immobilie für diese Position oder null",
-      "is_renovation": true oder false
+      "is_renovation": true oder false,
+      "unmapped_label": "Original-Bezeichnung, falls category=sonstiges nur als Notlösung gewählt wurde, sonst null"
     }
   ],
   "needs_review": true oder false,
@@ -94,10 +101,9 @@ Immobilie betrifft, hat "items" genau einen Eintrag (Summe = "amount").`
         {
           role: 'user',
           content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: mediaType.startsWith('image/') ? mediaType as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' : 'image/jpeg', data: base64 },
-            },
+            mediaType === 'application/pdf'
+              ? { type: 'document' as const, source: { type: 'base64' as const, media_type: 'application/pdf' as const, data: base64 } }
+              : { type: 'image' as const, source: { type: 'base64' as const, media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif', data: base64 } },
             { type: 'text', text: userPrompt },
           ],
         },
@@ -109,6 +115,26 @@ Immobilie betrifft, hat "items" genau einen Eintrag (Summe = "amount").`
     if (!jsonMatch) throw new Error('Kein JSON in der Antwort')
 
     const result = JSON.parse(jsonMatch[0])
+
+    type AiItemResult = { category: string; unmapped_label?: string | null; description?: string | null }
+    const gaps: AiItemResult[] = Array.isArray(result.items)
+      ? result.items.filter((i: AiItemResult) => i.category === 'sonstiges' && i.unmapped_label)
+      : []
+    if (gaps.length > 0) {
+      // Fire-and-forget: das Loggen einer Kategorielücke darf die eigentliche
+      // Analyse-Antwort nie zum Scheitern bringen.
+      supabase.from('ai_category_gaps').insert(
+        gaps.map(i => ({
+          user_id: user.id,
+          raw_label: i.unmapped_label,
+          vendor: result.vendor ?? null,
+          description: i.description ?? null,
+        }))
+      ).then(({ error }) => {
+        if (error) console.error('ai_category_gaps Logging fehlgeschlagen:', error)
+      })
+    }
+
     return NextResponse.json(result)
   } catch (err) {
     console.error('KI-Analyse Fehler:', err)

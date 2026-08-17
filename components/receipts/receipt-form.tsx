@@ -117,6 +117,7 @@ export function ReceiptForm({
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [ai, setAi] = useState<AiResult | null>(null)
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null)
   const [nudges, setNudges] = useState<ForecastNudge[] | null>(null)
   const [appliedNudges, setAppliedNudges] = useState<Set<string>>(new Set())
   const [vendor, setVendor] = useState(initialReceipt?.vendor ?? '')
@@ -176,12 +177,16 @@ export function ReceiptForm({
 
   async function analyzeFile(f: File) {
     setAnalyzing(true)
+    setAnalyzeError(null)
     try {
       const fd = new FormData()
       fd.append('file', f)
       fd.append('properties', JSON.stringify(properties))
       const res = await fetch('/api/analyze-receipt', { method: 'POST', body: fd })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error || 'Analyse fehlgeschlagen')
+      }
       const result: AiResult = await res.json()
       setAi(result)
       setVendor(result.vendor ?? '')
@@ -201,8 +206,8 @@ export function ReceiptForm({
         description: item.description ?? '',
         is_renovation: item.is_renovation ?? false,
       })))
-    } catch {
-      // KI-Analyse fehlgeschlagen – Nutzer füllt manuell aus
+    } catch (err) {
+      setAnalyzeError(err instanceof Error ? err.message : 'Analyse fehlgeschlagen')
     }
     setAnalyzing(false)
   }
@@ -386,6 +391,14 @@ export function ReceiptForm({
             onChange={onFileChange}
             className="hidden"
           />
+        </Card>
+      )}
+
+      {analyzeError && !analyzing && (
+        <Card className="mb-5 bg-red-50 dark:bg-red-950/40 border-red-100 dark:border-red-900">
+          <p className="text-sm text-red-800 dark:text-red-300">
+            <strong>KI-Analyse fehlgeschlagen:</strong> {analyzeError} – bitte die Felder unten manuell ausfüllen.
+          </p>
         </Card>
       )}
 
