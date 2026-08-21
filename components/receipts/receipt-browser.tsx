@@ -3,7 +3,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { getReceiptSignedUrl } from '@/app/actions/receipts'
-import { euro, propertyLabel } from '@/lib/format'
+import { propertyLabel } from '@/lib/format'
+import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
 import { CATEGORY_LABELS, Property, Receipt, ReceiptItem } from '@/lib/types'
 
 export function ReceiptBrowser({
@@ -116,7 +117,7 @@ export function ReceiptBrowser({
                 <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
                   {r.vendor ?? r.description ?? '–'}
                   {showPropertyColumn && propertyById[r.property_id] && (
-                    <span className="text-gray-400 dark:text-gray-500 font-normal"> · {propertyLabel(propertyById[r.property_id])}</span>
+                    <span className="text-gray-400 dark:text-gray-500 font-normal"> · <Sensitive kind="address" seed={r.property_id} value={propertyLabel(propertyById[r.property_id])} /></span>
                   )}
                 </p>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
@@ -125,7 +126,7 @@ export function ReceiptBrowser({
                   {r.archived && ' · archiviert'}
                 </p>
               </div>
-              <span className="font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">{euro(r.amount)}</span>
+              <span className="font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap"><SensitiveEuro seed={`${r.id}-amount`} amount={r.amount} /></span>
               <div className="flex items-center gap-2 whitespace-nowrap">
                 {r.file_url ? (
                   <button

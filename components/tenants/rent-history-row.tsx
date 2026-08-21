@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getContractSignedUrl } from '@/app/actions/contracts'
 import { buildStoragePath } from '@/lib/storage-path'
-import { euro, formatDate } from '@/lib/format'
+import { formatDate } from '@/lib/format'
+import { SensitiveEuro } from '@/components/privacy/sensitive'
 import { lookupVpiForMonth } from '@/lib/vpi-history'
 import { RentalAgreement } from '@/lib/types'
 import { ALLOWED_DOCUMENT_TYPES } from '@/lib/upload-validation'
@@ -127,7 +128,7 @@ export function RentHistoryRow({ agreement }: { agreement: RentalAgreement }) {
         {agreement.is_index_rent && <span className="text-xs text-blue-600 dark:text-blue-400 ml-1.5">Index</span>}
       </span>
       <div className="flex items-center gap-2">
-        <span className="font-medium text-gray-900 dark:text-gray-100">{euro(agreement.rent_amount)}</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${agreement.id}-amount`} amount={agreement.rent_amount} /></span>
         {agreement.file_url && (
           <button onClick={onOpenFile} disabled={opening} className="text-xs text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 underline">
             {opening ? '...' : 'Beleg'}

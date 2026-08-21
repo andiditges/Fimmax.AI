@@ -1,6 +1,7 @@
 'use client'
 import { ThresholdStatus } from '@/lib/types'
-import { euro, formatDate } from '@/lib/format'
+import { formatDate } from '@/lib/format'
+import { SensitiveEuro } from '@/components/privacy/sensitive'
 
 const COLORS = {
   safe: 'bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-300',
@@ -25,7 +26,7 @@ export function ThresholdBadge({ status }: { status: ThresholdStatus }) {
   )
 }
 
-export function ThresholdBar({ status }: { status: ThresholdStatus }) {
+export function ThresholdBar({ status, seed }: { status: ThresholdStatus; seed: string }) {
   if (!status.within_3_years) return null
   const pct = Math.min(status.percentage, 100)
   const barColor =
@@ -37,7 +38,7 @@ export function ThresholdBar({ status }: { status: ThresholdStatus }) {
     <div className="mt-3">
       <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
         <span>Renovierungskosten (3-Jahres-Fenster, Frist bis {formatDate(status.cutoff_date)})</span>
-        <span>{euro(status.renovation_total)} / {euro(status.threshold_15)}</span>
+        <span><SensitiveEuro seed={`${seed}-renovation`} amount={status.renovation_total} /> / <SensitiveEuro seed={`${seed}-threshold15`} amount={status.threshold_15} /></span>
       </div>
       <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
         <div className={`h-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />

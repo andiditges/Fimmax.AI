@@ -12,7 +12,8 @@ import { getReceiptAllocations } from '@/lib/receipt-allocations'
 import { calcAnnualAfa } from '@/lib/afa'
 import { generateAmortizationSchedule, interestPaidInYear } from '@/lib/amortization'
 import { sumRentForYear } from '@/lib/rent-schedule'
-import { euro, propertyLabel } from '@/lib/format'
+import { propertyLabel } from '@/lib/format'
+import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
 import { Property, Receipt, ReceiptItem, Tenant, RentalAgreement, RentAdjustment, Loan, LoanSpecialPayment, OperatingCost } from '@/lib/types'
 
 export default async function SteuerUebersicht({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
@@ -130,19 +131,19 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardTitle className="min-h-10">Einnahmen {year}</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-500 break-words">{euro(totalEinnahmen)}</p>
+          <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-500 break-words"><SensitiveEuro seed="steuer-einnahmen" amount={totalEinnahmen} /></p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Ausgaben {year}</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words">{euro(totalAusgaben)}</p>
+          <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words"><SensitiveEuro seed="steuer-ausgaben" amount={totalAusgaben} /></p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Werbungskosten {year} (inkl. AfA)</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words">{euro(totalWerbungskosten)}</p>
+          <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words"><SensitiveEuro seed="steuer-werbungskosten" amount={totalWerbungskosten} /></p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Ergebnis {year} (Anlage V)</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-500 break-words">{euro(totalErgebnis)}</p>
+          <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-500 break-words"><SensitiveEuro seed="steuer-ergebnis" amount={totalErgebnis} /></p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Steuer-Export</CardTitle>
@@ -163,7 +164,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
           <div className="mt-2 space-y-1">
             {relevantThresholds.map(r => (
               <Link key={r.property.id} href={`/properties/${r.property.id}`} className="flex items-center justify-between text-sm hover:underline">
-                <span className="text-gray-700 dark:text-gray-300">{propertyLabel(r.property)}</span>
+                <span className="text-gray-700 dark:text-gray-300"><Sensitive kind="address" seed={r.property.id} value={propertyLabel(r.property)} /></span>
                 <ThresholdBadge status={r.threshold} />
               </Link>
             ))}
@@ -186,18 +187,18 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div className="min-w-0">
                     <Link href={`/properties/${r.property.id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-700 hover:dark:text-blue-300 truncate block">
-                      {propertyLabel(r.property)}
+                      <Sensitive kind="address" seed={r.property.id} value={propertyLabel(r.property)} />
                     </Link>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{r.receiptCount} Belege in {year}</p>
                   </div>
                   <ThresholdBadge status={r.threshold} />
                 </div>
                 <div className="mt-3 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Einnahmen: <strong className="text-green-600 dark:text-green-500">{euro(r.taxRow.einnahmen)}</strong></span>
-                  <span className="text-gray-500 dark:text-gray-400">Ausgaben: <strong className="text-red-500 dark:text-red-400">{euro(r.yearExpenses)}</strong></span>
-                  <span className="text-gray-500 dark:text-gray-400">Werbungskosten: <strong className="text-red-500 dark:text-red-400">{euro(r.taxRow.werbungskosten_gesamt)}</strong></span>
-                  <span className="text-gray-500 dark:text-gray-400">AfA: <strong className="text-blue-600 dark:text-blue-400">{euro(r.taxRow.afa)}</strong></span>
-                  <span className="text-gray-500 dark:text-gray-400">Ergebnis: <strong className="text-green-600 dark:text-green-500">{euro(r.taxRow.ergebnis)}</strong></span>
+                  <span className="text-gray-500 dark:text-gray-400">Einnahmen: <strong className="text-green-600 dark:text-green-500"><SensitiveEuro seed={`${r.property.id}-einnahmen`} amount={r.taxRow.einnahmen} /></strong></span>
+                  <span className="text-gray-500 dark:text-gray-400">Ausgaben: <strong className="text-red-500 dark:text-red-400"><SensitiveEuro seed={`${r.property.id}-ausgaben`} amount={r.yearExpenses} /></strong></span>
+                  <span className="text-gray-500 dark:text-gray-400">Werbungskosten: <strong className="text-red-500 dark:text-red-400"><SensitiveEuro seed={`${r.property.id}-werbungskosten`} amount={r.taxRow.werbungskosten_gesamt} /></strong></span>
+                  <span className="text-gray-500 dark:text-gray-400">AfA: <strong className="text-blue-600 dark:text-blue-400"><SensitiveEuro seed={`${r.property.id}-afa`} amount={r.taxRow.afa} /></strong></span>
+                  <span className="text-gray-500 dark:text-gray-400">Ergebnis: <strong className="text-green-600 dark:text-green-500"><SensitiveEuro seed={`${r.property.id}-ergebnis`} amount={r.taxRow.ergebnis} /></strong></span>
                 </div>
                 <div className="mt-3 flex items-center gap-4 flex-wrap">
                   <TaxExportButton csv={rowsToCsv([r.taxRow])} filename={`steuer-export-${r.property.address.replace(/\s+/g, '-')}-${year}.csv`} label="CSV-Export" />

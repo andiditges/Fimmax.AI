@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
-import { euro, propertyLabel } from '@/lib/format'
+import { propertyLabel } from '@/lib/format'
+import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
 import { Property, Tenant } from '@/lib/types'
 
 interface Item {
@@ -80,11 +81,11 @@ export function ComparableRentTable({ items }: { items: Item[] }) {
               <tr key={row.tenant.id} className="border-b border-gray-50 dark:border-gray-800 last:border-0">
                 <td className="py-2.5">
                   <Link href={`/tenants/${row.tenant.id}`} className="font-medium text-gray-900 dark:text-gray-100 hover:text-blue-700 dark:hover:text-blue-400">
-                    {row.tenant.name}
+                    <Sensitive kind="name" seed={row.tenant.id} value={row.tenant.name} />
                   </Link>
                 </td>
-                <td className="py-2.5 text-gray-500 dark:text-gray-400 text-xs">{propertyLabel(row.property)}</td>
-                <td className="py-2.5 text-right text-gray-900 dark:text-gray-100">{euro(row.currentRent)}</td>
+                <td className="py-2.5 text-gray-500 dark:text-gray-400 text-xs"><Sensitive kind="address" seed={row.property.id} value={propertyLabel(row.property)} /></td>
+                <td className="py-2.5 text-right text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${row.tenant.id}-currentrent`} amount={row.currentRent} /></td>
                 <td className="py-2.5 text-right text-gray-500 dark:text-gray-400">
                   {row.rentPerSqm != null ? `${row.rentPerSqm.toFixed(2)} €` : '–'}
                 </td>

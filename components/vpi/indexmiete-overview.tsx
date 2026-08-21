@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardTitle } from '@/components/ui/card'
-import { euro, formatDate, propertyLabel } from '@/lib/format'
+import { formatDate, propertyLabel } from '@/lib/format'
+import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
 import { calcIndexmieteStatus } from '@/lib/vpi'
 import { Property, RentalAgreement, Tenant, VpiReading } from '@/lib/types'
 
@@ -71,8 +72,8 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
       <Card>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <Link href={`/tenants/${item.tenant.id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-700 dark:hover:text-blue-400">{item.tenant.name}</Link>
-            <p className="text-xs text-gray-400 dark:text-gray-500">{propertyLabel(item.property)}</p>
+            <Link href={`/tenants/${item.tenant.id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-700 dark:hover:text-blue-400"><Sensitive kind="name" seed={item.tenant.id} value={item.tenant.name} /></Link>
+            <p className="text-xs text-gray-400 dark:text-gray-500"><Sensitive kind="address" seed={item.property.id} value={propertyLabel(item.property)} /></p>
           </div>
           <span className="text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300">
             Basis-Index fehlt noch
@@ -120,8 +121,8 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
     <Card>
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <Link href={`/tenants/${item.tenant.id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-700 dark:hover:text-blue-400">{item.tenant.name}</Link>
-          <p className="text-xs text-gray-400 dark:text-gray-500">{propertyLabel(item.property)}</p>
+          <Link href={`/tenants/${item.tenant.id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-700 dark:hover:text-blue-400"><Sensitive kind="name" seed={item.tenant.id} value={item.tenant.name} /></Link>
+          <p className="text-xs text-gray-400 dark:text-gray-500"><Sensitive kind="address" seed={item.property.id} value={propertyLabel(item.property)} /></p>
         </div>
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${status.eligible ? 'bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}>
           {status.eligible ? 'Erhöhung möglich' : `Erst ab ${formatDate(status.earliest_next_date)}`}
@@ -131,7 +132,7 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3 text-sm">
         <div>
           <p className="text-gray-400 dark:text-gray-500 text-xs">Aktuelle Miete</p>
-          <p className="font-medium text-gray-900 dark:text-gray-100">{euro(status.current_rent)}</p>
+          <p className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${item.agreement.id}-current`} amount={status.current_rent} /></p>
         </div>
         <div>
           <p className="text-gray-400 dark:text-gray-500 text-xs">Basis-Index ({formatDate(status.base_date)})</p>
@@ -143,17 +144,17 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
         </div>
         <div>
           <p className="text-gray-400 dark:text-gray-500 text-xs">Rechnerisch möglich</p>
-          <p className="font-medium text-blue-700 dark:text-blue-400">{euro(status.possible_new_rent)}</p>
+          <p className="font-medium text-blue-700 dark:text-blue-400"><SensitiveEuro seed={`${item.agreement.id}-possible`} amount={status.possible_new_rent} /></p>
         </div>
         <div>
           <p className="text-gray-400 dark:text-gray-500 text-xs">Erhöhung heute möglich</p>
           <p className={`font-medium ${status.eligible ? 'text-green-700 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
-            {status.eligible ? `+${euro(status.possible_new_rent - status.current_rent)}` : '– noch nicht'}
+            {status.eligible ? <>+<SensitiveEuro seed={`${item.agreement.id}-delta`} amount={status.possible_new_rent - status.current_rent} /></> : '– noch nicht'}
           </p>
         </div>
         <div>
           <p className="text-gray-400 dark:text-gray-500 text-xs">Erhöhung inkl. zukünftig möglich</p>
-          <p className="font-medium text-blue-700 dark:text-blue-400">+{euro(status.possible_new_rent - status.current_rent)}</p>
+          <p className="font-medium text-blue-700 dark:text-blue-400">+<SensitiveEuro seed={`${item.agreement.id}-delta`} amount={status.possible_new_rent - status.current_rent} /></p>
         </div>
       </div>
 
@@ -192,7 +193,7 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
             <input type="date" value={effectiveDate} onChange={e => setEffectiveDate(e.target.value)}
               className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-300">Neue Miete: <strong>{euro(status.possible_new_rent)}</strong> (Basis-Index wird auf {status.latest_value.toFixed(3)} zurückgesetzt)</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300">Neue Miete: <strong><SensitiveEuro seed={`${item.agreement.id}-possible`} amount={status.possible_new_rent} /></strong> (Basis-Index wird auf {status.latest_value.toFixed(3)} zurückgesetzt)</p>
           <div className="flex gap-2">
             <button type="submit" disabled={saving}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">

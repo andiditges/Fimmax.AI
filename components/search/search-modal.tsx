@@ -4,10 +4,11 @@ import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { propertyLabel } from '@/lib/format'
+import { Sensitive } from '@/components/privacy/sensitive'
 
 interface ResultGroup {
   label: string
-  items: { id: string; title: string; subtitle: string | null; href: string }[]
+  items: { id: string; title: string; subtitle: string | null; href: string; kind?: 'name' | 'address' }[]
 }
 
 // PostgREST-.or()-Filter trennt Bedingungen per Komma - ein Komma in der
@@ -72,7 +73,7 @@ export function SearchModal({ onClose }: { onClose: () => void }) {
       if (properties && properties.length > 0) {
         nextGroups.push({
           label: 'Immobilien',
-          items: properties.map(p => ({ id: p.id, title: propertyLabel(p), subtitle: null, href: `/properties/${p.id}` })),
+          items: properties.map(p => ({ id: p.id, title: propertyLabel(p), subtitle: null, href: `/properties/${p.id}`, kind: 'address' as const })),
         })
       }
       if (tenants && tenants.length > 0) {
@@ -82,6 +83,7 @@ export function SearchModal({ onClose }: { onClose: () => void }) {
             id: t.id, title: t.name,
             subtitle: propertyById[t.property_id] ? propertyLabel(propertyById[t.property_id]) : null,
             href: `/tenants/${t.id}`,
+            kind: 'name' as const,
           })),
         })
       }
@@ -92,6 +94,7 @@ export function SearchModal({ onClose }: { onClose: () => void }) {
             id: l.id, title: l.name + (l.lender ? ` · ${l.lender}` : ''),
             subtitle: propertyById[l.property_id] ? propertyLabel(propertyById[l.property_id]) : null,
             href: `/loans/${l.id}`,
+            kind: 'name' as const,
           })),
         })
       }
@@ -155,8 +158,14 @@ export function SearchModal({ onClose }: { onClose: () => void }) {
                   onClick={() => goTo(item.href)}
                   className="block w-full text-left px-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-950/40"
                 >
-                  <p className="text-sm text-gray-800 dark:text-gray-200">{item.title}</p>
-                  {item.subtitle && <p className="text-xs text-gray-400 dark:text-gray-500">{item.subtitle}</p>}
+                  <p className="text-sm text-gray-800 dark:text-gray-200">
+                    {item.kind ? <Sensitive kind={item.kind} seed={item.id} value={item.title} /> : item.title}
+                  </p>
+                  {item.subtitle && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      <Sensitive kind="address" seed={item.id} value={item.subtitle} />
+                    </p>
+                  )}
                 </button>
               ))}
             </div>

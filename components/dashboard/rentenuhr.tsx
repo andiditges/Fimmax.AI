@@ -5,6 +5,8 @@ import { Clock, CheckCircle2, Circle } from 'lucide-react'
 import { euro } from '@/lib/format'
 import { useNow } from '@/lib/use-now'
 import { netWorthTier, NET_WORTH_TIERS } from '@/lib/net-worth'
+import { usePrivacyMode } from '@/components/privacy/privacy-mode-context'
+import { fakeAmount } from '@/lib/privacy'
 
 // 4 Nachkommastellen statt 2, damit bei den üblichen Tages-Tilgungsraten
 // (wenige € bis niedriger zweistelliger Betrag) jede Sekunde sichtbar etwas
@@ -22,11 +24,11 @@ function formatTicker(n: number): string {
  * (die reale Tilgung erfolgt weiterhin nur zu den tatsächlichen Zahlterminen).
  */
 export function Rentenuhr({
-  initialDebt,
-  initialPaid,
-  dailyPrincipalRate,
+  initialDebt: realInitialDebt,
+  initialPaid: realInitialPaid,
+  dailyPrincipalRate: realDailyPrincipalRate,
   asOf,
-  netWorth,
+  netWorth: realNetWorth,
 }: {
   initialDebt: number
   initialPaid: number
@@ -35,6 +37,16 @@ export function Rentenuhr({
   netWorth?: number
 }) {
   const now = useNow(200)
+  const { enabled: privacyEnabled } = usePrivacyMode()
+
+  // Ein Faktor pro Feld, konsistent über den ganzen Tick hinweg (nicht pro
+  // Frame neu gewürfelt) - sonst würde die Uhr im Privacy-Modus sichtbar
+  // "zittern" statt gleichmäßig weiterzulaufen.
+  const initialDebt = privacyEnabled ? fakeAmount('rentenuhr-debt', realInitialDebt) : realInitialDebt
+  const initialPaid = privacyEnabled ? fakeAmount('rentenuhr-paid', realInitialPaid) : realInitialPaid
+  const dailyPrincipalRate = privacyEnabled ? fakeAmount('rentenuhr-rate', realDailyPrincipalRate) : realDailyPrincipalRate
+  const netWorth = privacyEnabled && realNetWorth != null ? fakeAmount('rentenuhr-networth', realNetWorth) : realNetWorth
+
   const elapsedMs = now ? now.getTime() - new Date(asOf).getTime() : 0
 
   const ratePerMs = dailyPrincipalRate / (24 * 60 * 60 * 1000)
@@ -53,6 +65,19 @@ export function Rentenuhr({
   // 11 Segmente umschaltbar, damit man auch schon erreichte oder noch weit
   // entfernte Stufen ansehen kann, nicht nur die aktuelle.
   const [selectedIndex, setSelectedIndex] = useState(index)
+  // useState(index) liest den Startwert nur beim allerersten Mount. Wird
+  // dieselbe Komponenten-Instanz später mit einer aktuelleren Stufe neu
+  // gerendert (z.B. weil sie beim ersten Render noch mit vorläufigen/leeren
+  // Werten gemountet wurde, bevor die echten Portfoliodaten da waren),
+  // bliebe die angezeigte Detail-Stufe sonst dauerhaft auf dem alten Stand
+  // hängen - sichtbar als "erst Stufe 1", das sich nur durch einen manuellen
+  // Reload korrigiert. Deshalb State-Anpassung während des Renderns
+  // (offizielles React-Pattern), sobald sich die tatsächliche Stufe ändert.
+  const [prevIndex, setPrevIndex] = useState(index)
+  if (index !== prevIndex) {
+    setPrevIndex(index)
+    setSelectedIndex(index)
+  }
   const selectedTier = NET_WORTH_TIERS[selectedIndex]
   const selectedAchieved = selectedIndex <= index
   const selectedRemaining = Math.max(0, selectedTier.min - (netWorth ?? 0))

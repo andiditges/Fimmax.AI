@@ -22,6 +22,7 @@ import { getReceiptAllocations } from '@/lib/receipt-allocations'
 import { generateRentSchedule, currentRentAmount, currentAgreement } from '@/lib/rent-schedule'
 import { sumInstandhaltungsruecklage, isUtilityBillableTenant } from '@/lib/operating-costs'
 import { euro, formatDate, propertyLabel, propertyValue } from '@/lib/format'
+import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
 import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, PropertyImage, Receipt, ReceiptItem, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost, PROPERTY_CONDITION_GRADE_LABELS, PropertyConditionGrade } from '@/lib/types'
 
 const HOA_STATUS_COLORS: Record<HoaResolutionStatus, string> = {
@@ -189,7 +190,9 @@ export default async function PropertyDetail({ params, searchParams }: { params:
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <Link href="/properties" className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:dark:text-gray-300 mb-1 block">← Immobilien</Link>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{propertyLabel(p)}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <Sensitive kind="address" seed={p.id} value={propertyLabel(p)} />
+          </h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
             Baujahr {p.build_year} · AfA {p.afa_rate}% · {p.is_self_managed ? 'Selbst verwaltet' : 'Fremd verwaltet'} · Besitzübergang {formatDate(p.purchase_date)}
           </p>
@@ -221,20 +224,20 @@ export default async function PropertyDetail({ params, searchParams }: { params:
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardTitle className="min-h-10">Einnahmen {currentYear}</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-500 break-words">{euro(yearIncome)}</p>
+          <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-500 break-words"><SensitiveEuro seed={`${p.id}-income`} amount={yearIncome} /></p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Ausgaben {currentYear}</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words">{euro(yearExpenses)}</p>
+          <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words"><SensitiveEuro seed={`${p.id}-expenses`} amount={yearExpenses} /></p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">AfA / Jahr</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400 break-words">{euro(annualAfa)}</p>
+          <p className="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400 break-words"><SensitiveEuro seed={`${p.id}-afa`} amount={annualAfa} /></p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Ergebnis vor AfA</CardTitle>
           <p className={`text-lg md:text-2xl font-bold break-words ${yearIncome - yearExpenses >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500 dark:text-red-400'}`}>
-            {euro(yearIncome - yearExpenses)}
+            <SensitiveEuro seed={`${p.id}-result`} amount={yearIncome - yearExpenses} />
           </p>
         </Card>
       </div>
@@ -267,7 +270,7 @@ export default async function PropertyDetail({ params, searchParams }: { params:
             {currentRentPerSqm != null && (
               <div className="flex justify-between">
                 <span className="text-gray-500 dark:text-gray-400">Aktuelle Kaltmiete</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{euro(currentColdRent)} ({currentRentPerSqm.toFixed(2)} €/m²)</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${p.id}-coldrent`} amount={currentColdRent} /> ({currentRentPerSqm.toFixed(2)} €/m²)</span>
               </div>
             )}
             {(p.comparable_rent_min || p.comparable_rent_max) && (
@@ -350,7 +353,7 @@ export default async function PropertyDetail({ params, searchParams }: { params:
       {threshold.within_3_years && (
         <Card>
           <CardTitle>15%-Hürde (§ 6 Abs. 1 Nr. 1a EStG)</CardTitle>
-          <ThresholdBar status={threshold} />
+          <ThresholdBar status={threshold} seed={id} />
         </Card>
       )}
 
@@ -375,12 +378,12 @@ export default async function PropertyDetail({ params, searchParams }: { params:
             {categoryTotals.map(c => (
               <div key={c.cat} className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-300">{c.label}</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{euro(c.total)}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${p.id}-cat-${c.cat}`} amount={c.total} /></span>
               </div>
             ))}
             <div className="border-t pt-2 flex justify-between text-sm font-semibold">
               <span>Gesamt</span>
-              <span>{euro(yearExpenses)}</span>
+              <span><SensitiveEuro seed={`${p.id}-expenses`} amount={yearExpenses} /></span>
             </div>
           </div>
         </Card>
@@ -403,7 +406,7 @@ export default async function PropertyDetail({ params, searchParams }: { params:
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Bereits getilgt</p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                      {euro(totalLoanPrincipal - totalLoanRemaining)} von ursprünglich {euro(totalLoanPrincipal)} Kreditsumme
+                      <SensitiveEuro seed={`${p.id}-tilgung-paid`} amount={totalLoanPrincipal - totalLoanRemaining} /> von ursprünglich <SensitiveEuro seed={`${p.id}-tilgung-total`} amount={totalLoanPrincipal} /> Kreditsumme
                     </p>
                   </div>
                 </div>
@@ -412,7 +415,7 @@ export default async function PropertyDetail({ params, searchParams }: { params:
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Beleihungsauslauf (LTV)</p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                      {euro(totalLoanRemaining)} Restschuld / {euro(propertyValue(p))} Wert
+                      <SensitiveEuro seed={`${p.id}-ltv-remaining`} amount={totalLoanRemaining} /> Restschuld / <SensitiveEuro seed={`${p.id}-ltv-value`} amount={propertyValue(p)} /> Wert
                     </p>
                   </div>
                 </div>
@@ -423,13 +426,13 @@ export default async function PropertyDetail({ params, searchParams }: { params:
                 <Card className="hover:shadow-md transition-shadow cursor-pointer py-3">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{loan.name}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{loan.nominal_interest_rate}% Sollzins · {euro(status.current_annuity_amount)} / {loan.payment_frequency}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate"><Sensitive kind="name" seed={loan.id} value={loan.name} /></p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{loan.nominal_interest_rate}% Sollzins · <SensitiveEuro seed={`${loan.id}-annuity`} amount={status.current_annuity_amount} /> / {loan.payment_frequency}</p>
                       {loan.planned_renovation_amount && (
-                        <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">Davon {euro(loan.planned_renovation_amount)} für Renovierung/Sanierung eingeplant</p>
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">Davon <SensitiveEuro seed={`${loan.id}-renovation`} amount={loan.planned_renovation_amount} /> für Renovierung/Sanierung eingeplant</p>
                       )}
                     </div>
-                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">{euro(status.remaining_balance)}</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap"><SensitiveEuro seed={`${loan.id}-remaining`} amount={status.remaining_balance} /></span>
                   </div>
                 </Card>
               </Link>
@@ -458,14 +461,14 @@ export default async function PropertyDetail({ params, searchParams }: { params:
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                          {t.name}{t.unit && t.unit !== 'Wohnung' ? ` · ${t.unit}` : ''}
+                          <Sensitive kind="name" seed={t.id} value={t.name} />{t.unit && t.unit !== 'Wohnung' ? ` · ${t.unit}` : ''}
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                           {activeAgreement ? `seit ${formatDate(activeAgreement.start_date)}` : `Einzug ${formatDate(t.move_in_date)}`}
                           {t.move_out_date ? ` · Auszug ${formatDate(t.move_out_date)}` : ''}
                         </p>
                       </div>
-                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">{rent !== null ? euro(rent) : '–'}</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">{rent !== null ? <SensitiveEuro seed={`${t.id}-rent`} amount={rent} /> : '–'}</span>
                     </div>
                   </Card>
                 </Link>

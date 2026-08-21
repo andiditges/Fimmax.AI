@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { euro, formatDate, propertyLabel } from '@/lib/format'
+import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
 import { GemeindeEintrag, Section558Status } from '@/lib/mietrecht'
 import { Property, Tenant } from '@/lib/types'
 
@@ -45,8 +46,8 @@ function Section558Row({ item }: { item: Item }) {
     <Card>
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <Link href={`/tenants/${tenant.id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-700 dark:hover:text-blue-400">{tenant.name}</Link>
-          <p className="text-xs text-gray-400 dark:text-gray-500">{propertyLabel(property)}</p>
+          <Link href={`/tenants/${tenant.id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-700 dark:hover:text-blue-400"><Sensitive kind="name" seed={tenant.id} value={tenant.name} /></Link>
+          <p className="text-xs text-gray-400 dark:text-gray-500"><Sensitive kind="address" seed={property.id} value={propertyLabel(property)} /></p>
         </div>
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${alreadyPossible ? 'bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-300' : 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300'}`}>
           {alreadyPossible
@@ -57,14 +58,14 @@ function Section558Row({ item }: { item: Item }) {
 
       {status.reference_is_future && (
         <p className="text-xs text-blue-700 dark:text-blue-300 mt-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-lg px-2.5 py-2">
-          Bereits vereinbart: {euro(status.reference_rent)} ab {formatDate(status.reference_date)}. Der Countdown unten rechnet ab diesem Stand weiter, auch wenn er noch nicht wirksam ist.
+          Bereits vereinbart: <SensitiveEuro seed={`${tenant.id}-reference`} amount={status.reference_rent} /> ab {formatDate(status.reference_date)}. Der Countdown unten rechnet ab diesem Stand weiter, auch wenn er noch nicht wirksam ist.
         </p>
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 text-sm">
         <div>
           <p className="text-gray-400 dark:text-gray-500 text-xs">Aktuelle Miete</p>
-          <p className="font-medium text-gray-900 dark:text-gray-100">{euro(status.current_rent)}</p>
+          <p className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${tenant.id}-current`} amount={status.current_rent} /></p>
         </div>
         <div>
           <p className="text-gray-400 dark:text-gray-500 text-xs">Kappungsgrenze</p>
@@ -83,7 +84,7 @@ function Section558Row({ item }: { item: Item }) {
           <p className="text-gray-400 dark:text-gray-500 text-xs">Verbleibender Spielraum</p>
           <p className={`font-medium ${kappungsgrenzeAusgeschoepft ? 'text-red-500 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>
             {status.kappungsgrenze_remaining_percent !== null
-              ? `+${status.kappungsgrenze_remaining_percent.toFixed(1)}% (${euro(status.kappungsgrenze_remaining_amount ?? 0)})`
+              ? <>+{status.kappungsgrenze_remaining_percent.toFixed(1)}% (<SensitiveEuro seed={`${tenant.id}-kappung-remaining`} amount={status.kappungsgrenze_remaining_amount ?? 0} />)</>
               : '–'}
           </p>
         </div>

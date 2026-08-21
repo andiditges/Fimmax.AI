@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardTitle } from '@/components/ui/card'
-import { euro } from '@/lib/format'
+import { SensitiveEuro } from '@/components/privacy/sensitive'
 import { RESERVE_CATEGORY_LABELS, PropertyReserve, ReserveCategory } from '@/lib/types'
 
 export function PropertyReserves({
@@ -62,7 +62,7 @@ export function PropertyReserves({
       {instandhaltungsruecklage > 0 && (
         <Card className="mb-3 bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900">
           <CardTitle>Instandhaltungsrücklage (kumuliert, aus Nebenkosten)</CardTitle>
-          <p className="text-xl font-bold text-blue-700 dark:text-blue-400">{euro(instandhaltungsruecklage)}</p>
+          <p className="text-xl font-bold text-blue-700 dark:text-blue-400"><SensitiveEuro seed={`${propertyId}-instandhaltung`} amount={instandhaltungsruecklage} /></p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Summe aller "Zuführung Instandhaltungsrücklage"-Einträge aus der Nebenkosten-Erfassung, über alle Jahre.</p>
         </Card>
       )}
@@ -71,7 +71,7 @@ export function PropertyReserves({
         <Card className="mb-3">
           <div className="flex justify-between text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
             <span>Eigene Rücklagen</span>
-            <span>{euro(totalReserves)}</span>
+            <span><SensitiveEuro seed={`${propertyId}-reserves-total`} amount={totalReserves} /></span>
           </div>
           <div className="space-y-1.5">
             {reserves.map(r => (
@@ -80,7 +80,7 @@ export function PropertyReserves({
                   {RESERVE_CATEGORY_LABELS[r.category]}{r.name ? ` · ${r.name}` : ''}
                   {r.funded_from_rent && <span className="text-xs text-amber-700 dark:text-amber-400"> (aus Kaltmiete)</span>}
                 </span>
-                <span>{euro(r.current_value)}</span>
+                <span><SensitiveEuro seed={`${r.id}-value`} amount={r.current_value} /></span>
               </div>
             ))}
           </div>

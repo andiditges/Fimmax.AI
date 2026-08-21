@@ -11,7 +11,7 @@ import { currentAgreement, isStaffelSchedule, nextAgreementStep } from '@/lib/re
 import { calcIndexmieteStatus, latestVpiReading } from '@/lib/vpi'
 import { findGemeindeForAddress, kappungsgrenzePercent, calcSection558Status } from '@/lib/mietrecht'
 import { suggestIndexmieteReminders, suggestStaffelReminders } from '@/lib/reminder-suggestions'
-import { euro } from '@/lib/format'
+import { SensitiveEuro } from '@/components/privacy/sensitive'
 import { Property, RentalAgreement, Tenant, VpiReading } from '@/lib/types'
 
 export default async function IndexmietePage() {
@@ -161,11 +161,11 @@ export default async function IndexmietePage() {
           <CardTitle>Mögliche Mieterhöhung insgesamt (Indexmiete + Staffelmiete)</CardTitle>
           <div className="flex items-center justify-between flex-wrap gap-2 mt-2">
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Bereits heute möglich (Indexmiete)</p>
-            <p className="font-semibold text-green-700 dark:text-green-300">+{euro(totalToday)} / Monat</p>
+            <p className="font-semibold text-green-700 dark:text-green-300">+<SensitiveEuro seed="indexmiete-today" amount={totalToday} /> / Monat</p>
           </div>
           <div className="flex items-center justify-between flex-wrap gap-2 mt-1">
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Inkl. zukünftig möglicher Erhöhungen (Index + Staffel)</p>
-            <p className="font-semibold text-blue-700 dark:text-blue-300">+{euro(totalInclFuture)} / Monat</p>
+            <p className="font-semibold text-blue-700 dark:text-blue-300">+<SensitiveEuro seed="indexmiete-future" amount={totalInclFuture} /> / Monat</p>
           </div>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             Staffelmiete-Stufen treten automatisch zum vereinbarten Termin in Kraft und zählen daher nur zur "inkl. zukünftig"-Summe, nicht zu "bereits heute möglich".

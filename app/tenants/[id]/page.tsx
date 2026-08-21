@@ -7,7 +7,8 @@ import { RentChangeForm } from '@/components/tenants/rent-change-form'
 import { RentHistoryRow } from '@/components/tenants/rent-history-row'
 import { RentAdjustmentForm } from '@/components/tenants/rent-adjustment-form'
 import { currentRentAmount } from '@/lib/rent-schedule'
-import { euro, formatDate, propertyLabel } from '@/lib/format'
+import { formatDate, propertyLabel } from '@/lib/format'
+import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
 import { Tenant, Property, RentalAgreement, RentAdjustment } from '@/lib/types'
 
 export default async function TenantDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -35,10 +36,10 @@ export default async function TenantDetail({ params }: { params: Promise<{ id: s
     <div className="space-y-6">
       <div>
         <Link href={`/properties/${t.property_id}`} className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:dark:text-gray-300 mb-1 block">
-          ← {p ? propertyLabel(p) : 'Immobilie'}
+          ← {p ? <Sensitive kind="address" seed={p.id} value={propertyLabel(p)} /> : 'Immobilie'}
         </Link>
         <div className="flex items-start justify-between">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t.name}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100"><Sensitive kind="name" seed={t.id} value={t.name} /></h1>
           <Link href={`/tenants/${t.id}/edit`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Bearbeiten</Link>
         </div>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
@@ -49,9 +50,9 @@ export default async function TenantDetail({ params }: { params: Promise<{ id: s
       <div className="grid grid-cols-2 gap-4">
         <Card>
           <CardTitle>Aktuelle Miete</CardTitle>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{rent !== null ? euro(rent) : '–'}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{rent !== null ? <SensitiveEuro seed={`${t.id}-rent`} amount={rent} /> : '–'}</p>
           {t.furnishing_surcharge != null && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">davon {euro(t.furnishing_surcharge)} Küche/Stellplatz/Möbel</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">davon <SensitiveEuro seed={`${t.id}-furnishing`} amount={t.furnishing_surcharge} /> Küche/Stellplatz/Möbel</p>
           )}
         </Card>
         <Card>
@@ -88,7 +89,7 @@ export default async function TenantDetail({ params }: { params: Promise<{ id: s
             {adjustmentList.map(a => (
               <div key={a.id} className="flex justify-between text-sm py-1.5 border-b border-gray-50 dark:border-gray-800 last:border-0">
                 <span className="text-gray-600 dark:text-gray-300">{formatDate(a.month)}{a.note ? ` · ${a.note}` : ''}</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{euro(a.override_amount)}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${a.id}-override`} amount={a.override_amount} /></span>
               </div>
             ))}
           </div>

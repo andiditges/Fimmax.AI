@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { propertyLabel, formatDate } from '@/lib/format'
+import { Sensitive } from '@/components/privacy/sensitive'
 import { Property, RiskFactor } from '@/lib/types'
 
 function scoreColor(score: number | null): string {
@@ -72,7 +73,7 @@ function PropertyRiskRow({ property }: { property: Property }) {
             className="text-left font-medium text-gray-900 dark:text-gray-100 text-sm hover:text-blue-700 dark:hover:text-blue-400"
             disabled={!property.risk_summary}
           >
-            {propertyLabel(property)}
+            <Sensitive kind="address" seed={property.id} value={propertyLabel(property)} />
           </button>
           {property.risk_assessed_at ? (
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">zuletzt bewertet {formatDate(property.risk_assessed_at)}</p>

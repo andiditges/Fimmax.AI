@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 // Halbkreis-Meter (Gauge-Optik): Füllung = Akzentfarbe, Track = hellere Stufe
 // derselben Farbe. Als Halbkreis statt Vollkreis, damit mehrere Gauges
 // nebeneinander (Portfolio-Übersicht je Immobilie) kompakter wirken - analog
@@ -7,11 +9,11 @@ export function Ring({
 }: {
   percent: number
   size?: number
-  label: string
+  label: ReactNode
   colorClassName?: string
   trackClassName?: string
   ariaLabel: string
-  detail?: string
+  detail?: ReactNode
   decimals?: number
 }) {
   const clamped = Math.max(0, Math.min(100, percent))

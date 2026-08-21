@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
-import { euro, formatDate, propertyLabel } from '@/lib/format'
+import { formatDate, propertyLabel } from '@/lib/format'
+import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
 import { currentAgreement, nextAgreementStep } from '@/lib/rent-schedule'
 import { Property, RentalAgreement, Tenant } from '@/lib/types'
 
@@ -37,8 +38,8 @@ function StaffelmieteRow({ item }: { item: Item }) {
     <Card>
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <Link href={`/tenants/${item.tenant.id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-700 dark:hover:text-blue-400">{item.tenant.name}</Link>
-          <p className="text-xs text-gray-400 dark:text-gray-500">{propertyLabel(item.property)}</p>
+          <Link href={`/tenants/${item.tenant.id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-700 dark:hover:text-blue-400"><Sensitive kind="name" seed={item.tenant.id} value={item.tenant.name} /></Link>
+          <p className="text-xs text-gray-400 dark:text-gray-500"><Sensitive kind="address" seed={item.property.id} value={propertyLabel(item.property)} /></p>
         </div>
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${next ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}>
           {next ? `Nächste Stufe ab ${formatDate(next.start_date)}` : 'Letzte Stufe erreicht'}
@@ -48,16 +49,16 @@ function StaffelmieteRow({ item }: { item: Item }) {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3 text-sm">
         <div>
           <p className="text-gray-400 dark:text-gray-500 text-xs">Aktuelle Miete</p>
-          <p className="font-medium text-gray-900 dark:text-gray-100">{active ? euro(active.rent_amount) : '–'}</p>
+          <p className="font-medium text-gray-900 dark:text-gray-100">{active ? <SensitiveEuro seed={`${active.id}-amount`} amount={active.rent_amount} /> : '–'}</p>
         </div>
         <div>
           <p className="text-gray-400 dark:text-gray-500 text-xs">Nächste Stufe</p>
-          <p className="font-medium text-blue-700 dark:text-blue-400">{next ? euro(next.rent_amount) : '–'}</p>
+          <p className="font-medium text-blue-700 dark:text-blue-400">{next ? <SensitiveEuro seed={`${next.id}-amount`} amount={next.rent_amount} /> : '–'}</p>
         </div>
         <div>
           <p className="text-gray-400 dark:text-gray-500 text-xs">Erhöhung zur nächsten Stufe</p>
           <p className="font-medium text-green-700 dark:text-green-400">
-            {next && active ? `+${euro(next.rent_amount - active.rent_amount)}` : '–'}
+            {next && active ? <>+<SensitiveEuro seed={`${next.id}-delta`} amount={next.rent_amount - active.rent_amount} /></> : '–'}
           </p>
         </div>
       </div>
@@ -72,7 +73,7 @@ function StaffelmieteRow({ item }: { item: Item }) {
                 step.id === active?.id ? 'bg-blue-600 text-white' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
               }`}
             >
-              {formatDate(step.start_date)}: {euro(step.rent_amount)}
+              {formatDate(step.start_date)}: <SensitiveEuro seed={`${step.id}-amount`} amount={step.rent_amount} />
             </span>
           ))}
         </div>

@@ -7,6 +7,7 @@ import { Abrechnungsschreiben } from '@/components/nebenkosten/abrechnungsschrei
 import { Card } from '@/components/ui/card'
 import { sumAdvancePaymentsForYear } from '@/lib/operating-costs'
 import { propertyLabel } from '@/lib/format'
+import { Sensitive } from '@/components/privacy/sensitive'
 import { OperatingCost, Property, Tenant, UserSettings, UtilitySettlement } from '@/lib/types'
 
 export default async function NebenkostenPage({
@@ -44,7 +45,7 @@ export default async function NebenkostenPage({
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <Link href={`/properties/${id}`} className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:dark:text-gray-300 mb-1 block">← {propertyLabel(p)}</Link>
+          <Link href={`/properties/${id}`} className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:dark:text-gray-300 mb-1 block">← <Sensitive kind="address" seed={p.id} value={propertyLabel(p)} /></Link>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Nebenkostenassistent {year}</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
             {p.is_self_managed

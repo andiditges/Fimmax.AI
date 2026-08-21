@@ -1,7 +1,7 @@
 import { CSSProperties } from 'react'
 import { Card, CardTitle } from '@/components/ui/card'
 import { calcEhegattenschaukelPotential } from '@/lib/afa'
-import { euro } from '@/lib/format'
+import { SensitiveEuro } from '@/components/privacy/sensitive'
 import { Property } from '@/lib/types'
 
 // Je größer das AfA-Potenzial relativ zur bisherigen AfA, desto stärker und
@@ -45,11 +45,11 @@ export function Ehegattenschaukel({ property }: { property: Property }) {
       {hasPotential ? (
         <div className="text-sm text-center space-y-1">
           <p className="text-gray-600 dark:text-gray-300">
-            Aktuell <strong className="text-gray-900 dark:text-gray-100">{euro(potential.current_annual_afa)}</strong> AfA/Jahr
-            {' '}&rarr; nach Schaukel potenziell <strong className="text-green-700 dark:text-green-400">{euro(potential.potential_annual_afa)}</strong> AfA/Jahr
+            Aktuell <strong className="text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${property.id}-afa-current`} amount={potential.current_annual_afa} /></strong> AfA/Jahr
+            {' '}&rarr; nach Schaukel potenziell <strong className="text-green-700 dark:text-green-400"><SensitiveEuro seed={`${property.id}-afa-potential`} amount={potential.potential_annual_afa} /></strong> AfA/Jahr
           </p>
           <p className="text-green-700 dark:text-green-400 font-semibold">
-            +{euro(potential.delta_annual_afa)} mehr AfA pro Jahr (neue Restnutzungsdauer {potential.new_usage_duration} Jahre)
+            +<SensitiveEuro seed={`${property.id}-afa-delta`} amount={potential.delta_annual_afa} /> mehr AfA pro Jahr (neue Restnutzungsdauer {potential.new_usage_duration} Jahre)
           </p>
         </div>
       ) : (

@@ -9,7 +9,8 @@ import { DebtOverTimeChart } from '@/components/charts/debt-over-time-chart'
 import { TilgungZinsChart } from '@/components/charts/tilgung-zins-chart'
 import { calcBereitstellungszinsen, generateAmortizationSchedule, getLoanStatus, getMonthlyPrincipalAt, specialPaymentAllowanceRemaining, suggestInitialRepaymentRate } from '@/lib/amortization'
 import { checkAssetFunding } from '@/lib/net-worth'
-import { euro, formatDate, propertyLabel } from '@/lib/format'
+import { formatDate, propertyLabel } from '@/lib/format'
+import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
 import { Asset, Loan, LoanSpecialPayment, Property } from '@/lib/types'
 
 export default async function LoanDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -65,24 +66,24 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
     <div className="space-y-6">
       <div>
         <Link href={`/properties/${l.property_id}`} className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:dark:text-gray-300 mb-1 block">
-          ← {p ? propertyLabel(p) : 'Immobilie'}
+          ← {p ? <Sensitive kind="address" seed={p.id} value={propertyLabel(p)} /> : 'Immobilie'}
         </Link>
         <div className="flex items-start justify-between">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{l.name}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100"><Sensitive kind="name" seed={l.id} value={l.name} /></h1>
           <Link href={`/loans/${l.id}/edit`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Bearbeiten</Link>
         </div>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-          {l.lender ? `${l.lender} · ` : ''}{euro(l.principal)} · {l.nominal_interest_rate}% Sollzins · {l.payment_frequency}
+          {l.lender ? `${l.lender} · ` : ''}<SensitiveEuro seed={`${l.id}-principal`} amount={l.principal} /> · {l.nominal_interest_rate}% Sollzins · {l.payment_frequency}
         </p>
         {l.planned_renovation_amount && (
-          <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">Davon {euro(l.planned_renovation_amount)} für Renovierung/Sanierung eingeplant</p>
+          <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">Davon <SensitiveEuro seed={`${l.id}-renovation`} amount={l.planned_renovation_amount} /> für Renovierung/Sanierung eingeplant</p>
         )}
         {l.interest_only_months && (
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{l.interest_only_months} Monate tilgungsfrei ab Auszahlung</p>
         )}
         {bereitstellungszinsen !== null && bereitstellungszinsen > 0 && (
           <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-            {euro(bereitstellungszinsen)} Bereitstellungszinsen bis zur Auszahlung ({l.bereitstellungszins_rate}% p.a. nach {l.bereitstellungsfreie_monate ?? 0} Monaten bereitstellungsfreier Zeit)
+            <SensitiveEuro seed={`${l.id}-bereitstellungszinsen`} amount={bereitstellungszinsen} /> Bereitstellungszinsen bis zur Auszahlung ({l.bereitstellungszins_rate}% p.a. nach {l.bereitstellungsfreie_monate ?? 0} Monaten bereitstellungsfreier Zeit)
           </p>
         )}
         <DayCountEdit loanId={l.id} current={l.day_count_convention} />
@@ -99,19 +100,19 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardTitle className="min-h-10">Restschuld heute</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100 break-words">{euro(status.remaining_balance)}</p>
+          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100 break-words"><SensitiveEuro seed={`${l.id}-remaining`} amount={status.remaining_balance} /></p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Rate je Zahlung</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400 break-words">{euro(status.current_annuity_amount)}</p>
+          <p className="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400 break-words"><SensitiveEuro seed={`${l.id}-annuity`} amount={status.current_annuity_amount} /></p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Zinsen kumuliert</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words">{euro(status.cumulative_interest_paid)}</p>
+          <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words"><SensitiveEuro seed={`${l.id}-cum-interest`} amount={status.cumulative_interest_paid} /></p>
         </Card>
         <Card>
           <CardTitle className="min-h-10">Tilgung kumuliert</CardTitle>
-          <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-500 break-words">{euro(status.cumulative_principal_paid)}</p>
+          <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-500 break-words"><SensitiveEuro seed={`${l.id}-cum-principal`} amount={status.cumulative_principal_paid} /></p>
         </Card>
       </div>
 
@@ -133,22 +134,22 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
           <p className="text-sm text-gray-600 dark:text-gray-300">
             Zinsbindung endet nach {l.initial_fixed_period_years} Jahren am{' '}
             <strong>{formatDate(addYearsIso(l.disbursement_date, l.initial_fixed_period_years))}</strong>
-            {' '}– Restschuld zu diesem Zeitpunkt voraussichtlich <strong>{euro(schedule.balance_at_fixed_period_end)}</strong>.
+            {' '}– Restschuld zu diesem Zeitpunkt voraussichtlich <strong><SensitiveEuro seed={`${l.id}-fixedend`} amount={schedule.balance_at_fixed_period_end} /></strong>.
           </p>
         </Card>
       )}
 
       {asset && fundingCheck && (
         <Card className={fundingCheck.sufficient ? 'bg-green-50 dark:bg-green-950/40 border-green-100 dark:border-green-900' : 'bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900'}>
-          <CardTitle>Finanzierung durch {asset.name || 'Vermögenswert'}{asset.institution ? ` (${asset.institution})` : ''}</CardTitle>
+          <CardTitle>Finanzierung durch <Sensitive kind="name" seed={asset.id} value={asset.name || 'Vermögenswert'} />{asset.institution ? ` (${asset.institution})` : ''}</CardTitle>
           <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
-            Hochgerechneter Stand am Auszahlungsdatum ({formatDate(l.disbursement_date)}): <strong>{euro(fundingCheck.projected_value)}</strong>
-            {' '}· benötigt für diesen Kredit: <strong>{euro(fundingCheck.required_amount)}</strong>
+            Hochgerechneter Stand am Auszahlungsdatum ({formatDate(l.disbursement_date)}): <strong><SensitiveEuro seed={`${asset.id}-projected`} amount={fundingCheck.projected_value} /></strong>
+            {' '}· benötigt für diesen Kredit: <strong><SensitiveEuro seed={`${l.id}-required`} amount={fundingCheck.required_amount} /></strong>
           </p>
           <p className={`text-sm mt-1 font-medium ${fundingCheck.sufficient ? 'text-green-700 dark:text-green-300' : 'text-amber-700 dark:text-amber-300'}`}>
             {fundingCheck.sufficient
               ? '✓ Voraussichtlich ausreichend.'
-              : `Voraussichtlich noch ${euro(fundingCheck.shortfall)} zu wenig – Sparrate erhöhen oder Auszahlungsdatum prüfen.`}
+              : <>Voraussichtlich noch <SensitiveEuro seed={`${l.id}-shortfall`} amount={fundingCheck.shortfall} /> zu wenig – Sparrate erhöhen oder Auszahlungsdatum prüfen.</>}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             Hochrechnung auf Basis der monatlichen Sparrate des Vermögenswerts, angewendet zu jedem 01.01. – rein rechnerisch, ersetzt keine Beratung durch deine Bausparkasse/Bank.
@@ -168,7 +169,7 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
         {allowanceRemaining !== null && (
           <p className={`text-sm mb-3 ${allowanceRemaining > 0.01 ? 'text-gray-600 dark:text-gray-300' : 'text-amber-700 dark:text-amber-300'}`}>
             {allowanceRemaining > 0.01
-              ? `Noch ${euro(allowanceRemaining)} kostenloses Sondertilgungskontingent für ${new Date().getFullYear()} (${l.special_payment_limit_percent}% p.a.).`
+              ? <>Noch <SensitiveEuro seed={`${l.id}-allowance`} amount={allowanceRemaining} /> kostenloses Sondertilgungskontingent für {new Date().getFullYear()} ({l.special_payment_limit_percent}% p.a.).</>
               : `Sondertilgungsgrenze für ${new Date().getFullYear()} ausgeschöpft (${l.special_payment_limit_percent}% p.a.) – weitere Sondertilgung erst wieder ab ${new Date().getFullYear() + 1} ohne Vorfälligkeitsentschädigung.`}
           </p>
         )}
@@ -177,7 +178,7 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
             {sp.map(s => (
               <div key={s.id} className="flex justify-between text-sm py-1.5 border-b border-gray-50 dark:border-gray-800 last:border-0">
                 <span className="text-gray-600 dark:text-gray-300">{formatDate(s.payment_date)}{s.note ? ` · ${s.note}` : ''}</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{euro(s.amount)}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${s.id}-amount`} amount={s.amount} /></span>
               </div>
             ))}
           </div>
@@ -205,10 +206,10 @@ export default async function LoanDetail({ params }: { params: Promise<{ id: str
               {schedule.entries.slice(0, 60).map((e, i) => (
                 <tr key={i} className="border-b border-gray-50 dark:border-gray-800">
                   <td className="py-1.5 text-gray-600 dark:text-gray-300">{formatDate(e.date)}</td>
-                  <td className="py-1.5 text-right text-red-500 dark:text-red-400">{euro(e.interest_accrued)}</td>
-                  <td className="py-1.5 text-right text-green-600 dark:text-green-500">{euro(e.scheduled_principal)}</td>
-                  <td className="py-1.5 text-right text-blue-600 dark:text-blue-400">{e.special_payment > 0 ? euro(e.special_payment) : '–'}</td>
-                  <td className="py-1.5 text-right font-medium text-gray-900 dark:text-gray-100">{euro(e.remaining_balance)}</td>
+                  <td className="py-1.5 text-right text-red-500 dark:text-red-400"><SensitiveEuro seed={`${l.id}-${i}-interest`} amount={e.interest_accrued} /></td>
+                  <td className="py-1.5 text-right text-green-600 dark:text-green-500"><SensitiveEuro seed={`${l.id}-${i}-principal`} amount={e.scheduled_principal} /></td>
+                  <td className="py-1.5 text-right text-blue-600 dark:text-blue-400">{e.special_payment > 0 ? <SensitiveEuro seed={`${l.id}-${i}-special`} amount={e.special_payment} /> : '–'}</td>
+                  <td className="py-1.5 text-right font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${l.id}-${i}-remaining`} amount={e.remaining_balance} /></td>
                 </tr>
               ))}
             </tbody>

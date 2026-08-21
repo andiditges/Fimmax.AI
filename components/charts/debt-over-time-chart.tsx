@@ -2,6 +2,8 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { euro, formatDate } from '@/lib/format'
 import { useTheme } from '@/components/theme/theme-provider'
+import { usePrivacyMode } from '@/components/privacy/privacy-mode-context'
+import { fakeAmount } from '@/lib/privacy'
 
 interface Point {
   date: string
@@ -21,6 +23,7 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: { valu
 
 export function DebtOverTimeChart({ data }: { data: Point[] }) {
   const { theme } = useTheme()
+  const { enabled: privacyEnabled } = usePrivacyMode()
   const gridStroke = theme === 'dark' ? '#374151' : '#f3f4f6'
   const tickFill = theme === 'dark' ? '#6b7280' : '#9ca3af'
 
@@ -28,10 +31,17 @@ export function DebtOverTimeChart({ data }: { data: Point[] }) {
     return <p className="text-sm text-gray-400 dark:text-gray-500 py-8 text-center">Keine Daten für den Verlauf.</p>
   }
 
+  // Gleicher Seed für jeden Punkt der Reihe: skaliert die komplette Kurve
+  // um denselben Faktor, damit Achse/Tooltip/Kurvenform im Privacy-Modus
+  // konsistent zueinander bleiben (statt jeden Punkt einzeln zu verzerren).
+  const chartData = privacyEnabled
+    ? data.map(d => ({ ...d, remaining_balance: fakeAmount('debt-over-time', d.remaining_balance) }))
+    : data
+
   return (
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+        <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           <CartesianGrid strokeDasharray="0" vertical={false} stroke={gridStroke} />
           <XAxis
             dataKey="date"
