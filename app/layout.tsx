@@ -32,7 +32,7 @@ export const viewport: Viewport = {
 // data-theme auf <html>, bevor React überhaupt hydriert (siehe Next-Doku
 // "preventing-flash-before-hydration"). Fällt beim allerersten Besuch auf
 // die Systemeinstellung zurück.
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("fimmax-theme");if(!t)t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("fimmax-theme");if(t!=="light"&&t!=="dark")t="light";document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
