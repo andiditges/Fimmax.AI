@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/supabase/get-user'
 import { UserSettingsForm } from '@/components/settings/user-settings-form'
+import { DeleteAccountSection } from '@/components/settings/delete-account-section'
 import { UserSettings } from '@/lib/types'
 
 export default async function EinstellungenPage() {
@@ -17,6 +18,7 @@ export default async function EinstellungenPage() {
         </p>
       </div>
       <UserSettingsForm settings={settings as UserSettings | null} />
+      <DeleteAccountSection />
     </div>
   )
 }
