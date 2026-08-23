@@ -9,7 +9,7 @@ import { ArchiveYearButton } from '@/components/receipts/archive-year-button'
 import { calc15Threshold } from '@/lib/threshold15'
 import { buildTaxExportRow, buildTaxExportDetailRows, rowsToCsv, detailRowsToCsv } from '@/lib/tax-export'
 import { getReceiptAllocations } from '@/lib/receipt-allocations'
-import { calcAnnualAfa } from '@/lib/afa'
+import { calcAnnualAfa, calcIncidentalCostsForAfa } from '@/lib/afa'
 import { generateAmortizationSchedule, interestPaidInYear } from '@/lib/amortization'
 import { sumRentForYear } from '@/lib/rent-schedule'
 import { propertyLabel } from '@/lib/format'
@@ -83,7 +83,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
       property: p,
       threshold: calc15Threshold(p, propAllocations),
       taxRow: buildTaxExportRow(p, year, propAllocations, yearIncome, loanInterest, propOperatingCosts, propDepreciableItems),
-      detailRows: buildTaxExportDetailRows(p, year, propAllocations, calcAnnualAfa(p), loanInterest, propOperatingCosts, propDepreciableItems),
+      detailRows: buildTaxExportDetailRows(p, year, propAllocations, calcAnnualAfa(p, calcIncidentalCostsForAfa(p.id, propAllocations, p)), loanInterest, propOperatingCosts, propDepreciableItems),
       yearExpenses,
       // Distinkte Belege zählen, nicht Allocation-Zeilen - ein auf 2
       // Positionen aufgeteilter Beleg zählt bei diesem Objekt weiterhin als 1.

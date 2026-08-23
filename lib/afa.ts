@@ -1,5 +1,6 @@
-import { Property, DepreciableItem } from './types'
+import { Property, DepreciableItem, ReceiptCategory } from './types'
 import { propertyValue } from './format'
+import { ReceiptAllocation } from './receipt-allocations'
 
 // Gesetzliche Standard-Restnutzungsdauer nach § 7 Abs. 4 EStG, nur als
 // Startwert gedacht. Ein Restnutzungsdauergutachten kann davon abweichen
@@ -10,8 +11,38 @@ export function suggestUsageDuration(buildYear: number): number {
   return 40
 }
 
-export function calcAnnualAfa(property: Property): number {
-  return property.building_value * (property.afa_rate / 100)
+const KAUFNEBENKOSTEN_AFA_CATEGORIES: ReceiptCategory[] = ['notar_kauf', 'grundbuch_kauf', 'makler_kauf']
+
+// Notar/Grundbuch/Makler sind Anschaffungsnebenkosten (§ 255 Abs. 1 HGB) und
+// erhöhen die AfA-Bemessungsgrundlage. Beleg-Summe hat Vorrang vor der alten
+// manuellen Eingabe (property.incidental_costs, aus dem inzwischen entfernten
+// Posten-Modus im Objekt-Formular) - sobald mindestens ein passender Beleg
+// existiert, ersetzt er den Alt-Wert komplett statt ihn aufzuaddieren, sonst
+// Doppelzählung für Bestandsobjekte mit alten manuellen Einträgen.
+// Grunderwerbsteuer bewusst NICHT über Belege gezählt (auch wenn die
+// Beleg-Kategorie 'grunderwerbsteuer' existiert) - das automatisch berechnete
+// property.grunderwerbsteuer-Feld bleibt dafür allein maßgeblich, sonst zählt
+// ein zusätzlich hochgeladener Steuerbescheid doppelt.
+export function calcIncidentalCostsForAfa(
+  propertyId: string,
+  allocations: ReceiptAllocation[],
+  property: Pick<Property, 'incidental_costs' | 'grunderwerbsteuer'>
+): number {
+  const receiptSum = allocations
+    .filter(a => a.property_id === propertyId && KAUFNEBENKOSTEN_AFA_CATEGORIES.includes(a.category))
+    .reduce((s, a) => s + a.amount, 0)
+  const notarGrundbuchMakler = receiptSum > 0 ? receiptSum : property.incidental_costs
+  return notarGrundbuchMakler + (property.grunderwerbsteuer ?? 0)
+}
+
+export function calcAnnualAfa(property: Property, incidentalCostsForAfa: number = 0): number {
+  // Nur der Gebäudeanteil ist abschreibbar - Kaufnebenkosten werden daher im
+  // bestehenden Grundstücks-/Gebäude-Verhältnis anteilig aufgeteilt, nicht
+  // komplett der Gebäude-AfA-Basis zugeschlagen.
+  const effectiveBuildingValue = property.purchase_price > 0
+    ? property.building_value + incidentalCostsForAfa * (property.building_value / property.purchase_price)
+    : property.building_value
+  return effectiveBuildingValue * (property.afa_rate / 100)
 }
 
 export function calcCumulativeAfa(property: Property, asOfYear: number): number {

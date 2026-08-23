@@ -1,5 +1,5 @@
 import { OperatingCost, Property, CATEGORY_LABELS, ReceiptCategory, NON_DEDUCTIBLE_CATEGORIES, DepreciableItem } from './types'
-import { calcAnnualAfa, calcAnnualMovableAfa, isMovableAfaActiveInYear } from './afa'
+import { calcAnnualAfa, calcIncidentalCostsForAfa, calcAnnualMovableAfa, isMovableAfaActiveInYear } from './afa'
 import { propertyLabel } from './format'
 import { deductibleOwnCosts, OPERATING_COST_CATEGORY_MAP } from './operating-costs'
 import { ReceiptAllocation } from './receipt-allocations'
@@ -42,7 +42,7 @@ export function buildTaxExportRow(
   // "Zinsen"-Belegen - sonst fehlten die Zinsen hier komplett, solange kein
   // entsprechender Beleg (z.B. Jahreszinsbescheinigung der Bank) erfasst ist.
   kosten_nach_kategorie.zinsen += loanInterest
-  const afa = calcAnnualAfa(property)
+  const afa = calcAnnualAfa(property, calcIncidentalCostsForAfa(property.id, allocations, property))
   const afa_beweglich = depreciableItems
     .filter(d => isMovableAfaActiveInYear(d, year))
     .reduce((s, d) => s + calcAnnualMovableAfa(d), 0)

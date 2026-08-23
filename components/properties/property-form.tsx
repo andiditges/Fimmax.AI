@@ -9,9 +9,8 @@ import { GRUNDERWERBSTEUER_RATES } from '@/lib/grunderwerbsteuer'
 import { Card } from '@/components/ui/card'
 import { AddressAutocomplete } from '@/components/address-autocomplete'
 import { trackEvent } from '@/lib/analytics'
-import { euro } from '@/lib/format'
 import {
-  Bundesland, IncidentalCostCategory, IncidentalCostItem, INCIDENTAL_COST_CATEGORY_LABELS,
+  Bundesland,
   Property, PropertyConditionGrade, PROPERTY_CONDITION_GRADE_LABELS,
   EnergyCertificateType, ENERGY_CERTIFICATE_TYPE_LABELS, ENERGY_EFFICIENCY_CLASSES,
 } from '@/lib/types'
@@ -23,13 +22,7 @@ const CONDITION_FIELDS: { key: 'condition_windows' | 'condition_electrical' | 'c
   { key: 'condition_heating', label: 'Heizung' },
 ]
 
-interface ItemRow {
-  category: IncidentalCostCategory
-  amount: string
-  note: string
-}
-
-export function PropertyForm({ property, incidentalCostItems }: { property?: Property; incidentalCostItems?: IncidentalCostItem[] }) {
+export function PropertyForm({ property }: { property?: Property }) {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
@@ -74,39 +67,9 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
   const isWizard = !property
   const STEP_TITLES = ['Adresse & Objekt', 'Kaufpreis & Nebenkosten', 'Abschreibung (AfA)', 'Zustand & Vergleichsmiete']
   const [step, setStep] = useState(1)
-  const [incidentalCostsMode, setIncidentalCostsMode] = useState<'eur' | 'percent' | 'items'>(
-    incidentalCostItems && incidentalCostItems.length > 0 ? 'items' : 'eur'
-  )
-  const [incidentalCostsPercent, setIncidentalCostsPercent] = useState('')
-  const [itemRows, setItemRows] = useState<ItemRow[]>(
-    incidentalCostItems && incidentalCostItems.length > 0
-      ? incidentalCostItems.map(i => ({ category: i.category, amount: String(i.amount), note: i.note ?? '' }))
-      : [{ category: 'notar', amount: '', note: '' }]
-  )
-
-  function itemRowsSum(rows: ItemRow[]) {
-    return round2(rows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0))
-  }
-
-  function updateItemRows(updater: (rows: ItemRow[]) => ItemRow[]) {
-    setItemRows(rows => {
-      const next = updater(rows)
-      setForm(f => ({ ...f, incidental_costs: String(itemRowsSum(next)) }))
-      return next
-    })
-  }
-
-  function addItemRow() {
-    updateItemRows(rows => [...rows, { category: 'sonstiges', amount: '', note: '' }])
-  }
-
-  function removeItemRow(index: number) {
-    updateItemRows(rows => rows.filter((_, i) => i !== index))
-  }
-
-  function updateItemRow(index: number, patch: Partial<ItemRow>) {
-    updateItemRows(rows => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)))
-  }
+  // Nur im Wizard relevant: ob Schritt 4 (komplett optionale Detail-Felder)
+  // direkt ausgefüllt oder übersprungen werden soll - siehe Weiche unten.
+  const [optionalDetailsChoice, setOptionalDetailsChoice] = useState<'pending' | 'skip' | 'fill'>('pending')
 
   const gemeindeMatch = useMemo(() => findGemeindeForAddress(form.address), [form.address])
 
@@ -158,21 +121,8 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
       if (!isNaN(land)) next.building_value = String(round2(price - land))
       else if (!isNaN(building)) next.land_value = String(round2(price - building))
       if (f.bundesland) next.grunderwerbsteuer = String(calcGrunderwerbsteuer(grunderwerbsteuerBase(price, movable), f.bundesland))
-      if (incidentalCostsMode === 'percent') {
-        const pct = parseFloat(incidentalCostsPercent)
-        if (!isNaN(pct)) next.incidental_costs = String(round2(price * pct / 100))
-      }
       return next
     })
-  }
-
-  function onIncidentalCostsPercentChange(value: string) {
-    setIncidentalCostsPercent(value)
-    const price = parseFloat(form.purchase_price)
-    const pct = parseFloat(value)
-    if (!isNaN(price) && !isNaN(pct)) {
-      setForm(f => ({ ...f, incidental_costs: String(round2(price * pct / 100)) }))
-    }
   }
 
   function onMovableBlur() {
@@ -275,31 +225,11 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
       return
     }
 
-    const { error: deleteItemsError } = await supabase.from('incidental_cost_items').delete().eq('property_id', savedProperty.id)
-    if (deleteItemsError) {
-      alert('Fehler beim Speichern der Kaufnebenkosten-Posten: ' + deleteItemsError.message)
-      setLoading(false)
-      return
-    }
-
-    if (incidentalCostsMode === 'items') {
-      const itemsPayload = itemRows
-        .filter(r => r.amount && !isNaN(parseFloat(r.amount)))
-        .map(r => ({
-          property_id: savedProperty.id,
-          category: r.category,
-          amount: parseFloat(r.amount),
-          note: r.note || null,
-        }))
-      if (itemsPayload.length > 0) {
-        const { error: insertItemsError } = await supabase.from('incidental_cost_items').insert(itemsPayload)
-        if (insertItemsError) {
-          alert('Fehler beim Speichern der Kaufnebenkosten-Posten: ' + insertItemsError.message)
-          setLoading(false)
-          return
-        }
-      }
-    }
+    // Kaufnebenkosten-Posten (Notar/Grundbuch/Makler) werden nicht mehr über
+    // dieses Formular gepflegt, sondern ausschließlich über hochgeladene
+    // Belege (siehe calcIncidentalCostsForAfa in lib/afa.ts) - etwaige
+    // bereits vorhandene incidental_cost_items-Zeilen bleiben unangetastet
+    // als Fallback bestehen, bis ein passender Beleg sie ersetzt.
 
     if (property) router.push(`/properties/${property.id}`)
     else { trackEvent('property_created'); setCreatedPropertyId(savedProperty.id) }
@@ -314,7 +244,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
   }
 
   const OPTIONAL_FIELDS: (keyof typeof form)[] = [
-    'unit', 'unit_label', 'current_value', 'movable_items', 'incidental_costs',
+    'unit', 'unit_label', 'current_value', 'movable_items',
     'living_area_sqm', 'comparable_rent_min', 'comparable_rent_max', 'comparable_rent_source', 'comparable_rent_as_of', 'renovation_note',
     'expected_allocable_operating_cost_annual', 'expected_non_allocable_operating_cost_annual',
     'rooms', 'energy_certificate_type', 'energy_certificate_value', 'energy_efficiency_class', 'heating_year',
@@ -451,110 +381,8 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
             />
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Kaufnebenkosten</label>
-              <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-xs shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIncidentalCostsMode('eur')}
-                  className={`px-2.5 py-1 transition-colors ${incidentalCostsMode === 'eur' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
-                >
-                  €
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIncidentalCostsMode('percent')}
-                  className={`px-2.5 py-1 border-l border-gray-200 dark:border-gray-700 transition-colors ${incidentalCostsMode === 'percent' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
-                >
-                  %
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIncidentalCostsMode('items')}
-                  className={`px-2.5 py-1 border-l border-gray-200 dark:border-gray-700 transition-colors ${incidentalCostsMode === 'items' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
-                >
-                  Posten
-                </button>
-              </div>
-            </div>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">
-              Notar, Grundbuch/Amtsgericht, Makler, Grundschuldbestellung, Nutzungsdauergutachten u.ä. – ohne Grunderwerbsteuer (die hat ihr eigenes Feld oben) und ohne Renovierung (kommt als Beleg mit is_renovation-Flag). Fließt in die Eigenkapital-Berechnung im Finanz-Cockpit ein.
-            </p>
-            {incidentalCostsMode === 'eur' ? (
-              <input
-                type="number"
-                step="0.01"
-                value={form.incidental_costs}
-                onChange={e => setForm(f => ({ ...f, incidental_costs: e.target.value }))}
-                className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            ) : incidentalCostsMode === 'percent' ? (
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={incidentalCostsPercent}
-                    onChange={e => onIncidentalCostsPercentChange(e.target.value)}
-                    placeholder="z.B. 8"
-                    className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm">%</span>
-                </div>
-                <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  = {form.incidental_costs && !isNaN(parseFloat(form.incidental_costs)) ? euro(parseFloat(form.incidental_costs)) : '–'}
-                </span>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {itemRows.map((row, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <select
-                      value={row.category}
-                      onChange={e => updateItemRow(i, { category: e.target.value as IncidentalCostCategory })}
-                      className="border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-2.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
-                    >
-                      {(Object.keys(INCIDENTAL_COST_CATEGORY_LABELS) as IncidentalCostCategory[]).map(c => (
-                        <option key={c} value={c}>{INCIDENTAL_COST_CATEGORY_LABELS[c]}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="text"
-                      value={row.note}
-                      onChange={e => updateItemRow(i, { note: e.target.value })}
-                      placeholder="Notiz (optional)"
-                      className="flex-1 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0"
-                    />
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={row.amount}
-                      onChange={e => updateItemRow(i, { amount: e.target.value })}
-                      placeholder="€"
-                      className="w-24 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeItemRow(i)}
-                      disabled={itemRows.length === 1}
-                      className="text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-30 disabled:cursor-not-allowed px-1 shrink-0"
-                      aria-label="Posten entfernen"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-                <div className="flex items-center justify-between pt-1">
-                  <button type="button" onClick={addItemRow} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
-                    + Posten hinzufügen
-                  </button>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Summe: <strong className="text-gray-900 dark:text-gray-100">{euro(itemRowsSum(itemRows))}</strong>
-                  </span>
-                </div>
-              </div>
-            )}
+          <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-xl px-3 py-2.5 text-xs text-blue-800 dark:text-blue-300">
+            Weitere Kaufnebenkosten (Notar, Grundbuch/Amtsgericht, Makler) trägst du am besten direkt als Beleg ein, sobald du die jeweilige Rechnung hast – einfach über „Beleg erfassen&rdquo; hochladen, dann fließt der Betrag automatisch in die Abschreibung ein.
           </div>
 
           {field('Aktueller Marktwert (€)', 'current_value', 'number',
@@ -612,6 +440,31 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
           </>)}
 
           {(!isWizard || step === 4) && (<>
+          {isWizard && optionalDetailsChoice === 'pending' ? (
+            <div className="text-center py-6 space-y-4">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Möchtest du direkt weitere Angaben machen (Zustand, Energieausweis, Vergleichsmiete)?
+                Das kannst du auch jederzeit später über &quot;Bearbeiten&quot; nachtragen.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  type="button"
+                  onClick={() => setOptionalDetailsChoice('fill')}
+                  className="px-5 py-3 rounded-xl font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                >
+                  Ja, jetzt ausfüllen
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  onClick={() => setOptionalDetailsChoice('skip')}
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Wird gespeichert...' : 'Nein, überspringen'}
+                </button>
+              </div>
+            </div>
+          ) : (<>
           <div className={isWizard ? 'space-y-5' : 'border-t border-gray-100 dark:border-gray-800 pt-5 space-y-5'}>
             <div>
               <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Zustand & Vergleichsmiete</h2>
@@ -694,8 +547,10 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
             {field('Stand', 'comparable_rent_as_of', 'date')}
           </div>
           </>)}
+          </>)}
 
           {isWizard ? (
+            (step !== 4 || optionalDetailsChoice !== 'pending') && (
             <div className="flex gap-3">
               {step > 1 && (
                 <button
@@ -724,6 +579,7 @@ export function PropertyForm({ property, incidentalCostItems }: { property?: Pro
                 </button>
               )}
             </div>
+            )
           ) : (
             <button
               type="submit"

@@ -14,7 +14,7 @@ import { RiskOverview } from '@/components/tipps/risk-overview'
 import { ReceiptBrowser } from '@/components/receipts/receipt-browser'
 import { Ehegattenschaukel } from '@/components/properties/ehegattenschaukel'
 import { HoaDocumentMove } from '@/components/hoa/hoa-document-move'
-import { calcAnnualAfa, shouldRecommendNutzungsdauergutachten, calcAnnualMovableAfa, isMovableAfaActiveInYear } from '@/lib/afa'
+import { calcAnnualAfa, calcIncidentalCostsForAfa, shouldRecommendNutzungsdauergutachten, calcAnnualMovableAfa, isMovableAfaActiveInYear } from '@/lib/afa'
 import { DepreciableItemList } from '@/components/depreciable-items/depreciable-item-list'
 import { calc15Threshold } from '@/lib/threshold15'
 import { getLoanStatus, generateAmortizationSchedule, interestPaidInYear, aggregateLoanChains } from '@/lib/amortization'
@@ -125,7 +125,15 @@ export default async function PropertyDetail({ params, searchParams }: { params:
   const ltvPercent = propertyValue(p) > 0 ? (totalLoanRemaining / propertyValue(p)) * 100 : 0
 
   const threshold = calc15Threshold(p, propAllocations)
-  const annualAfa = calcAnnualAfa(p)
+  const incidentalCostsForAfa = calcIncidentalCostsForAfa(p.id, propAllocations, p)
+  const annualAfa = calcAnnualAfa(p, incidentalCostsForAfa)
+  const annualAfaWithoutIncidentalCosts = calcAnnualAfa(p, 0)
+  // Notar/Grundbuch/Makler aus hochgeladenen Belegen haben Vorrang vor der
+  // alten manuellen Eingabe (siehe calcIncidentalCostsForAfa) - für die
+  // Kaufnebenkosten-Karte unten getrennt berechnet, um das transparent zu
+  // machen (welche Zahl gerade tatsächlich für die AfA zählt).
+  const kaufnebenkostenReceipts = propAllocations.filter(a => (['notar_kauf', 'grundbuch_kauf', 'makler_kauf'] as string[]).includes(a.category))
+  const kaufnebenkostenReceiptsSum = kaufnebenkostenReceipts.reduce((s, a) => s + a.amount, 0)
 
   const yearAllocations = propAllocations.filter(a => a.tax_year === currentYear)
   const yearExpenses = yearAllocations.reduce((s, a) => s + a.amount, 0)
@@ -513,14 +521,18 @@ export default async function PropertyDetail({ params, searchParams }: { params:
       <div>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Kaufnebenkosten</h2>
-          <Link href={`/properties/${id}/edit`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap">Bearbeiten</Link>
+          <div className="flex items-center gap-3">
+            <Link href={`/receipts/new?property=${id}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap">+ Beleg erfassen</Link>
+            <Link href={`/properties/${id}/edit`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap">Bearbeiten</Link>
+          </div>
         </div>
         <p className="text-xs text-gray-400 dark:text-gray-500 -mt-2 mb-3">
           Notar, Grundbuch, Makler, Grunderwerbsteuer u.ä. beim Kauf – erhöhen die AfA-Bemessungsgrundlage, sind aber keine sofort abziehbaren Werbungskosten.
+          Notar/Grundbuch/Makler trägst du am besten direkt als Beleg ein - der Betrag zählt dann automatisch für die Abschreibung.
         </p>
-        {incidentalCostItemList.length === 0 && p.grunderwerbsteuer == null && p.incidental_costs === 0 ? (
+        {p.grunderwerbsteuer == null && kaufnebenkostenReceiptsSum === 0 && incidentalCostItemList.length === 0 && p.incidental_costs === 0 ? (
           <Card className="text-center py-8 text-gray-400 dark:text-gray-500">
-            Noch keine Kaufnebenkosten erfasst – <Link href={`/properties/${id}/edit`} className="text-blue-600 dark:text-blue-400 hover:underline">jetzt erfassen</Link>
+            Noch keine Kaufnebenkosten erfasst – <Link href={`/receipts/new?property=${id}`} className="text-blue-600 dark:text-blue-400 hover:underline">Beleg erfassen</Link>
           </Card>
         ) : (
           <Card>
@@ -530,7 +542,22 @@ export default async function PropertyDetail({ params, searchParams }: { params:
                 <span className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${p.id}-grunderwerbsteuer`} amount={p.grunderwerbsteuer} /></span>
               </div>
             )}
-            {incidentalCostItemList.length > 0 ? (
+            {kaufnebenkostenReceiptsSum > 0 ? (
+              <>
+                {kaufnebenkostenReceipts.map(a => (
+                  <div key={a.receipt_id + a.category} className="flex justify-between text-sm py-1">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {CATEGORY_LABELS[a.category]}{a.vendor ? ` – ${a.vendor}` : ''}
+                    </span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${a.receipt_id}-${a.category}`} amount={a.amount} /></span>
+                  </div>
+                ))}
+                <div className="border-t pt-2 mt-2 flex justify-between text-sm font-semibold">
+                  <span>Notar/Grundbuch/Makler aus Belegen</span>
+                  <span><SensitiveEuro seed={`${p.id}-kaufnebenkosten-belege`} amount={kaufnebenkostenReceiptsSum} /></span>
+                </div>
+              </>
+            ) : incidentalCostItemList.length > 0 ? (
               <>
                 {incidentalCostItemList.map(item => (
                   <div key={item.id} className="flex justify-between text-sm py-1">
@@ -541,16 +568,34 @@ export default async function PropertyDetail({ params, searchParams }: { params:
                   </div>
                 ))}
                 <div className="border-t pt-2 mt-2 flex justify-between text-sm font-semibold">
-                  <span>Summe Kaufnebenkosten</span>
+                  <span>Summe (alt, manuell erfasst)</span>
                   <span><SensitiveEuro seed={`${p.id}-incidental-sum`} amount={incidentalCostItemsSum} /></span>
                 </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 pt-1">
+                  Wird automatisch durch die Beleg-Summe ersetzt, sobald du den Notar-/Grundbuch-/Makler-Beleg hochlädst.
+                </p>
               </>
             ) : p.incidental_costs > 0 ? (
-              <div className="flex justify-between text-sm py-1">
-                <span className="text-gray-600 dark:text-gray-400">Kaufnebenkosten (pauschal)</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${p.id}-incidental-flat`} amount={p.incidental_costs} /></span>
+              <>
+                <div className="flex justify-between text-sm py-1">
+                  <span className="text-gray-600 dark:text-gray-400">Kaufnebenkosten (alt, pauschal erfasst)</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${p.id}-incidental-flat`} amount={p.incidental_costs} /></span>
+                </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 pt-1">
+                  Wird automatisch durch die Beleg-Summe ersetzt, sobald du den Notar-/Grundbuch-/Makler-Beleg hochlädst.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                Noch kein Notar-/Grundbuch-/Makler-Beleg hochgeladen.
+              </p>
+            )}
+            {incidentalCostsForAfa > 0 && (
+              <div className="border-t pt-2 mt-2 flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                <span>Erhöht die jährliche AfA um ca.</span>
+                <span><SensitiveEuro seed={`${p.id}-afa-boost`} amount={annualAfa - annualAfaWithoutIncidentalCosts} /></span>
               </div>
-            ) : null}
+            )}
           </Card>
         )}
       </div>

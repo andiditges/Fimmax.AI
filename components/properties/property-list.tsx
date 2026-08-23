@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { ThresholdBadge } from '@/components/threshold-badge'
-import { calcAnnualAfa } from '@/lib/afa'
+import { calcAnnualAfa, calcIncidentalCostsForAfa } from '@/lib/afa'
 import { calc15Threshold } from '@/lib/threshold15'
 import { getReceiptAllocations } from '@/lib/receipt-allocations'
 import { sumRentForYear } from '@/lib/rent-schedule'
@@ -70,7 +70,7 @@ export function PropertyList({
                   <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
                     <Sensitive kind="address" seed={p.id} value={p.address} />{unitLabel ? ` · ${unitLabel}` : ''}
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">AfA: <SensitiveEuro seed={`${p.id}-afa`} amount={calcAnnualAfa(p)} /> / Jahr · {p.afa_rate}% · Bj. {p.build_year}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">AfA: <SensitiveEuro seed={`${p.id}-afa`} amount={calcAnnualAfa(p, calcIncidentalCostsForAfa(p.id, propAllocations, p))} /> / Jahr · {p.afa_rate}% · Bj. {p.build_year}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <ThresholdBadge status={threshold} />

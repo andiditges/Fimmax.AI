@@ -9,7 +9,8 @@ import { Rentenuhr } from '@/components/dashboard/rentenuhr'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { PrivacyModeToggle } from '@/components/privacy/privacy-mode-toggle'
 import { SensitiveEuro } from '@/components/privacy/sensitive'
-import { calcAnnualAfa } from '@/lib/afa'
+import { calcAnnualAfa, calcIncidentalCostsForAfa } from '@/lib/afa'
+import { getReceiptAllocations } from '@/lib/receipt-allocations'
 import { aggregatePortfolioFinancials, aggregateLoanChains, totalDailyPrincipal, accruedPrincipalSinceLastPeriodStart } from '@/lib/amortization'
 import { sumRentForYear } from '@/lib/rent-schedule'
 import { sumMonthlyReserveFromRent, sumReserveCurrentValue } from '@/lib/reserves'
@@ -80,7 +81,8 @@ export default async function Dashboard() {
     return acc
   }, {} as Record<string, RentAdjustment[]>)
 
-  const totalAfa = props.reduce((s, p) => s + calcAnnualAfa(p), 0)
+  const allocations = getReceiptAllocations(recs, recItems)
+  const totalAfa = props.reduce((s, p) => s + calcAnnualAfa(p, calcIncidentalCostsForAfa(p.id, allocations, p)), 0)
   const totalIncome = sumRentForYear(tenantList, agreementsByTenant, adjustmentsByTenant, currentYear)
   const totalExpenses = recs
     .filter(r => r.tax_year === currentYear)
