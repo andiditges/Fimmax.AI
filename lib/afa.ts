@@ -1,4 +1,4 @@
-import { Property } from './types'
+import { Property, DepreciableItem } from './types'
 import { propertyValue } from './format'
 
 // Gesetzliche Standard-Restnutzungsdauer nach § 7 Abs. 4 EStG, nur als
@@ -18,6 +18,19 @@ export function calcCumulativeAfa(property: Property, asOfYear: number): number 
   const startYear = new Date(property.purchase_date).getFullYear()
   const years = Math.max(0, asOfYear - startYear + 1)
   return Math.min(calcAnnualAfa(property) * years, property.building_value)
+}
+
+// Bewegliche Wirtschaftsgüter (z.B. Einbauküche) haben eine eigene, meist
+// kürzere Nutzungsdauer als das Gebäude und werden linear über diese
+// abgeschrieben - kein Monats-Pro-Rata, analog zur Gebäude-AfA oben (das
+// Anschaffungsjahr zählt voll).
+export function calcAnnualMovableAfa(item: Pick<DepreciableItem, 'acquisition_cost' | 'usage_duration_years'>): number {
+  return item.acquisition_cost / item.usage_duration_years
+}
+
+export function isMovableAfaActiveInYear(item: Pick<DepreciableItem, 'acquisition_date' | 'usage_duration_years'>, year: number): boolean {
+  const startYear = new Date(item.acquisition_date).getFullYear()
+  return year >= startYear && year < startYear + item.usage_duration_years
 }
 
 // Ein Nutzungsdauergutachten (Kurzgutachten zur Restnutzungsdauer) kann eine

@@ -14,7 +14,8 @@ import { RiskOverview } from '@/components/tipps/risk-overview'
 import { ReceiptBrowser } from '@/components/receipts/receipt-browser'
 import { Ehegattenschaukel } from '@/components/properties/ehegattenschaukel'
 import { HoaDocumentMove } from '@/components/hoa/hoa-document-move'
-import { calcAnnualAfa, shouldRecommendNutzungsdauergutachten } from '@/lib/afa'
+import { calcAnnualAfa, shouldRecommendNutzungsdauergutachten, calcAnnualMovableAfa, isMovableAfaActiveInYear } from '@/lib/afa'
+import { DepreciableItemList } from '@/components/depreciable-items/depreciable-item-list'
 import { calc15Threshold } from '@/lib/threshold15'
 import { getLoanStatus, generateAmortizationSchedule, interestPaidInYear, aggregateLoanChains } from '@/lib/amortization'
 import { buildTaxExportRow, buildTaxExportDetailRows, rowsToCsv, detailRowsToCsv } from '@/lib/tax-export'
@@ -23,7 +24,7 @@ import { generateRentSchedule, currentRentAmount, currentAgreement } from '@/lib
 import { sumInstandhaltungsruecklage, isUtilityBillableTenant } from '@/lib/operating-costs'
 import { euro, formatDate, propertyLabel, propertyValue } from '@/lib/format'
 import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
-import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, PropertyImage, Receipt, ReceiptItem, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost, PROPERTY_CONDITION_GRADE_LABELS, PropertyConditionGrade } from '@/lib/types'
+import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, PropertyImage, Receipt, ReceiptItem, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost, PROPERTY_CONDITION_GRADE_LABELS, PropertyConditionGrade, DepreciableItem } from '@/lib/types'
 
 const HOA_STATUS_COLORS: Record<HoaResolutionStatus, string> = {
   offen: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
@@ -38,7 +39,7 @@ export default async function PropertyDetail({ params, searchParams }: { params:
   const supabase = await createClient()
   const currentYear = new Date().getFullYear()
 
-  const [{ data: property }, { data: receipts }, { data: receiptItems }, { data: tenants }, { data: loans }, { data: reminders }, { data: hoaDocuments }, { data: hoaResolutions }, { data: reserves }, { data: operatingCosts }, { data: propertyImages }] = await Promise.all([
+  const [{ data: property }, { data: receipts }, { data: receiptItems }, { data: tenants }, { data: loans }, { data: reminders }, { data: hoaDocuments }, { data: hoaResolutions }, { data: reserves }, { data: operatingCosts }, { data: propertyImages }, { data: depreciableItems }] = await Promise.all([
     supabase.from('properties').select('*').eq('id', id).single(),
     // Bewusst nicht auf property_id gefiltert: ein Beleg kann per
     // receipt_items auf mehrere Immobilien aufgeteilt sein, dessen eigener
@@ -54,6 +55,7 @@ export default async function PropertyDetail({ params, searchParams }: { params:
     supabase.from('property_reserves').select('*').eq('property_id', id).order('created_at'),
     supabase.from('operating_costs').select('*').eq('property_id', id),
     supabase.from('property_images').select('*').eq('property_id', id).order('is_cover', { ascending: false }).order('created_at'),
+    supabase.from('depreciable_items').select('*').eq('property_id', id).order('acquisition_date', { ascending: false }),
   ])
 
   if (!property) notFound()
@@ -74,6 +76,7 @@ export default async function PropertyDetail({ params, searchParams }: { params:
   const reserveList = (reserves ?? []) as PropertyReserve[]
   const operatingCostList = (operatingCosts ?? []) as OperatingCost[]
   const imageList = (propertyImages ?? []) as PropertyImage[]
+  const depreciableItemList = (depreciableItems ?? []) as DepreciableItem[]
   const reminderById = Object.fromEntries(reminderList.map(r => [r.id, r]))
 
   const { data: rentalAgreements } = tenantList.length
@@ -182,8 +185,11 @@ export default async function PropertyDetail({ params, searchParams }: { params:
     const sp = (allSpecialPayments ?? []).filter(x => x.loan_id === l.id)
     return s + interestPaidInYear(generateAmortizationSchedule(l, sp).entries, exportYear)
   }, 0)
-  const taxExportRow = buildTaxExportRow(p, exportYear, propAllocations, exportYearIncome, exportLoanInterest, operatingCostList)
-  const taxExportDetailRows = buildTaxExportDetailRows(p, exportYear, propAllocations, annualAfa, exportLoanInterest, operatingCostList)
+  const taxExportRow = buildTaxExportRow(p, exportYear, propAllocations, exportYearIncome, exportLoanInterest, operatingCostList, depreciableItemList)
+  const taxExportDetailRows = buildTaxExportDetailRows(p, exportYear, propAllocations, annualAfa, exportLoanInterest, operatingCostList, depreciableItemList)
+  const annualMovableAfa = depreciableItemList
+    .filter(item => isMovableAfaActiveInYear(item, currentYear))
+    .reduce((s, item) => s + calcAnnualMovableAfa(item), 0)
 
   return (
     <div className="space-y-6">
@@ -496,6 +502,32 @@ export default async function PropertyDetail({ params, searchParams }: { params:
         ) : (
           <Card>
             <ReceiptBrowser receipts={recs} items={allReceiptItems} />
+          </Card>
+        )}
+      </div>
+
+      {/* Bewegliche Wirtschaftsgüter (AfA) */}
+      <div>
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+            Bewegliche Wirtschaftsgüter (AfA) ({depreciableItemList.length})
+          </h2>
+          <Link href={`/depreciable-items/new?property=${id}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap">
+            + Wirtschaftsgut erfassen
+          </Link>
+        </div>
+        <p className="text-xs text-gray-400 dark:text-gray-500 -mt-2 mb-3">
+          Anschaffungen wie eine Einbauküche werden nicht sofort abgezogen, sondern über die Nutzungsdauer abgeschrieben – die jährliche AfA fließt automatisch in die Werbungskosten der jeweiligen Jahre ein.
+        </p>
+        {depreciableItemList.length === 0 ? (
+          <Card className="text-center py-8 text-gray-400 dark:text-gray-500">Noch keine beweglichen Wirtschaftsgüter erfasst</Card>
+        ) : (
+          <Card>
+            <DepreciableItemList items={depreciableItemList} />
+            <div className="border-t pt-2 mt-2 flex justify-between text-sm font-semibold">
+              <span>AfA {currentYear}</span>
+              <span><SensitiveEuro seed={`${p.id}-movable-afa`} amount={annualMovableAfa} /></span>
+            </div>
           </Card>
         )}
       </div>

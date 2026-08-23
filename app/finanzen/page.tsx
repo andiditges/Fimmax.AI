@@ -14,6 +14,7 @@ import { aggregateNetWorth, projectedAssetValue } from '@/lib/net-worth'
 import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
 import { sumReserveCurrentValue, sumMonthlyReserveFromRent } from '@/lib/reserves'
 import { currentAgreement } from '@/lib/rent-schedule'
+import { getReceiptAllocations } from '@/lib/receipt-allocations'
 import { latestVpiReading, calcIndexmieteStatus } from '@/lib/vpi'
 import { formatDate, propertyLabel, propertyValue, percent } from '@/lib/format'
 import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
@@ -52,11 +53,16 @@ export default async function Finanzen() {
   // CapEx-Trend: Renovierungs-/Sanierungsbelege (is_renovation) über alle
   // Objekte hinweg, je Steuerjahr summiert - zeigt auf einen Blick, wie viel
   // über die Jahre insgesamt investiert wurde, statt es sich aus den
-  // einzelnen Objekt-Belegsituationen zusammensuchen zu müssen.
-  const capexByYear = recs
-    .filter(r => r.is_renovation)
-    .reduce((acc, r) => {
-      acc[r.tax_year] = (acc[r.tax_year] ?? 0) + r.amount
+  // einzelnen Objekt-Belegsituationen zusammensuchen zu müssen. Läuft bewusst
+  // über getReceiptAllocations statt direkt über recs: bei einem auf mehrere
+  // Kategorien/Objekte aufgeteilten Beleg (receipt_items) ist is_renovation
+  // auf Beleg-Ebene nur ein veralteter Fallback-Wert - die einzelnen
+  // Positionen sind die eigentliche Quelle (analog zu tax-export.ts/
+  // threshold15.ts).
+  const capexByYear = getReceiptAllocations(recs, recItems)
+    .filter(a => a.is_renovation)
+    .reduce((acc, a) => {
+      acc[a.tax_year] = (acc[a.tax_year] ?? 0) + a.amount
       return acc
     }, {} as Record<number, number>)
   const capexData = Object.entries(capexByYear)

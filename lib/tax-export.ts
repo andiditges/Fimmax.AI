@@ -1,5 +1,5 @@
-import { OperatingCost, Property, CATEGORY_LABELS, ReceiptCategory, NON_DEDUCTIBLE_CATEGORIES } from './types'
-import { calcAnnualAfa } from './afa'
+import { OperatingCost, Property, CATEGORY_LABELS, ReceiptCategory, NON_DEDUCTIBLE_CATEGORIES, DepreciableItem } from './types'
+import { calcAnnualAfa, calcAnnualMovableAfa, isMovableAfaActiveInYear } from './afa'
 import { propertyLabel } from './format'
 import { deductibleOwnCosts, OPERATING_COST_CATEGORY_MAP } from './operating-costs'
 import { ReceiptAllocation } from './receipt-allocations'
@@ -14,6 +14,7 @@ export interface TaxExportRow {
   einnahmen: number
   kosten_nach_kategorie: Record<ReceiptCategory, number>
   afa: number
+  afa_beweglich: number
   weg_nicht_umlagefaehig: number
   werbungskosten_gesamt: number
   ergebnis: number
@@ -25,7 +26,8 @@ export function buildTaxExportRow(
   allocations: ReceiptAllocation[],
   incomeTotal: number,
   loanInterest: number = 0,
-  operatingCosts: OperatingCost[] = []
+  operatingCosts: OperatingCost[] = [],
+  depreciableItems: DepreciableItem[] = []
 ): TaxExportRow {
   // Spenden/Fortbildung fließen bewusst nicht in die Anlage-V-Werbungskosten
   // ein (siehe NON_DEDUCTIBLE_CATEGORIES) - sie sind nicht objektbezogen und
@@ -41,13 +43,16 @@ export function buildTaxExportRow(
   // entsprechender Beleg (z.B. Jahreszinsbescheinigung der Bank) erfasst ist.
   kosten_nach_kategorie.zinsen += loanInterest
   const afa = calcAnnualAfa(property)
+  const afa_beweglich = depreciableItems
+    .filter(d => isMovableAfaActiveInYear(d, year))
+    .reduce((s, d) => s + calcAnnualMovableAfa(d), 0)
   const belegeSumme = yearAllocs.reduce((s, a) => s + a.amount, 0)
   // Nicht umlagefähige Kosten aus dem Nebenkostenassistenten (WEG-/
   // Hausgeldabrechnung) - siehe deductibleOwnCosts. Wer diese Kosten dort
   // erfasst, sollte dafür keinen zusätzlichen Beleg mehr anlegen, sonst
   // zählen sie doppelt.
   const weg_nicht_umlagefaehig = deductibleOwnCosts(operatingCosts.filter(c => c.year === year)).reduce((s, c) => s + c.amount, 0)
-  const werbungskosten_gesamt = belegeSumme + afa + loanInterest + weg_nicht_umlagefaehig
+  const werbungskosten_gesamt = belegeSumme + afa + afa_beweglich + loanInterest + weg_nicht_umlagefaehig
 
   return {
     objekt: propertyLabel(property),
@@ -55,6 +60,7 @@ export function buildTaxExportRow(
     einnahmen: incomeTotal,
     kosten_nach_kategorie,
     afa,
+    afa_beweglich,
     weg_nicht_umlagefaehig,
     werbungskosten_gesamt,
     ergebnis: incomeTotal - werbungskosten_gesamt,
@@ -65,7 +71,7 @@ export function buildTaxExportRow(
 // zum manuellen Eintragen in Elster oder Importieren in WISO Steuer o.ä.
 export function rowsToCsv(rows: TaxExportRow[]): string {
   const categories = Object.keys(CATEGORY_LABELS) as ReceiptCategory[]
-  const header = ['Objekt', 'Jahr', 'Einnahmen', ...categories.map(c => CATEGORY_LABELS[c]), 'AfA', 'WEG nicht umlagefähig (Verwaltung/Instandhaltung/etc.)', 'Werbungskosten gesamt', 'Ergebnis (Anlage V)']
+  const header = ['Objekt', 'Jahr', 'Einnahmen', ...categories.map(c => CATEGORY_LABELS[c]), 'AfA', 'AfA bewegliche Wirtschaftsgüter', 'WEG nicht umlagefähig (Verwaltung/Instandhaltung/etc.)', 'Werbungskosten gesamt', 'Ergebnis (Anlage V)']
   const lines = [header.join(';')]
 
   for (const row of rows) {
@@ -75,6 +81,7 @@ export function rowsToCsv(rows: TaxExportRow[]): string {
       formatNumberDe(row.einnahmen),
       ...categories.map(c => formatNumberDe(row.kosten_nach_kategorie[c])),
       formatNumberDe(row.afa),
+      formatNumberDe(row.afa_beweglich),
       formatNumberDe(row.weg_nicht_umlagefaehig),
       formatNumberDe(row.werbungskosten_gesamt),
       formatNumberDe(row.ergebnis),
@@ -103,7 +110,8 @@ export function buildTaxExportDetailRows(
   allocations: ReceiptAllocation[],
   afa: number,
   loanInterest: number = 0,
-  operatingCosts: OperatingCost[] = []
+  operatingCosts: OperatingCost[] = [],
+  depreciableItems: DepreciableItem[] = []
 ): TaxExportDetailRow[] {
   const propertyId = property.id
   const yearAllocs = allocations
@@ -120,6 +128,15 @@ export function buildTaxExportDetailRows(
 
   if (afa > 0) {
     rows.push({ datum: '', kategorie: 'AfA', beschreibung: 'Jährliche Gebäude-Abschreibung', betrag: afa, renovierung: false })
+  }
+  for (const item of depreciableItems.filter(d => isMovableAfaActiveInYear(d, year))) {
+    rows.push({
+      datum: '',
+      kategorie: 'AfA bewegliche WG',
+      beschreibung: `${item.description} (${item.usage_duration_years} Jahre)`,
+      betrag: calcAnnualMovableAfa(item),
+      renovierung: false,
+    })
   }
   if (loanInterest > 0) {
     rows.push({ datum: '', kategorie: CATEGORY_LABELS.zinsen, beschreibung: 'Kreditzinsen laut Tilgungsplan', betrag: loanInterest, renovierung: false })

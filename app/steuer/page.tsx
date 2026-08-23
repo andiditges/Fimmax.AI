@@ -14,7 +14,7 @@ import { generateAmortizationSchedule, interestPaidInYear } from '@/lib/amortiza
 import { sumRentForYear } from '@/lib/rent-schedule'
 import { propertyLabel } from '@/lib/format'
 import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
-import { Property, Receipt, ReceiptItem, Tenant, RentalAgreement, RentAdjustment, Loan, LoanSpecialPayment, OperatingCost } from '@/lib/types'
+import { Property, Receipt, ReceiptItem, Tenant, RentalAgreement, RentAdjustment, Loan, LoanSpecialPayment, OperatingCost, DepreciableItem } from '@/lib/types'
 
 export default async function SteuerUebersicht({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
   await requireUser()
@@ -24,7 +24,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
   const year = yearParam ? parseInt(yearParam) : thisYear - 1
   const yearOptions = [thisYear, thisYear - 1, thisYear - 2]
 
-  const [{ data: properties }, { data: receipts }, { data: receiptItems }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: loans }, { data: operatingCosts }] = await Promise.all([
+  const [{ data: properties }, { data: receipts }, { data: receiptItems }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: loans }, { data: operatingCosts }, { data: depreciableItems }] = await Promise.all([
     supabase.from('properties').select('*').order('created_at'),
     supabase.from('receipts').select('*'),
     supabase.from('receipt_items').select('*'),
@@ -33,6 +33,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
     supabase.from('rent_adjustments').select('*'),
     supabase.from('loans').select('*'),
     supabase.from('operating_costs').select('*'),
+    supabase.from('depreciable_items').select('*'),
   ])
 
   const props = (properties ?? []) as Property[]
@@ -44,6 +45,7 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
   const adjustmentList = (rentAdjustments ?? []) as RentAdjustment[]
   const loanList = (loans ?? []) as Loan[]
   const operatingCostList = (operatingCosts ?? []) as OperatingCost[]
+  const depreciableItemList = (depreciableItems ?? []) as DepreciableItem[]
 
   const { data: specialPayments } = loanList.length
     ? await supabase.from('loan_special_payments').select('*').in('loan_id', loanList.map(l => l.id))
@@ -76,11 +78,12 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
       return s + interestPaidInYear(generateAmortizationSchedule(l, sp).entries, year)
     }, 0)
     const propOperatingCosts = operatingCostList.filter(c => c.property_id === p.id)
+    const propDepreciableItems = depreciableItemList.filter(d => d.property_id === p.id)
     return {
       property: p,
       threshold: calc15Threshold(p, propAllocations),
-      taxRow: buildTaxExportRow(p, year, propAllocations, yearIncome, loanInterest, propOperatingCosts),
-      detailRows: buildTaxExportDetailRows(p, year, propAllocations, calcAnnualAfa(p), loanInterest, propOperatingCosts),
+      taxRow: buildTaxExportRow(p, year, propAllocations, yearIncome, loanInterest, propOperatingCosts, propDepreciableItems),
+      detailRows: buildTaxExportDetailRows(p, year, propAllocations, calcAnnualAfa(p), loanInterest, propOperatingCosts, propDepreciableItems),
       yearExpenses,
       // Distinkte Belege zählen, nicht Allocation-Zeilen - ein auf 2
       // Positionen aufgeteilter Beleg zählt bei diesem Objekt weiterhin als 1.

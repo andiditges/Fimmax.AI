@@ -185,6 +185,22 @@ export interface ReceiptItem {
   created_at: string
 }
 
+// Bewegliche Wirtschaftsgüter (z.B. Einbauküche) werden nicht sofort
+// abgezogen, sondern linear über usage_duration_years abgeschrieben (siehe
+// calcAnnualMovableAfa/isMovableAfaActiveInYear in lib/afa.ts) - unabhängig
+// von der Gebäude-AfA der Immobilie.
+export interface DepreciableItem {
+  id: string
+  property_id: string
+  description: string
+  acquisition_date: string
+  acquisition_cost: number
+  usage_duration_years: number
+  receipt_id: string | null
+  note: string | null
+  created_at: string
+}
+
 export interface IncomeRecord {
   id: string
   property_id: string
@@ -538,4 +554,36 @@ export interface UserSettings {
   postal_code: string | null
   city: string | null
   updated_at: string
+}
+
+// Ausgaben außerhalb der Anlage V - z.B. für Nutzer mit eigenem Gewerbe/
+// Selbständigkeit neben der Vermietung (EÜR/Anlage G/S). Bewusst nicht
+// property-bezogen und getrennt von receipts/tax-export.ts, siehe
+// supabase/migrations/0047_business_expenses.sql.
+export type BusinessExpenseCategory =
+  | 'edv_software'
+  | 'buero_verwaltung'
+  | 'reise_fortbildung'
+  | 'bewirtung'
+  | 'sonstiges'
+
+export const BUSINESS_EXPENSE_CATEGORY_LABELS: Record<BusinessExpenseCategory, string> = {
+  edv_software: 'EDV / Software / KI',
+  buero_verwaltung: 'Büro / Verwaltung',
+  reise_fortbildung: 'Reise / Fortbildung',
+  bewirtung: 'Bewirtung',
+  sonstiges: 'Sonstiges',
+}
+
+export interface BusinessExpense {
+  id: string
+  user_id: string
+  expense_date: string
+  category: BusinessExpenseCategory
+  description: string | null
+  vendor: string | null
+  amount: number
+  file_url: string | null
+  tax_year: number
+  created_at: string
 }
