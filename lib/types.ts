@@ -7,6 +7,8 @@ export type ReceiptCategory =
   | 'hausgeld'
   | 'abfall'
   | 'sonstiges'
+  | 'spenden'
+  | 'fortbildung'
 
 export const CATEGORY_LABELS: Record<ReceiptCategory, string> = {
   instandhaltung: 'Instandhaltung',
@@ -17,7 +19,15 @@ export const CATEGORY_LABELS: Record<ReceiptCategory, string> = {
   hausgeld: 'Hausgeld / WEG',
   abfall: 'Müllgebühren',
   sonstiges: 'Sonstiges',
+  spenden: 'Spenden',
+  fortbildung: 'Fortbildung',
 }
+
+// Spenden sind Sonderausgaben, keine Vermietungs-Werbungskosten; Fortbildung
+// ist objektübergreifend und keinem einzelnen Objekt zuzurechnen. Beide
+// Kategorien dienen in Fimmax nur der Dokumentation und werden bewusst von
+// der Anlage-V-Werbungskosten-Summe in lib/tax-export.ts ausgeschlossen.
+export const NON_DEDUCTIBLE_CATEGORIES: ReceiptCategory[] = ['spenden', 'fortbildung']
 
 export type Bundesland =
   | 'Baden-Württemberg'

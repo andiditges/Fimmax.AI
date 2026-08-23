@@ -1,4 +1,4 @@
-import { OperatingCost, Property, CATEGORY_LABELS, ReceiptCategory } from './types'
+import { OperatingCost, Property, CATEGORY_LABELS, ReceiptCategory, NON_DEDUCTIBLE_CATEGORIES } from './types'
 import { calcAnnualAfa } from './afa'
 import { propertyLabel } from './format'
 import { deductibleOwnCosts, OPERATING_COST_CATEGORY_MAP } from './operating-costs'
@@ -27,7 +27,10 @@ export function buildTaxExportRow(
   loanInterest: number = 0,
   operatingCosts: OperatingCost[] = []
 ): TaxExportRow {
-  const yearAllocs = allocations.filter(a => a.tax_year === year)
+  // Spenden/Fortbildung fließen bewusst nicht in die Anlage-V-Werbungskosten
+  // ein (siehe NON_DEDUCTIBLE_CATEGORIES) - sie sind nicht objektbezogen und
+  // steuerlich kein Vermietungs-Werbungskosten-Posten.
+  const yearAllocs = allocations.filter(a => a.tax_year === year && !NON_DEDUCTIBLE_CATEGORIES.includes(a.category))
   const kosten_nach_kategorie = {} as Record<ReceiptCategory, number>
   for (const cat of Object.keys(CATEGORY_LABELS) as ReceiptCategory[]) {
     kosten_nach_kategorie[cat] = yearAllocs.filter(a => a.category === cat).reduce((s, a) => s + a.amount, 0)
@@ -104,7 +107,7 @@ export function buildTaxExportDetailRows(
 ): TaxExportDetailRow[] {
   const propertyId = property.id
   const yearAllocs = allocations
-    .filter(a => a.property_id === propertyId && a.tax_year === year)
+    .filter(a => a.property_id === propertyId && a.tax_year === year && !NON_DEDUCTIBLE_CATEGORIES.includes(a.category))
     .sort((a, b) => a.receipt_date.localeCompare(b.receipt_date))
 
   const rows: TaxExportDetailRow[] = yearAllocs.map(a => ({
