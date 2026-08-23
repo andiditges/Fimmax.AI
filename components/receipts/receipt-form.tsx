@@ -100,6 +100,7 @@ export function ReceiptForm({
   receiptId,
   initialReceipt,
   initialItems,
+  defaultPropertyId,
 }: {
   properties: PropertyOption[]
   userId: string | null
@@ -107,6 +108,7 @@ export function ReceiptForm({
   receiptId?: string
   initialReceipt?: Receipt
   initialItems?: ReceiptItem[]
+  defaultPropertyId?: string
 }) {
   const router = useRouter()
   const supabase = createClient()
@@ -143,8 +145,13 @@ export function ReceiptForm({
         is_renovation: initialReceipt.is_renovation,
       }]
     }
-    return [newLine()]
+    return [newLine(defaultPropertyId ?? '')]
   })
+  // Wenn man aus einer konkreten Objektseite kommt (defaultPropertyId
+  // gesetzt), ist das Objekt-Dropdown für die erste Position zunächst
+  // versteckt (nur Objektname als Text) - diese Checkbox blendet es bei
+  // Bedarf wieder ein, z.B. falls man sich in der Objektseite geirrt hat.
+  const [overridePropertyLock, setOverridePropertyLock] = useState(false)
 
   const linesTotal = lines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0)
   const documentAmount = ai?.amount ?? null
@@ -198,9 +205,13 @@ export function ReceiptForm({
         suggested_property_id: null,
         is_renovation: false,
       }]
-      setLines(items.map(item => ({
+      setLines(items.map((item, i) => ({
         key: Math.random().toString(36).slice(2),
-        property_id: item.suggested_property_id ?? '',
+        // Position 0 bleibt am vorbelegten Objekt hängen, solange dessen
+        // Anzeige gesperrt ist (siehe defaultPropertyId/overridePropertyLock
+        // weiter unten) - sonst würde die KI-Vorschlagsauswahl von der
+        // (dann noch sichtbaren) gesperrten Anzeige abweichen.
+        property_id: i === 0 && defaultPropertyId && !overridePropertyLock ? defaultPropertyId : (item.suggested_property_id ?? ''),
         category: item.category ?? 'sonstiges',
         amount: item.amount != null ? String(item.amount) : '',
         description: item.description ?? '',
@@ -436,20 +447,37 @@ export function ReceiptForm({
                     </button>
                   </div>
                 )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Immobilie *</label>
-                  <select
-                    value={line.property_id}
-                    onChange={e => updateLine(line.key, { property_id: e.target.value })}
-                    className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="">Bitte wählen...</option>
-                    {properties.map(p => (
-                      <option key={p.id} value={p.id}>{propertyLabel(p)}</option>
-                    ))}
-                  </select>
-                </div>
+                {i === 0 && defaultPropertyId && !overridePropertyLock ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Immobilie</label>
+                    <div className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                      {(() => {
+                        const p = properties.find(p => p.id === defaultPropertyId)
+                        return p ? propertyLabel(p) : '...'
+                      })()}
+                    </div>
+                    <label className="flex items-center gap-2 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                      <input type="checkbox" checked={overridePropertyLock} onChange={() => setOverridePropertyLock(true)}
+                        className="w-3.5 h-3.5 rounded border-gray-300 dark:border-gray-600 text-blue-600" />
+                      Anderes Objekt?
+                    </label>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Immobilie *</label>
+                    <select
+                      value={line.property_id}
+                      onChange={e => updateLine(line.key, { property_id: e.target.value })}
+                      className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">Bitte wählen...</option>
+                      {properties.map(p => (
+                        <option key={p.id} value={p.id}>{propertyLabel(p)}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>

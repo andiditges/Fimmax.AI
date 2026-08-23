@@ -9,6 +9,10 @@ export type ReceiptCategory =
   | 'sonstiges'
   | 'spenden'
   | 'fortbildung'
+  | 'grunderwerbsteuer'
+  | 'notar_kauf'
+  | 'grundbuch_kauf'
+  | 'makler_kauf'
 
 export const CATEGORY_LABELS: Record<ReceiptCategory, string> = {
   instandhaltung: 'Instandhaltung',
@@ -21,13 +25,24 @@ export const CATEGORY_LABELS: Record<ReceiptCategory, string> = {
   sonstiges: 'Sonstiges',
   spenden: 'Spenden',
   fortbildung: 'Fortbildung',
+  grunderwerbsteuer: 'Grunderwerbsteuer (Kauf)',
+  notar_kauf: 'Notar (Kauf)',
+  grundbuch_kauf: 'Grundbuch / Amtsgericht (Kauf)',
+  makler_kauf: 'Makler (Kauf)',
 }
 
 // Spenden sind Sonderausgaben, keine Vermietungs-Werbungskosten; Fortbildung
-// ist objektübergreifend und keinem einzelnen Objekt zuzurechnen. Beide
-// Kategorien dienen in Fimmax nur der Dokumentation und werden bewusst von
-// der Anlage-V-Werbungskosten-Summe in lib/tax-export.ts ausgeschlossen.
-export const NON_DEDUCTIBLE_CATEGORIES: ReceiptCategory[] = ['spenden', 'fortbildung']
+// ist objektübergreifend und keinem einzelnen Objekt zuzurechnen. Grunder-
+// werbsteuer/Notar/Grundbuch/Makler beim Immobilienkauf sind Anschaffungs-
+// nebenkosten (§ 255 Abs. 1 HGB) - sie erhöhen die AfA-Bemessungsgrundlage
+// und sind KEINE sofort abziehbaren Werbungskosten (dafür gibt es das
+// Grunderwerbsteuer-Feld und den Kaufnebenkosten-Posten-Modus im Objekt-
+// Formular). Alle diese Kategorien dienen in der Belege-Liste nur der
+// Dokumentation (z.B. Rechnung ablegen) und werden bewusst von der
+// Anlage-V-Werbungskosten-Summe in lib/tax-export.ts ausgeschlossen.
+export const NON_DEDUCTIBLE_CATEGORIES: ReceiptCategory[] = [
+  'spenden', 'fortbildung', 'grunderwerbsteuer', 'notar_kauf', 'grundbuch_kauf', 'makler_kauf',
+]
 
 export type Bundesland =
   | 'Baden-Württemberg'

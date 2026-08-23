@@ -138,3 +138,17 @@ html {
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
 }
+
+/* Spinner-Pfeile auf Zahlenfeldern ausblenden - führen sonst dazu, dass ein
+   Mausrad-Scroll über einem fokussierten Feld den Wert statt der Seite
+   scrollt (Scroll-Blockade dafür in components/no-number-input-scroll.tsx,
+   CSS allein verhindert das Scroll-Verhalten nicht). */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

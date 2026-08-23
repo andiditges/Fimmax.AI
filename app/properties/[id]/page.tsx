@@ -24,7 +24,7 @@ import { generateRentSchedule, currentRentAmount, currentAgreement } from '@/lib
 import { sumInstandhaltungsruecklage, isUtilityBillableTenant } from '@/lib/operating-costs'
 import { euro, formatDate, propertyLabel, propertyValue } from '@/lib/format'
 import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
-import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, PropertyImage, Receipt, ReceiptItem, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost, PROPERTY_CONDITION_GRADE_LABELS, PropertyConditionGrade, DepreciableItem } from '@/lib/types'
+import { CATEGORY_LABELS, HOA_RESOLUTION_STATUS_LABELS, HoaDocument, HoaResolution, HoaResolutionStatus, Property, PropertyImage, Receipt, ReceiptItem, Reminder, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, PropertyReserve, OperatingCost, PROPERTY_CONDITION_GRADE_LABELS, PropertyConditionGrade, DepreciableItem, IncidentalCostItem, INCIDENTAL_COST_CATEGORY_LABELS } from '@/lib/types'
 
 const HOA_STATUS_COLORS: Record<HoaResolutionStatus, string> = {
   offen: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
@@ -39,7 +39,7 @@ export default async function PropertyDetail({ params, searchParams }: { params:
   const supabase = await createClient()
   const currentYear = new Date().getFullYear()
 
-  const [{ data: property }, { data: receipts }, { data: receiptItems }, { data: tenants }, { data: loans }, { data: reminders }, { data: hoaDocuments }, { data: hoaResolutions }, { data: reserves }, { data: operatingCosts }, { data: propertyImages }, { data: depreciableItems }] = await Promise.all([
+  const [{ data: property }, { data: receipts }, { data: receiptItems }, { data: tenants }, { data: loans }, { data: reminders }, { data: hoaDocuments }, { data: hoaResolutions }, { data: reserves }, { data: operatingCosts }, { data: propertyImages }, { data: depreciableItems }, { data: incidentalCostItems }] = await Promise.all([
     supabase.from('properties').select('*').eq('id', id).single(),
     // Bewusst nicht auf property_id gefiltert: ein Beleg kann per
     // receipt_items auf mehrere Immobilien aufgeteilt sein, dessen eigener
@@ -56,6 +56,7 @@ export default async function PropertyDetail({ params, searchParams }: { params:
     supabase.from('operating_costs').select('*').eq('property_id', id),
     supabase.from('property_images').select('*').eq('property_id', id).order('is_cover', { ascending: false }).order('created_at'),
     supabase.from('depreciable_items').select('*').eq('property_id', id).order('acquisition_date', { ascending: false }),
+    supabase.from('incidental_cost_items').select('*').eq('property_id', id).order('created_at'),
   ])
 
   if (!property) notFound()
@@ -77,6 +78,8 @@ export default async function PropertyDetail({ params, searchParams }: { params:
   const operatingCostList = (operatingCosts ?? []) as OperatingCost[]
   const imageList = (propertyImages ?? []) as PropertyImage[]
   const depreciableItemList = (depreciableItems ?? []) as DepreciableItem[]
+  const incidentalCostItemList = (incidentalCostItems ?? []) as IncidentalCostItem[]
+  const incidentalCostItemsSum = incidentalCostItemList.reduce((s, item) => s + item.amount, 0)
   const reminderById = Object.fromEntries(reminderList.map(r => [r.id, r]))
 
   const { data: rentalAgreements } = tenantList.length
@@ -502,6 +505,52 @@ export default async function PropertyDetail({ params, searchParams }: { params:
         ) : (
           <Card>
             <ReceiptBrowser receipts={recs} items={allReceiptItems} />
+          </Card>
+        )}
+      </div>
+
+      {/* Kaufnebenkosten */}
+      <div>
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Kaufnebenkosten</h2>
+          <Link href={`/properties/${id}/edit`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap">Bearbeiten</Link>
+        </div>
+        <p className="text-xs text-gray-400 dark:text-gray-500 -mt-2 mb-3">
+          Notar, Grundbuch, Makler, Grunderwerbsteuer u.ä. beim Kauf – erhöhen die AfA-Bemessungsgrundlage, sind aber keine sofort abziehbaren Werbungskosten.
+        </p>
+        {incidentalCostItemList.length === 0 && p.grunderwerbsteuer == null && p.incidental_costs === 0 ? (
+          <Card className="text-center py-8 text-gray-400 dark:text-gray-500">
+            Noch keine Kaufnebenkosten erfasst – <Link href={`/properties/${id}/edit`} className="text-blue-600 dark:text-blue-400 hover:underline">jetzt erfassen</Link>
+          </Card>
+        ) : (
+          <Card>
+            {p.grunderwerbsteuer != null && (
+              <div className="flex justify-between text-sm py-1">
+                <span className="text-gray-600 dark:text-gray-400">Grunderwerbsteuer</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${p.id}-grunderwerbsteuer`} amount={p.grunderwerbsteuer} /></span>
+              </div>
+            )}
+            {incidentalCostItemList.length > 0 ? (
+              <>
+                {incidentalCostItemList.map(item => (
+                  <div key={item.id} className="flex justify-between text-sm py-1">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {INCIDENTAL_COST_CATEGORY_LABELS[item.category]}{item.note ? ` – ${item.note}` : ''}
+                    </span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={item.id} amount={item.amount} /></span>
+                  </div>
+                ))}
+                <div className="border-t pt-2 mt-2 flex justify-between text-sm font-semibold">
+                  <span>Summe Kaufnebenkosten</span>
+                  <span><SensitiveEuro seed={`${p.id}-incidental-sum`} amount={incidentalCostItemsSum} /></span>
+                </div>
+              </>
+            ) : p.incidental_costs > 0 ? (
+              <div className="flex justify-between text-sm py-1">
+                <span className="text-gray-600 dark:text-gray-400">Kaufnebenkosten (pauschal)</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${p.id}-incidental-flat`} amount={p.incidental_costs} /></span>
+              </div>
+            ) : null}
           </Card>
         )}
       </div>

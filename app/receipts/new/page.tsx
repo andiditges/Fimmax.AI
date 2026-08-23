@@ -1,10 +1,13 @@
 'use client'
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ReceiptForm } from '@/components/receipts/receipt-form'
 
 export default function NewReceipt() {
   const supabase = createClient()
+  const searchParams = useSearchParams()
+  const defaultPropertyId = searchParams.get('property') ?? undefined
   const [properties, setProperties] = useState<{ id: string; address: string; unit: string | null; unit_label: string | null; expected_non_allocable_operating_cost_annual: number | null }[]>([])
   const [userId, setUserId] = useState<string | null>(null)
 
@@ -17,5 +20,5 @@ export default function NewReceipt() {
     })
   })
 
-  return <ReceiptForm mode="new" properties={properties} userId={userId} />
+  return <ReceiptForm mode="new" properties={properties} userId={userId} defaultPropertyId={defaultPropertyId} />
 }
