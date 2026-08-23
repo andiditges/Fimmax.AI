@@ -470,6 +470,34 @@ export function totalDailyPrincipal(
 }
 
 /**
+ * Zusätzlich zur zuletzt abgeschlossenen Zahlperiode bereits anteilig
+ * innerhalb der aktuell laufenden Periode aufgelaufene Tilgung (fraktionale
+ * Tage seit Periodenbeginn × Tages-Tilgungsrate der laufenden Periode je
+ * Kredit). Macht die Rentenuhr tagesgenau und unabhängig vom Zeitpunkt/Gerät
+ * des Seitenaufrufs: derselbe (nur mit der Zeit weiter wachsende) Wert bei
+ * jedem Request, statt bei jedem Reload auf den reinen
+ * Perioden-Anfangswert zurückzufallen (der Client tickt von diesem bereits
+ * tagesgenauen Wert dann nur noch die laufende Sekunde/den laufenden Tag
+ * symbolisch weiter, siehe Rentenuhr-Komponente).
+ */
+export function accruedPrincipalSinceLastPeriodStart(
+  loans: Loan[],
+  specialPaymentsByLoan: Record<string, LoanSpecialPayment[]>,
+  asOfDate: Date = new Date()
+): number {
+  return loans
+    .filter(l => !isSupersededAt(l, loans, asOfDate))
+    .reduce((sum, l) => {
+      const breakdown = getDailyRateBreakdown(l, specialPaymentsByLoan[l.id] ?? [], asOfDate)
+      if (!breakdown) return sum
+      const periodStart = new Date(breakdown.period_start)
+      const msElapsed = Math.max(0, asOfDate.getTime() - periodStart.getTime())
+      const daysElapsed = Math.min(breakdown.days_in_period, msElapsed / (24 * 60 * 60 * 1000))
+      return sum + breakdown.daily_principal * daysElapsed
+    }, 0)
+}
+
+/**
  * "Stand heute"-Karte fürs Finanz-Cockpit: rechnet die Tagessätze aller
  * Kredite sowie Miete/Betriebskosten-Laufrate auf die bereits vergangenen
  * Tage des laufenden Kalendermonats hoch. Bewusst kalendermonatsbasiert

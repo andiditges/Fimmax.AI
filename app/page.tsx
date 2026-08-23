@@ -10,7 +10,7 @@ import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { PrivacyModeToggle } from '@/components/privacy/privacy-mode-toggle'
 import { SensitiveEuro } from '@/components/privacy/sensitive'
 import { calcAnnualAfa } from '@/lib/afa'
-import { aggregatePortfolioFinancials, aggregateLoanChains, totalDailyPrincipal } from '@/lib/amortization'
+import { aggregatePortfolioFinancials, aggregateLoanChains, totalDailyPrincipal, accruedPrincipalSinceLastPeriodStart } from '@/lib/amortization'
 import { sumRentForYear } from '@/lib/rent-schedule'
 import { sumMonthlyReserveFromRent, sumReserveCurrentValue } from '@/lib/reserves'
 import { sumInstandhaltungsruecklage } from '@/lib/operating-costs'
@@ -62,7 +62,12 @@ export default async function Dashboard() {
   // eine Anschlussfinanzierung die Rentenuhr nicht schlagartig zurückspringen lässt.
   const totalPrincipalPaid = aggregateLoanChains(loanList, specialPaymentsByLoan).reduce((s, c) => s + c.paid, 0)
   const dailyPrincipalRate = totalDailyPrincipal(loanList, specialPaymentsByLoan)
-  const rentenuhrAsOf = new Date().toISOString()
+  const rentenuhrAsOf = new Date()
+  // Bereits innerhalb der laufenden Zahlperiode anteilig aufgelaufene Tilgung
+  // (tagesgenau, aus dem Tilgungsplan) - macht totalPrincipalPaid/total_debt
+  // für die Rentenuhr unabhängig vom Zeitpunkt des Seitenaufrufs exakt statt
+  // nur zum letzten abgeschlossenen Zahltermin aktuell.
+  const accruedToday = accruedPrincipalSinceLastPeriodStart(loanList, specialPaymentsByLoan, rentenuhrAsOf)
   const totalReserves = sumReserveCurrentValue(reserveList) + sumInstandhaltungsruecklage(operatingCostList)
   const netWorth = aggregateNetWorth(assets, portfolio.total_equity, totalReserves)
 
@@ -96,10 +101,10 @@ export default async function Dashboard() {
 
       {loanList.length > 0 && (
         <Rentenuhr
-          initialDebt={portfolio.total_debt}
-          initialPaid={totalPrincipalPaid}
+          initialDebt={portfolio.total_debt - accruedToday}
+          initialPaid={totalPrincipalPaid + accruedToday}
           dailyPrincipalRate={dailyPrincipalRate}
-          asOf={rentenuhrAsOf}
+          asOf={rentenuhrAsOf.toISOString()}
           netWorth={netWorth.net_worth}
         />
       )}

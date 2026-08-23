@@ -19,9 +19,16 @@ function formatTicker(n: number): string {
 /**
  * "Rentenuhr": läuft rein clientseitig auf Basis der beim Server-Render
  * bekannten Werte weiter (Restschuld/Tilgung zum Zeitpunkt asOf + aktuell
- * laufende Tages-Tilgungsrate) - keine Server-Roundtrips, nur eine simple
- * lineare Fortschreibung. Symbolisch/illustrativ, keine exakte Abrechnung
- * (die reale Tilgung erfolgt weiterhin nur zu den tatsächlichen Zahlterminen).
+ * laufende Tages-Tilgungsrate). initialDebt/initialPaid enthalten bereits
+ * die innerhalb der laufenden Zahlperiode tagesgenau anteilig aufgelaufene
+ * Tilgung (siehe accruedPrincipalSinceLastPeriodStart in lib/amortization.ts) -
+ * dadurch liefert jeder Seitenaufruf denselben, nur mit der echten Zeit
+ * weiter wachsenden Wert, unabhängig von Gerät oder Ladezeitpunkt, statt bei
+ * jedem Reload auf den reinen Perioden-Anfangswert zurückzufallen. Der
+ * Client tickt ab hier nur noch die laufende Sekunde symbolisch weiter -
+ * keine Server-Roundtrips, nur eine simple lineare Fortschreibung
+ * (keine exakte Abrechnung, die reale Tilgung erfolgt weiterhin nur zu den
+ * tatsächlichen Zahlterminen).
  */
 export function Rentenuhr({
   initialDebt: realInitialDebt,
