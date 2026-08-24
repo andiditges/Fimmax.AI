@@ -8,6 +8,7 @@ import { CapexChart } from '@/components/charts/capex-chart'
 import { DailyTilgungChart } from '@/components/charts/daily-tilgung-chart'
 import { SondertilgungSimulator } from '@/components/finanzen/sondertilgung-simulator'
 import { FreedomCountdown } from '@/components/finanzen/freedom-countdown'
+import { CapitalRecoveries } from '@/components/finanzen/capital-recoveries'
 import { aggregatePortfolioFinancials, aggregateDebtOverTime, aggregateTodayCashflow, aggregateDailyRateOverTime, aggregateLoanChains, generateAmortizationSchedule, getLoanStatus, principalPaidInYear, getMonthlyPrincipalAt, iso } from '@/lib/amortization'
 import { totalEquityInvested, calcEquityBreakEven } from '@/lib/equity-breakeven'
 import { aggregateNetWorth, projectedAssetValue } from '@/lib/net-worth'
@@ -18,13 +19,13 @@ import { getReceiptAllocations } from '@/lib/receipt-allocations'
 import { latestVpiReading, calcIndexmieteStatus } from '@/lib/vpi'
 import { formatDate, propertyLabel, propertyValue, percent } from '@/lib/format'
 import { Sensitive, SensitiveEuro } from '@/components/privacy/sensitive'
-import { ASSET_CATEGORY_LABELS, Asset, AssetCategory, Property, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Receipt, ReceiptItem, PropertyReserve, OperatingCost, RESERVE_CATEGORY_LABELS, VpiReading } from '@/lib/types'
+import { ASSET_CATEGORY_LABELS, Asset, AssetCategory, Property, Loan, LoanSpecialPayment, Tenant, RentalAgreement, RentAdjustment, Receipt, ReceiptItem, PropertyReserve, OperatingCost, RESERVE_CATEGORY_LABELS, VpiReading, CapitalRecovery } from '@/lib/types'
 
 export default async function Finanzen() {
   await requireUser()
   const supabase = await createClient()
 
-  const [{ data: properties }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: receipts }, { data: receiptItems }, { data: assetsData }, { data: reservesData }, { data: operatingCostsData }, { data: vpiReadingsData }] = await Promise.all([
+  const [{ data: properties }, { data: loans }, { data: tenants }, { data: rentalAgreements }, { data: rentAdjustments }, { data: receipts }, { data: receiptItems }, { data: assetsData }, { data: reservesData }, { data: operatingCostsData }, { data: vpiReadingsData }, { data: capitalRecoveriesData }] = await Promise.all([
     supabase.from('properties').select('*'),
     supabase.from('loans').select('*'),
     supabase.from('tenants').select('*'),
@@ -36,6 +37,7 @@ export default async function Finanzen() {
     supabase.from('property_reserves').select('*').order('created_at'),
     supabase.from('operating_costs').select('*'),
     supabase.from('vpi_readings').select('*'),
+    supabase.from('capital_recoveries').select('*').order('recovery_date', { ascending: false }),
   ])
 
   const props = (properties ?? []) as Property[]
@@ -49,6 +51,9 @@ export default async function Finanzen() {
   const reserveList = (reservesData ?? []) as PropertyReserve[]
   const operatingCostList = (operatingCostsData ?? []) as OperatingCost[]
   const vpiReadingList = (vpiReadingsData ?? []) as VpiReading[]
+  const capitalRecoveryList = (capitalRecoveriesData ?? []) as CapitalRecovery[]
+
+  const allocations = getReceiptAllocations(recs, recItems)
 
   // CapEx-Trend: Renovierungs-/Sanierungsbelege (is_renovation) über alle
   // Objekte hinweg, je Steuerjahr summiert - zeigt auf einen Blick, wie viel
@@ -59,7 +64,7 @@ export default async function Finanzen() {
   // auf Beleg-Ebene nur ein veralteter Fallback-Wert - die einzelnen
   // Positionen sind die eigentliche Quelle (analog zu tax-export.ts/
   // threshold15.ts).
-  const capexByYear = getReceiptAllocations(recs, recItems)
+  const capexByYear = allocations
     .filter(a => a.is_renovation)
     .reduce((acc, a) => {
       acc[a.tax_year] = (acc[a.tax_year] ?? 0) + a.amount
@@ -218,7 +223,7 @@ export default async function Finanzen() {
     return acc
   }, {} as Record<string, RentAdjustment[]>)
 
-  const equityInvested = totalEquityInvested(props, loanList, specialPaymentsByLoan)
+  const equityInvested = totalEquityInvested(props, loanList, specialPaymentsByLoan, allocations)
   const breakEven = calcEquityBreakEven(
     props,
     loanSchedules,
@@ -227,9 +232,9 @@ export default async function Finanzen() {
     adjustmentsByTenant,
     portfolio.monthly_operating_cost_runrate,
     monthlyReserveFromRent,
-    equityInvested
+    equityInvested,
+    capitalRecoveryList
   )
-
   // Tilgungsmeilensteine: 10/20/30-Jahres-Stand + Halbzeitmarke greifen auf
   // debtOverTime zurück (Restschuld je Datum über alle Kredite), statt pro
   // Meilenstein neu zu rechnen. Schreibt Status quo fort (keine weiteren
@@ -493,13 +498,15 @@ export default async function Finanzen() {
             </div>
           )}
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-            Break-even = kumulierter Cashflow (Miete abzüglich Zinsen, Tilgung, Kosten-Laufrate und Rücklagenbildung) seit dem frühesten Kaufdatum, verglichen mit dem eingesetzten Eigenkapital (Kaufpreis + Kaufnebenkosten abzüglich Kreditsumme je Objekt). Kosten-/Rücklagen-Laufrate werden dabei vereinfacht als konstant über die Zeit angenommen.
+            Break-even = kumulierte Rückgewinnung (Miete abzüglich Zinsen, Kosten-Laufrate und Rücklagenbildung, plus geleistete Tilgung – die zählt nicht als Verlust, sondern baut Eigenkapital in gleicher Höhe auf – plus sonstige Rückflüsse, siehe unten) seit dem frühesten Kaufdatum, verglichen mit dem eingesetzten Eigenkapital (Kaufpreis + Kaufnebenkosten + Renovierungskosten abzüglich Kreditsumme je Objekt). Kosten-/Rücklagen-Laufrate werden dabei vereinfacht als konstant über die Zeit angenommen und mit dem Anteil bereits gekaufter Objekte skaliert.
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
             10/20/30-Jahres-Stand, Halbzeitmarke und Bruttorendite-Analogie schreiben den aktuellen Tilgungsplan (inkl. bereits erfolgter Sondertilgungen) unverändert fort – ohne Annahme weiterer Sondertilgungen, Zinsanpassungen oder Anschlussfinanzierungen zum Laufzeitende. Kredite in der tilgungsfreien Anlaufzeit sind aus der Bruttorendite-Berechnung ausgeklammert, da ihr Tilgungsanteil dort bei 0 startet.
           </p>
         </Card>
       )}
+
+      <CapitalRecoveries recoveries={capitalRecoveryList} />
 
       {loanList.length > 0 && (
         <Card>

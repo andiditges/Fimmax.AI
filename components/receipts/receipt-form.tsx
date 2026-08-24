@@ -1,5 +1,6 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { buildStoragePath } from '@/lib/storage-path'
@@ -8,6 +9,7 @@ import { Card } from '@/components/ui/card'
 import { propertyLabel } from '@/lib/format'
 import { CATEGORY_LABELS, Receipt, ReceiptCategory, ReceiptItem } from '@/lib/types'
 import { ALLOWED_DOCUMENT_TYPES as ALLOWED_RECEIPT_TYPES } from '@/lib/upload-validation'
+import { DuplicateCandidate, findLikelyDuplicates } from '@/lib/receipt-duplicates'
 
 interface PropertyOption {
   id: string
@@ -101,6 +103,7 @@ export function ReceiptForm({
   initialReceipt,
   initialItems,
   defaultPropertyId,
+  existingReceipts = [],
 }: {
   properties: PropertyOption[]
   userId: string | null
@@ -109,6 +112,7 @@ export function ReceiptForm({
   initialReceipt?: Receipt
   initialItems?: ReceiptItem[]
   defaultPropertyId?: string
+  existingReceipts?: DuplicateCandidate[]
 }) {
   const router = useRouter()
   const supabase = createClient()
@@ -156,6 +160,25 @@ export function ReceiptForm({
   const linesTotal = lines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0)
   const documentAmount = ai?.amount ?? null
   const totalsMismatch = documentAmount != null && Math.abs(documentAmount - linesTotal) > 0.05
+
+  // Warnt schon vor dem Speichern vor einer wahrscheinlichen Doppel-
+  // Erfassung (gleiches Objekt, gleicher Betrag, Datum nah beieinander) -
+  // spiegelt exakt die Logik, mit der der Beleg später gespeichert würde
+  // (primäres Objekt = betragsstärkste Position, Gesamtbetrag = Summe aller
+  // Positionen), damit die Warnung nicht von dem abweicht, was tatsächlich
+  // als Beleg entsteht.
+  const primaryPropertyId = useMemo(() => {
+    if (lines.length === 0) return ''
+    return lines.reduce((max, l) => ((parseFloat(l.amount) || 0) > (parseFloat(max.amount) || 0) ? l : max), lines[0]).property_id
+  }, [lines])
+  const duplicateMatches = useMemo(() => {
+    if (!primaryPropertyId || !receiptDate || linesTotal <= 0) return []
+    return findLikelyDuplicates(
+      { property_id: primaryPropertyId, amount: linesTotal, receipt_date: receiptDate, vendor },
+      existingReceipts,
+      receiptId
+    )
+  }, [primaryPropertyId, receiptDate, linesTotal, vendor, existingReceipts, receiptId])
 
   function updateLine(key: string, patch: Partial<LineItem>) {
     setLines(ls => ls.map(l => (l.key === key ? { ...l, ...patch } : l)))
@@ -418,6 +441,27 @@ export function ReceiptForm({
           <p className="text-sm text-amber-800 dark:text-amber-300">
             <strong>KI ist sich nicht sicher:</strong> {ai.review_note}
           </p>
+        </Card>
+      )}
+
+      {duplicateMatches.length > 0 && (
+        <Card className="mb-5 bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900">
+          <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-1.5">
+            ⚠️ Möglicherweise schon erfasst
+          </p>
+          <ul className="space-y-1">
+            {duplicateMatches.map(m => (
+              <li key={m.receipt.id} className="text-sm text-amber-800 dark:text-amber-300">
+                {m.reason}: {m.receipt.vendor ?? m.receipt.description ?? 'Beleg'} vom{' '}
+                {new Date(m.receipt.receipt_date).toLocaleDateString('de-DE')} über{' '}
+                {m.receipt.amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                {' '}·{' '}
+                <Link href={`/receipts/${m.receipt.id}/edit`} target="_blank" className="underline hover:no-underline">
+                  ansehen ↗
+                </Link>
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
 

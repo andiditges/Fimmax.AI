@@ -12,11 +12,13 @@ export function ReceiptBrowser({
   items = [],
   properties,
   showPropertyColumn = false,
+  duplicateWarnings = {},
 }: {
   receipts: Receipt[]
   items?: ReceiptItem[]
   properties?: Property[]
   showPropertyColumn?: boolean
+  duplicateWarnings?: Record<string, string>
 }) {
   const [query, setQuery] = useState('')
   const [from, setFrom] = useState('')
@@ -125,6 +127,11 @@ export function ReceiptBrowser({
                   {r.is_renovation && ' · Renovierung'}
                   {r.archived && ' · archiviert'}
                 </p>
+                {duplicateWarnings[r.id] && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5" title={duplicateWarnings[r.id]}>
+                    ⚠️ evtl. Duplikat ({duplicateWarnings[r.id]})
+                  </p>
+                )}
               </div>
               <span className="font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap"><SensitiveEuro seed={`${r.id}-amount`} amount={r.amount} /></span>
               <div className="flex items-center gap-2 whitespace-nowrap">

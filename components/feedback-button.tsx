@@ -37,10 +37,10 @@ export function FeedbackButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-40 flex items-center gap-2 bg-gray-900 text-white pl-3 pr-4 py-2.5 rounded-full shadow-lg hover:bg-gray-800 transition-colors text-sm font-medium"
+        className="fixed bottom-4 right-4 z-40 flex items-center gap-1.5 bg-gray-900 text-white pl-2.5 pr-3 py-2 rounded-full shadow-md hover:bg-gray-800 transition-colors text-xs font-medium"
         aria-label="Feedback geben oder Problem melden"
       >
-        <MessageCircle size={16} />
+        <MessageCircle size={14} />
         Feedback
       </button>
 

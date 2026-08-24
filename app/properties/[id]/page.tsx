@@ -20,6 +20,7 @@ import { calc15Threshold } from '@/lib/threshold15'
 import { getLoanStatus, generateAmortizationSchedule, interestPaidInYear, aggregateLoanChains } from '@/lib/amortization'
 import { buildTaxExportRow, buildTaxExportDetailRows, rowsToCsv, detailRowsToCsv } from '@/lib/tax-export'
 import { getReceiptAllocations } from '@/lib/receipt-allocations'
+import { findLikelyDuplicates } from '@/lib/receipt-duplicates'
 import { generateRentSchedule, currentRentAmount, currentAgreement } from '@/lib/rent-schedule'
 import { sumInstandhaltungsruecklage, isUtilityBillableTenant } from '@/lib/operating-costs'
 import { euro, formatDate, propertyLabel, propertyValue } from '@/lib/format'
@@ -69,6 +70,15 @@ export default async function PropertyDetail({ params, searchParams }: { params:
   // Allokation aufgeteilt sind.
   const recs = allReceipts.filter(r => r.property_id === id).sort((a, b) => b.receipt_date.localeCompare(a.receipt_date))
   const propAllocations = getReceiptAllocations(allReceipts, allReceiptItems).filter(a => a.property_id === id)
+  // Spätestens hier (nicht nur bei der Neu-Erfassung) auf wahrscheinliche
+  // Doppel-Erfassungen hinweisen - z.B. wenn ein Beleg importiert statt über
+  // das Formular erfasst wurde, oder zwei Scans desselben Papierbelegs
+  // unabhängig voneinander hochgeladen wurden.
+  const duplicateWarnings = Object.fromEntries(
+    recs
+      .map(r => [r.id, findLikelyDuplicates(r, recs, r.id)[0]?.reason] as const)
+      .filter((entry): entry is [string, string] => entry[1] !== undefined)
+  )
   const tenantList = (tenants ?? []) as Tenant[]
   const propertyLoans = (loans ?? []) as Loan[]
   const reminderList = (reminders ?? []) as Reminder[]
@@ -135,15 +145,31 @@ export default async function PropertyDetail({ params, searchParams }: { params:
   const kaufnebenkostenReceipts = propAllocations.filter(a => (['notar_kauf', 'grundbuch_kauf', 'makler_kauf'] as string[]).includes(a.category))
   const kaufnebenkostenReceiptsSum = kaufnebenkostenReceipts.reduce((s, a) => s + a.amount, 0)
 
-  const yearAllocations = propAllocations.filter(a => a.tax_year === currentYear)
+  const openReminders = reminderList.filter(r => r.status !== 'erledigt')
+  const receiptYears = [...new Set(recs.map(r => r.tax_year))].sort((a, b) => b - a)
+
+  // Angezeigtes Jahr für Einnahmen/Ausgaben/Kategorien/AfA UND CSV-Export -
+  // ein einziger Wert statt getrennter "currentYear für die Anzeige" /
+  // "exportYear nur für den Export" Variablen wie zuvor: sonst blieben KPI-
+  // Karten und Kategorien-Aufschlüsselung beim Durchklicken der Jahres-Buttons
+  // stur auf dem laufenden Kalenderjahr stehen, während nur der CSV-Export
+  // tatsächlich das gewählte Jahr benutzte - sah dann so aus, als wären
+  // Belege dem falschen Jahr zugeordnet. Default: das jüngste Jahr mit
+  // tatsächlichen Belegen (nicht zwingend das laufende Kalenderjahr), sonst
+  // liefert die Ansicht für ein frisch erworbenes Objekt eine praktisch leere
+  // Übersicht, obwohl z.B. 28 Belege aus dem Kaufjahr vorliegen.
+  const selectedYearOptions = [...new Set([...receiptYears, currentYear])].sort((a, b) => b - a)
+  const selectedYear = steuerjahr ? parseInt(steuerjahr) : (receiptYears[0] ?? currentYear)
+
+  const yearAllocations = propAllocations.filter(a => a.tax_year === selectedYear)
   const yearExpenses = yearAllocations.reduce((s, a) => s + a.amount, 0)
   const yearIncome = tenantList.reduce((sum, t) => {
     const schedule = generateRentSchedule(
       t,
       agreementsByTenant[t.id] ?? [],
       adjustmentsByTenant[t.id] ?? [],
-      new Date(currentYear, 0, 1),
-      new Date(currentYear, 11, 1)
+      new Date(selectedYear, 0, 1),
+      new Date(selectedYear, 11, 1)
     )
     return sum + schedule.reduce((s, e) => s + e.amount, 0)
   }, 0)
@@ -168,38 +194,14 @@ export default async function PropertyDetail({ params, searchParams }: { params:
     total: yearAllocations.filter(a => a.category === cat).reduce((s, a) => s + a.amount, 0),
   })).filter(c => c.total > 0)
 
-  const loanInterestThisYear = propertyLoans.reduce((s, l) => {
+  const loanInterestSelectedYear = propertyLoans.reduce((s, l) => {
     const sp = (allSpecialPayments ?? []).filter(x => x.loan_id === l.id)
-    return s + interestPaidInYear(generateAmortizationSchedule(l, sp).entries, currentYear)
+    return s + interestPaidInYear(generateAmortizationSchedule(l, sp).entries, selectedYear)
   }, 0)
-  const openReminders = reminderList.filter(r => r.status !== 'erledigt')
-  const receiptYears = [...new Set(recs.map(r => r.tax_year))].sort((a, b) => b - a)
-
-  // Steuer-Export-Jahr: unabhängig vom laufenden Kalenderjahr wählbar, sonst
-  // liefert der Export für ein frisch erworbenes Objekt (noch keine Belege im
-  // aktuellen Jahr) eine praktisch leere Datei, obwohl z.B. 28 Belege aus dem
-  // Kaufjahr vorliegen. Default: das jüngste Jahr mit tatsächlichen Belegen,
-  // sonst das laufende Jahr.
-  const exportYearOptions = [...new Set([...receiptYears, currentYear])].sort((a, b) => b - a)
-  const exportYear = steuerjahr ? parseInt(steuerjahr) : (receiptYears[0] ?? currentYear)
-  const exportYearIncome = tenantList.reduce((sum, t) => {
-    const schedule = generateRentSchedule(
-      t,
-      agreementsByTenant[t.id] ?? [],
-      adjustmentsByTenant[t.id] ?? [],
-      new Date(exportYear, 0, 1),
-      new Date(exportYear, 11, 1)
-    )
-    return sum + schedule.reduce((s, e) => s + e.amount, 0)
-  }, 0)
-  const exportLoanInterest = propertyLoans.reduce((s, l) => {
-    const sp = (allSpecialPayments ?? []).filter(x => x.loan_id === l.id)
-    return s + interestPaidInYear(generateAmortizationSchedule(l, sp).entries, exportYear)
-  }, 0)
-  const taxExportRow = buildTaxExportRow(p, exportYear, propAllocations, exportYearIncome, exportLoanInterest, operatingCostList, depreciableItemList)
-  const taxExportDetailRows = buildTaxExportDetailRows(p, exportYear, propAllocations, annualAfa, exportLoanInterest, operatingCostList, depreciableItemList)
+  const taxExportRow = buildTaxExportRow(p, selectedYear, propAllocations, yearIncome, loanInterestSelectedYear, operatingCostList, depreciableItemList)
+  const taxExportDetailRows = buildTaxExportDetailRows(p, selectedYear, propAllocations, annualAfa, loanInterestSelectedYear, operatingCostList, depreciableItemList)
   const annualMovableAfa = depreciableItemList
-    .filter(item => isMovableAfaActiveInYear(item, currentYear))
+    .filter(item => isMovableAfaActiveInYear(item, selectedYear))
     .reduce((s, item) => s + calcAnnualMovableAfa(item), 0)
 
   return (
@@ -217,22 +219,22 @@ export default async function PropertyDetail({ params, searchParams }: { params:
         <div className="flex flex-col items-end gap-2">
           <ThresholdBadge status={threshold} />
           <Link href={`/properties/${id}/edit`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Bearbeiten</Link>
-          {exportYearOptions.length > 1 && (
+          {selectedYearOptions.length > 1 && (
             <div className="flex items-center gap-1 flex-wrap justify-end">
-              <span className="text-xs text-gray-400 dark:text-gray-500">Steuer-Export-Jahr:</span>
-              {exportYearOptions.map(y => (
+              <span className="text-xs text-gray-400 dark:text-gray-500">Jahr:</span>
+              {selectedYearOptions.map(y => (
                 <Link
                   key={y}
                   href={`/properties/${id}?steuerjahr=${y}`}
-                  className={`text-xs px-2 py-1 rounded-lg font-medium transition-colors ${y === exportYear ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 hover:dark:bg-gray-800'}`}
+                  className={`text-xs px-2 py-1 rounded-lg font-medium transition-colors ${y === selectedYear ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 hover:dark:bg-gray-800'}`}
                 >
                   {y}
                 </Link>
               ))}
             </div>
           )}
-          <TaxExportButton csv={rowsToCsv([taxExportRow])} filename={`steuer-export-${p.address.replace(/\s+/g, '-')}-${exportYear}.csv`} label={`Steuer-Export ${exportYear} (CSV)`} />
-          <TaxExportButton csv={detailRowsToCsv(p, exportYear, taxExportDetailRows)} filename={`steuer-positionen-${p.address.replace(/\s+/g, '-')}-${exportYear}.csv`} label={`Alle Positionen ${exportYear} (CSV)`} />
+          <TaxExportButton csv={rowsToCsv([taxExportRow])} filename={`steuer-export-${p.address.replace(/\s+/g, '-')}-${selectedYear}.csv`} label={`Steuer-Export ${selectedYear} (CSV)`} />
+          <TaxExportButton csv={detailRowsToCsv(p, selectedYear, taxExportDetailRows)} filename={`steuer-positionen-${p.address.replace(/\s+/g, '-')}-${selectedYear}.csv`} label={`Alle Positionen ${selectedYear} (CSV)`} />
           <ExposeButton propertyId={id} />
         </div>
       </div>
@@ -240,11 +242,11 @@ export default async function PropertyDetail({ params, searchParams }: { params:
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardTitle className="min-h-10">Einnahmen {currentYear}</CardTitle>
+          <CardTitle className="min-h-10">Einnahmen {selectedYear}</CardTitle>
           <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-500 break-words"><SensitiveEuro seed={`${p.id}-income`} amount={yearIncome} /></p>
         </Card>
         <Card>
-          <CardTitle className="min-h-10">Ausgaben {currentYear}</CardTitle>
+          <CardTitle className="min-h-10">Ausgaben {selectedYear}</CardTitle>
           <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words"><SensitiveEuro seed={`${p.id}-expenses`} amount={yearExpenses} /></p>
         </Card>
         <Card>
@@ -390,7 +392,7 @@ export default async function PropertyDetail({ params, searchParams }: { params:
       {/* Ausgaben nach Kategorie */}
       {categoryTotals.length > 0 && (
         <Card>
-          <CardTitle>Ausgaben {currentYear} nach Kategorie</CardTitle>
+          <CardTitle>Ausgaben {selectedYear} nach Kategorie</CardTitle>
           <div className="mt-3 space-y-2">
             {categoryTotals.map(c => (
               <div key={c.cat} className="flex justify-between text-sm">
@@ -512,7 +514,7 @@ export default async function PropertyDetail({ params, searchParams }: { params:
           <Card className="text-center py-8 text-gray-400 dark:text-gray-500">Noch keine Belege</Card>
         ) : (
           <Card>
-            <ReceiptBrowser receipts={recs} items={allReceiptItems} />
+            <ReceiptBrowser receipts={recs} items={allReceiptItems} duplicateWarnings={duplicateWarnings} />
           </Card>
         )}
       </div>
@@ -619,7 +621,7 @@ export default async function PropertyDetail({ params, searchParams }: { params:
           <Card>
             <DepreciableItemList items={depreciableItemList} />
             <div className="border-t pt-2 mt-2 flex justify-between text-sm font-semibold">
-              <span>AfA {currentYear}</span>
+              <span>AfA {selectedYear}</span>
               <span><SensitiveEuro seed={`${p.id}-movable-afa`} amount={annualMovableAfa} /></span>
             </div>
           </Card>

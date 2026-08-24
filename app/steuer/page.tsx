@@ -221,6 +221,14 @@ export default async function SteuerUebersicht({ searchParams }: { searchParams:
         )}
       </div>
 
+      {/* Betriebsausgaben (separater Steuerkontext, siehe Hinweis) */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Ausgaben außerhalb der Anlage V (z.B. eigenes Gewerbe/Selbständigkeit) verwaltest du separat unter{' '}
+          <Link href="/business-expenses" className="text-blue-600 dark:text-blue-400 hover:underline">Betriebsausgaben</Link>.
+        </p>
+      </div>
+
       {/* Beleg-Suche */}
       <div>
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Belege durchsuchen (alle Objekte, alle Jahre)</h2>

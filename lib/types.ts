@@ -540,6 +540,19 @@ export interface PropertyReserve {
   created_at: string
 }
 
+// Sonstige, nicht aus Miete stammende Rückflüsse, die eingesetztes
+// Eigenkapital wirtschaftlich zurückgewinnen (z.B. Immobilien-Anteil einer
+// Steuerrückerstattung) - portfolioweit statt je Objekt, siehe
+// lib/equity-breakeven.ts.
+export interface CapitalRecovery {
+  id: string
+  user_id: string
+  recovery_date: string
+  amount: number
+  description: string | null
+  created_at: string
+}
+
 export type TipSeverity = 'info' | 'warnung' | 'aktion'
 
 export interface Tip {

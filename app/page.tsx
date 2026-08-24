@@ -89,11 +89,11 @@ export default async function Dashboard() {
     .reduce((s, r) => s + r.amount, 0)
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Steuerjahr {currentYear}</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">Steuerjahr {currentYear}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 pt-1">
           <PrivacyModeToggle />
@@ -112,55 +112,55 @@ export default async function Dashboard() {
       )}
 
       {/* KPI-Karten */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <Card>
-          <CardTitle className="min-h-10">Immobilien</CardTitle>
-          <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 break-words">{props.length}</p>
+          <CardTitle className="min-h-8">Immobilien</CardTitle>
+          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 break-words">{props.length}</p>
         </Card>
         <Card>
-          <CardTitle className="min-h-10">Einnahmen {currentYear}</CardTitle>
-          <p className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-500 break-words"><SensitiveEuro seed="dashboard-income" amount={totalIncome} /></p>
+          <CardTitle className="min-h-8">Einnahmen {currentYear}</CardTitle>
+          <p className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-500 break-words"><SensitiveEuro seed="dashboard-income" amount={totalIncome} /></p>
         </Card>
         <Card>
-          <CardTitle className="min-h-10">Ausgaben {currentYear}</CardTitle>
-          <p className="text-2xl md:text-3xl font-bold text-red-500 dark:text-red-400 break-words"><SensitiveEuro seed="dashboard-expenses" amount={totalExpenses} /></p>
+          <CardTitle className="min-h-8">Ausgaben {currentYear}</CardTitle>
+          <p className="text-xl md:text-2xl font-bold text-red-500 dark:text-red-400 break-words"><SensitiveEuro seed="dashboard-expenses" amount={totalExpenses} /></p>
         </Card>
         <Card>
-          <CardTitle className="min-h-10">AfA gesamt / Jahr</CardTitle>
-          <p className="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 break-words"><SensitiveEuro seed="dashboard-afa" amount={totalAfa} /></p>
+          <CardTitle className="min-h-8">AfA gesamt / Jahr</CardTitle>
+          <p className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400 break-words"><SensitiveEuro seed="dashboard-afa" amount={totalAfa} /></p>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Hauptspalte */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-6">
           <RemindersWidget reminders={reminderList} properties={props} />
 
           {/* Finanz-Cockpit */}
           {loanList.length > 0 && (
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Finanz-Cockpit</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">Finanz-Cockpit</h2>
                 <Link href="/finanzen" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Portfolio-Übersicht →</Link>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Link href="/finanzen#kredite">
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardTitle className="min-h-10">Verbindlichkeiten (aktuell)</CardTitle>
-                    <p className="text-lg md:text-2xl font-bold text-red-500 dark:text-red-400 break-words"><SensitiveEuro seed="dashboard-debt" amount={portfolio.total_debt} /></p>
+                    <CardTitle className="min-h-8">Verbindlichkeiten (aktuell)</CardTitle>
+                    <p className="text-base md:text-lg font-bold text-red-500 dark:text-red-400 break-words"><SensitiveEuro seed="dashboard-debt" amount={portfolio.total_debt} /></p>
                   </Card>
                 </Link>
                 <Card>
-                  <CardTitle className="min-h-10">Kreditrate / Monat</CardTitle>
-                  <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100 break-words"><SensitiveEuro seed="dashboard-debt-service" amount={portfolio.monthly_debt_service} /></p>
+                  <CardTitle className="min-h-8">Kreditrate / Monat</CardTitle>
+                  <p className="text-base md:text-lg font-bold text-gray-900 dark:text-gray-100 break-words"><SensitiveEuro seed="dashboard-debt-service" amount={portfolio.monthly_debt_service} /></p>
                 </Card>
                 <Card>
-                  <CardTitle className="min-h-10">Eigenkapital</CardTitle>
-                  <p className="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400 break-words"><SensitiveEuro seed="dashboard-equity" amount={portfolio.total_equity} /></p>
+                  <CardTitle className="min-h-8">Eigenkapital</CardTitle>
+                  <p className="text-base md:text-lg font-bold text-blue-600 dark:text-blue-400 break-words"><SensitiveEuro seed="dashboard-equity" amount={portfolio.total_equity} /></p>
                 </Card>
                 <Card>
-                  <CardTitle className="min-h-10">Cashflow / Monat</CardTitle>
-                  <p className={`text-lg md:text-2xl font-bold break-words ${portfolio.monthly_net_cashflow >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500 dark:text-red-400'}`}>
+                  <CardTitle className="min-h-8">Cashflow / Monat</CardTitle>
+                  <p className={`text-base md:text-lg font-bold break-words ${portfolio.monthly_net_cashflow >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500 dark:text-red-400'}`}>
                     <SensitiveEuro seed="dashboard-cashflow" amount={portfolio.monthly_net_cashflow} />
                   </p>
                 </Card>
@@ -170,8 +170,8 @@ export default async function Dashboard() {
 
           {/* Immobilien-Liste */}
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Meine Immobilien</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">Meine Immobilien</h2>
               <Link href="/properties" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Alle anzeigen →</Link>
             </div>
             <PropertyList properties={props} receipts={recs} receiptItems={recItems} tenants={tenantList} rentalAgreements={agreementList} rentAdjustments={adjustmentList} currentYear={currentYear} />

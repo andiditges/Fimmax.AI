@@ -90,29 +90,29 @@ export function Rentenuhr({
   const selectedRemaining = Math.max(0, selectedTier.min - (netWorth ?? 0))
 
   return (
-    <div className="rounded-2xl bg-gray-900 text-white p-5 shadow-sm overflow-hidden">
+    <div className="rounded-xl bg-gray-900 text-white p-4 shadow-sm overflow-hidden">
       <div className="flex items-center gap-2">
-        <Clock size={16} className="text-gray-400" />
-        <span className="text-sm font-semibold tracking-wide text-gray-200">Rentenuhr</span>
-        <span className="ml-auto flex items-center gap-1.5 text-[11px] text-gray-400">
-          <span className="relative flex h-2 w-2">
+        <Clock size={14} className="text-gray-400" />
+        <span className="text-xs font-semibold tracking-wide text-gray-200">Rentenuhr</span>
+        <span className="ml-auto flex items-center gap-1.5 text-[10px] text-gray-400">
+          <span className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
           </span>
           live
         </span>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 divide-x divide-gray-700">
+      <div className="mt-3 grid grid-cols-2 divide-x divide-gray-700">
         <div className="pr-4">
-          <p className="text-xs text-gray-400 uppercase tracking-wide">Verbindlichkeiten</p>
-          <p className="mt-1 font-mono text-red-400 text-lg md:text-xl font-bold tabular-nums break-all" aria-hidden="true">
+          <p className="text-[11px] text-gray-400 uppercase tracking-wide">Verbindlichkeiten</p>
+          <p className="mt-0.5 font-mono text-red-400 text-base md:text-lg font-bold tabular-nums break-all" aria-hidden="true">
             {formatTicker(debtNow)} €
           </p>
         </div>
         <div className="pl-4">
-          <p className="text-xs text-gray-400 uppercase tracking-wide">Bereits getilgt</p>
-          <p className="mt-1 font-mono text-emerald-400 text-lg md:text-xl font-bold tabular-nums break-all" aria-hidden="true">
+          <p className="text-[11px] text-gray-400 uppercase tracking-wide">Bereits getilgt</p>
+          <p className="mt-0.5 font-mono text-emerald-400 text-base md:text-lg font-bold tabular-nums break-all" aria-hidden="true">
             {formatTicker(paidNow)} €
           </p>
         </div>
@@ -122,13 +122,13 @@ export function Rentenuhr({
         Verbindlichkeiten aktuell rund {euro(debtNow)}, bereits getilgt rund {euro(paidNow)}. Läuft in Echtzeit weiter.
       </p>
 
-      <p className="mt-4 text-[11px] text-gray-500">
+      <p className="mt-3 text-[10px] text-gray-500">
         Läuft auf Basis der aktuell laufenden Tages-Tilgungsrate ({euro(dailyPrincipalRate)}/Tag) symbolisch in Echtzeit weiter – ersetzt keine exakte Abrechnung.
       </p>
 
       {netWorth != null && (
-        <div className="mt-4 pt-4 border-t border-gray-700">
-          <div className="flex items-center justify-between text-[11px] text-gray-400 uppercase tracking-wide">
+        <div className="mt-3 pt-3 border-t border-gray-700">
+          <div className="flex items-center justify-between text-[10px] text-gray-400 uppercase tracking-wide">
             <span>Vermögens-Stufe {index + 1} / {total}</span>
             <span>{euro(netWorth)}</span>
           </div>
@@ -147,34 +147,34 @@ export function Rentenuhr({
                 onClick={() => setSelectedIndex(i)}
                 aria-label={`${t.title} (${euro(t.min)}${t.max ? ` – ${euro(t.max)}` : '+'})`}
                 aria-pressed={i === selectedIndex}
-                className={`flex-1 h-2.5 rounded-full transition-colors cursor-pointer hover:opacity-80 ${i <= index ? 'bg-emerald-400' : 'bg-gray-700'} ${i === selectedIndex ? 'ring-2 ring-white/70' : ''}`}
+                className={`flex-1 h-2 rounded-full transition-colors cursor-pointer hover:opacity-80 ${i <= index ? 'bg-emerald-400' : 'bg-gray-700'} ${i === selectedIndex ? 'ring-2 ring-white/70' : ''}`}
               />
             ))}
           </div>
 
-          <div className="mt-3 flex items-start gap-2">
+          <div className="mt-2.5 flex items-start gap-2">
             {selectedAchieved
-              ? <CheckCircle2 className="text-emerald-400 shrink-0 mt-0.5" size={20} />
-              : <Circle className="text-gray-600 shrink-0 mt-0.5" size={20} />}
+              ? <CheckCircle2 className="text-emerald-400 shrink-0 mt-0.5" size={16} />
+              : <Circle className="text-gray-600 shrink-0 mt-0.5" size={16} />}
             <div>
-              <p className="text-sm font-semibold text-white">{selectedTier.title}</p>
-              <p className="text-xs text-gray-400">{selectedTier.subtitle}</p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs font-semibold text-white">{selectedTier.title}</p>
+              <p className="text-[11px] text-gray-400">{selectedTier.subtitle}</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">
                 {euro(selectedTier.min)}{selectedTier.max ? ` – ${euro(selectedTier.max)}` : '+'}
               </p>
               {selectedAchieved ? (
-                <p className="text-xs text-emerald-400 mt-1">
+                <p className="text-[11px] text-emerald-400 mt-0.5">
                   Geschafft{selectedIndex === index ? ' – deine aktuelle Stufe' : ''}
                 </p>
               ) : (
-                <p className="text-xs text-gray-400 mt-1">Noch {euro(selectedRemaining)} bis zu dieser Stufe</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">Noch {euro(selectedRemaining)} bis zu dieser Stufe</p>
               )}
             </div>
           </div>
 
           {nextTier && (
-            <div className="mt-3">
-              <div className="flex items-center justify-between text-[11px] text-gray-400">
+            <div className="mt-2.5">
+              <div className="flex items-center justify-between text-[10px] text-gray-400">
                 <span>Nächste Stufe: {nextTier.title}</span>
                 <span>noch {euro(remainingToNext)}</span>
               </div>

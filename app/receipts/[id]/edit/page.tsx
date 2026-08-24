@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ReceiptForm } from '@/components/receipts/receipt-form'
 import { Receipt, ReceiptItem } from '@/lib/types'
+import { DuplicateCandidate } from '@/lib/receipt-duplicates'
 
 export default function EditReceipt() {
   const params = useParams<{ id: string }>()
@@ -12,6 +13,7 @@ export default function EditReceipt() {
   const [userId, setUserId] = useState<string | null>(null)
   const [receipt, setReceipt] = useState<Receipt | null>(null)
   const [items, setItems] = useState<ReceiptItem[]>([])
+  const [existingReceipts, setExistingReceipts] = useState<DuplicateCandidate[]>([])
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -20,6 +22,9 @@ export default function EditReceipt() {
     })
     supabase.auth.getUser().then(({ data }) => {
       setUserId(data.user?.id ?? null)
+    })
+    supabase.from('receipts').select('id, property_id, receipt_date, amount, vendor, description').then(({ data }) => {
+      setExistingReceipts(data ?? [])
     })
     Promise.all([
       supabase.from('receipts').select('*').eq('id', params.id).single(),
@@ -41,6 +46,7 @@ export default function EditReceipt() {
       userId={userId}
       initialReceipt={receipt}
       initialItems={items}
+      existingReceipts={existingReceipts}
     />
   )
 }

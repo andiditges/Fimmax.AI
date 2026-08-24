@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { Reminder, ReminderStatus, REMINDER_CATEGORY_LABELS, REMINDER_STATUS_LABELS } from '@/lib/types'
 import { formatDate } from '@/lib/format'
+import { usePrivacyMode } from '@/components/privacy/privacy-mode-context'
 
 const CATEGORY_COLORS: Record<string, string> = {
   mieterhoehung: 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300',
@@ -35,6 +36,13 @@ export function ReminderRow({
   const supabase = createClient()
   const [status, setStatus] = useState(reminder.status)
   const [saving, setSaving] = useState(false)
+  const { enabled: privacyEnabled } = usePrivacyMode()
+  // Titel/Beschreibung sind KI-generierter Freitext mit eingebetteten
+  // Mieternamen/Beträgen (kein separates Namensfeld) - anders als bei
+  // Sensitive/SensitiveEuro lässt sich darin nicht gezielt nur der Name durch
+  // einen Fake-Namen ersetzen, daher wird im Datenschutzmodus der gesamte
+  // Text unkenntlich gemacht statt nur einzelne Werte zu verfälschen.
+  const privacyBlur = privacyEnabled ? 'blur-sm select-none' : ''
 
   async function onStatusChange(next: ReminderStatus) {
     setSaving(true)
@@ -53,16 +61,16 @@ export function ReminderRow({
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[reminder.category]}`}>
               {REMINDER_CATEGORY_LABELS[reminder.category]}
             </span>
-            {propertyLabel && <span className="text-xs text-gray-400 dark:text-gray-500">{propertyLabel}</span>}
+            {propertyLabel && <span className={`text-xs text-gray-400 dark:text-gray-500 ${privacyBlur}`}>{propertyLabel}</span>}
           </div>
-          <p className={`text-sm font-medium mt-1 ${status === 'erledigt' ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-900 dark:text-gray-100'}`}>
+          <p className={`text-sm font-medium mt-1 ${status === 'erledigt' ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-900 dark:text-gray-100'} ${privacyBlur}`}>
             {reminder.title}
           </p>
           {reminder.description && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{reminder.description}</p>
+            <p className={`text-xs text-gray-500 dark:text-gray-400 mt-0.5 ${privacyBlur}`}>{reminder.description}</p>
           )}
           {dependsOnTitle && status !== 'erledigt' && (
-            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">⏳ hängt ab von: {dependsOnTitle}</p>
+            <p className={`text-xs text-amber-700 dark:text-amber-400 mt-1 ${privacyBlur}`}>⏳ hängt ab von: {dependsOnTitle}</p>
           )}
           {reminder.due_date && (
             <p className={`text-xs mt-1 ${dueDateColor(reminder.due_date, status)}`}>
