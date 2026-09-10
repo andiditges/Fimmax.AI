@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/supabase/get-user'
 import { VpiReadingsForm } from '@/components/vpi/vpi-readings-form'
 import { IndexmieteOverview } from '@/components/vpi/indexmiete-overview'
+import { RentOverviewTable } from '@/components/vpi/rent-overview-table'
 import { StaffelmieteOverview } from '@/components/vpi/staffelmiete-overview'
 import { Section558Overview } from '@/components/vpi/section558-overview'
 import { ComparableRentTable } from '@/components/vpi/comparable-rent-table'
@@ -117,69 +118,83 @@ export default async function IndexmietePage() {
   return (
     <div className="space-y-8 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Mieterhöhung</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Miete</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-          Aktuelle Erhöhungsmöglichkeit nach § 557b BGB für Mietverhältnisse mit Indexmiete (auf Basis des Verbraucherpreisindex/VPI), Überblick über bereits vereinbarte Staffelmieten nach § 557a BGB,
-          sowie Kappungsgrenzen-Countdown nach § 558 BGB für alle übrigen (fest vereinbarten) Mietverhältnisse.
+          Übersicht aller vermieteten Einheiten mit Gesamtsumme, sowie darunter der Überblick möglicher Mieterhöhungen: Erhöhungsmöglichkeit nach § 557b BGB für Mietverhältnisse mit Indexmiete
+          (auf Basis des Verbraucherpreisindex/VPI), bereits vereinbarte Staffelmieten nach § 557a BGB, sowie Kappungsgrenzen-Countdown nach § 558 BGB für alle übrigen (fest vereinbarten) Mietverhältnisse.
         </p>
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Miete vs. Vergleichsmiete – Portfolio-Übersicht ({comparableRentItems.length})</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Mietübersicht ({comparableRentItems.length})</h2>
         <p className="text-xs text-gray-400 dark:text-gray-500 -mt-2 mb-3">
-          Alle aktiven Mietverhältnisse im Vergleich zur beim jeweiligen Objekt hinterlegten ortsüblichen Vergleichsmiete (€/m²) – zeigt auf einen Blick, wo Erhöhungspotential besteht oder die Miete bereits über dem Vergleichswert liegt.
+          Alle aktiven Mietverhältnisse mit Kaltmiete, Nebenkosten-Vorauszahlung und Warmmiete – inkl. Gesamtsumme über das gesamte Portfolio.
         </p>
-        <ComparableRentTable items={comparableRentItems} />
+        <RentOverviewTable items={comparableRentItems} />
       </div>
 
-      <VpiReadingsForm readings={readingList} />
+      <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Überblick möglicher Mieterhöhungen</h2>
 
-      <div>
-        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Mietverhältnisse mit Indexmiete ({indexItems.length})</h2>
-          <GenerateRemindersButton
-            label={`Erinnerungen für 01.11.2026 anlegen (${indexReminderSuggestions.length})`}
-            suggestions={indexReminderSuggestions}
-          />
-        </div>
-        <IndexmieteOverview items={indexItems} latestReading={latest} />
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Mietverhältnisse mit Staffelmiete ({staffelItems.length})</h2>
-          <GenerateRemindersButton
-            label={`Erinnerungen für anstehende Stufen anlegen (${staffelReminderSuggestions.length})`}
-            suggestions={staffelReminderSuggestions}
-          />
-        </div>
-        <StaffelmieteOverview items={staffelItems} />
-      </div>
-
-      {totalInclFuture > 0 && (
-        <Card className="bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900">
-          <CardTitle>Mögliche Mieterhöhung insgesamt (Indexmiete + Staffelmiete)</CardTitle>
-          <div className="flex items-center justify-between flex-wrap gap-2 mt-2">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Bereits heute möglich (Indexmiete)</p>
-            <p className="font-semibold text-green-700 dark:text-green-300">+<SensitiveEuro seed="indexmiete-today" amount={totalToday} /> / Monat</p>
+        <div className="space-y-8">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Miete vs. Vergleichsmiete – Portfolio-Übersicht ({comparableRentItems.length})</h3>
+            <p className="text-xs text-gray-400 dark:text-gray-500 -mt-2 mb-3">
+              Alle aktiven Mietverhältnisse im Vergleich zur beim jeweiligen Objekt hinterlegten ortsüblichen Vergleichsmiete (€/m²) – zeigt auf einen Blick, wo Erhöhungspotential besteht oder die Miete bereits über dem Vergleichswert liegt.
+            </p>
+            <ComparableRentTable items={comparableRentItems} />
           </div>
-          <div className="flex items-center justify-between flex-wrap gap-2 mt-1">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Inkl. zukünftig möglicher Erhöhungen (Index + Staffel)</p>
-            <p className="font-semibold text-blue-700 dark:text-blue-300">+<SensitiveEuro seed="indexmiete-future" amount={totalInclFuture} /> / Monat</p>
-          </div>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-            Staffelmiete-Stufen treten automatisch zum vereinbarten Termin in Kraft und zählen daher nur zur "inkl. zukünftig"-Summe, nicht zu "bereits heute möglich".
-          </p>
-        </Card>
-      )}
 
-      <div>
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Feste Miete – Kappungsgrenzen-Countdown ({plain558Items.length})</h2>
-        <p className="text-xs text-gray-400 dark:text-gray-500 -mt-2 mb-3">
-          Für Mietverhältnisse ohne Staffel- oder Indexvereinbarung: wann eine Mieterhöhung nach § 558 BGB (Anpassung an die ortsübliche Vergleichsmiete) frühestens verlangt werden darf,
-          und wie viel von der Kappungsgrenze (20% bzw. 15% in Gebieten mit angespanntem Wohnungsmarkt) in den letzten 3 Jahren bereits ausgeschöpft ist.
-        </p>
-        <Section558Overview items={plain558Items} />
+          <VpiReadingsForm readings={readingList} />
+
+          <div>
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Mietverhältnisse mit Indexmiete ({indexItems.length})</h3>
+              <GenerateRemindersButton
+                label={`Erinnerungen für 01.11.2026 anlegen (${indexReminderSuggestions.length})`}
+                suggestions={indexReminderSuggestions}
+              />
+            </div>
+            <IndexmieteOverview items={indexItems} latestReading={latest} />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Mietverhältnisse mit Staffelmiete ({staffelItems.length})</h3>
+              <GenerateRemindersButton
+                label={`Erinnerungen für anstehende Stufen anlegen (${staffelReminderSuggestions.length})`}
+                suggestions={staffelReminderSuggestions}
+              />
+            </div>
+            <StaffelmieteOverview items={staffelItems} />
+          </div>
+
+          {totalInclFuture > 0 && (
+            <Card className="bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900">
+              <CardTitle>Mögliche Mieterhöhung insgesamt (Indexmiete + Staffelmiete)</CardTitle>
+              <div className="flex items-center justify-between flex-wrap gap-2 mt-2">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Bereits heute möglich (Indexmiete)</p>
+                <p className="font-semibold text-green-700 dark:text-green-300">+<SensitiveEuro seed="indexmiete-today" amount={totalToday} /> / Monat</p>
+              </div>
+              <div className="flex items-center justify-between flex-wrap gap-2 mt-1">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Inkl. zukünftig möglicher Erhöhungen (Index + Staffel)</p>
+                <p className="font-semibold text-blue-700 dark:text-blue-300">+<SensitiveEuro seed="indexmiete-future" amount={totalInclFuture} /> / Monat</p>
+              </div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                Staffelmiete-Stufen treten automatisch zum vereinbarten Termin in Kraft und zählen daher nur zur "inkl. zukünftig"-Summe, nicht zu "bereits heute möglich".
+              </p>
+            </Card>
+          )}
+
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Feste Miete – Kappungsgrenzen-Countdown ({plain558Items.length})</h3>
+            <p className="text-xs text-gray-400 dark:text-gray-500 -mt-2 mb-3">
+              Für Mietverhältnisse ohne Staffel- oder Indexvereinbarung: wann eine Mieterhöhung nach § 558 BGB (Anpassung an die ortsübliche Vergleichsmiete) frühestens verlangt werden darf,
+              und wie viel von der Kappungsgrenze (20% bzw. 15% in Gebieten mit angespanntem Wohnungsmarkt) in den letzten 3 Jahren bereits ausgeschöpft ist.
+            </p>
+            <Section558Overview items={plain558Items} />
+          </div>
+        </div>
       </div>
     </div>
   )

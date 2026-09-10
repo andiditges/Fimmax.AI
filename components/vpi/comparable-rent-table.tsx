@@ -66,7 +66,7 @@ export function ComparableRentTable({ items }: { items: Item[] }) {
       <table className="w-full text-sm min-w-[640px]">
         <thead>
           <tr className="text-left text-xs text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-gray-800">
-            <th className="pb-2 font-medium">Mieter</th>
+            <th className="pb-2 font-medium sticky left-0 bg-white dark:bg-gray-900 pr-2">Mieter</th>
             <th className="pb-2 font-medium">Objekt</th>
             <th className="pb-2 font-medium text-right">Kaltmiete</th>
             <th className="pb-2 font-medium text-right">€/m²</th>
@@ -79,7 +79,7 @@ export function ComparableRentTable({ items }: { items: Item[] }) {
             const badge = statusBadge[row.status]
             return (
               <tr key={row.tenant.id} className="border-b border-gray-50 dark:border-gray-800 last:border-0">
-                <td className="py-2.5">
+                <td className="py-2.5 sticky left-0 bg-white dark:bg-gray-900 pr-2">
                   <Link href={`/tenants/${row.tenant.id}`} className="font-medium text-gray-900 dark:text-gray-100 hover:text-blue-700 dark:hover:text-blue-400">
                     <Sensitive kind="name" seed={row.tenant.id} value={row.tenant.name} />
                   </Link>

@@ -10,11 +10,11 @@ const LINKS = [
   { href: '/warum', label: 'Warum' },
   { href: '/', label: 'Dashboard' },
   { href: '/properties', label: 'Immobilien' },
+  { href: '/indexmiete', label: 'Miete' },
   { href: '/steuer', label: 'Steuerübersicht' },
   { href: '/finanzen', label: 'Finanzen' },
-  { href: '/tipps', label: 'Tipps' },
-  { href: '/indexmiete', label: 'Mieterhöhung' },
   { href: '/reminders', label: 'Erinnerungen' },
+  { href: '/tipps', label: 'Tipps' },
   { href: '/charity', label: 'Charity' },
   { href: '/einstellungen', label: 'Einstellungen' },
 ]
