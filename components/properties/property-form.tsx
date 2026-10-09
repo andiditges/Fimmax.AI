@@ -68,8 +68,8 @@ export function PropertyForm({ property }: { property?: Property }) {
   const STEP_TITLES = ['Adresse & Objekt', 'Kaufpreis & Nebenkosten', 'Abschreibung (AfA)', 'Zustand & Vergleichsmiete']
   const [step, setStep] = useState(1)
   // Nur im Wizard relevant: ob Schritt 4 (komplett optionale Detail-Felder)
-  // direkt ausgefüllt oder übersprungen werden soll - siehe Weiche unten.
-  const [optionalDetailsChoice, setOptionalDetailsChoice] = useState<'pending' | 'skip' | 'fill'>('pending')
+  // direkt ausgefüllt werden soll - "überspringen" speichert sofort, siehe Weiche unten.
+  const [optionalDetailsChoice, setOptionalDetailsChoice] = useState<'pending' | 'fill'>('pending')
 
   const gemeindeMatch = useMemo(() => findGemeindeForAddress(form.address), [form.address])
 
@@ -176,8 +176,12 @@ export function PropertyForm({ property }: { property?: Property }) {
     setStep(s => Math.max(1, s - 1))
   }
 
-  async function onSubmit(e: React.FormEvent) {
+  function onSubmit(e: React.FormEvent) {
     e.preventDefault()
+    save()
+  }
+
+  async function save() {
     setLoading(true)
     const payload = {
       address: form.address,
@@ -454,10 +458,12 @@ export function PropertyForm({ property }: { property?: Property }) {
                 >
                   Ja, jetzt ausfüllen
                 </button>
+                {/* Bewusst type="button" + direkter save()-Aufruf: ein Submit-Button,
+                    der per State-Wechsel aus dem DOM verschwindet, bricht das Absenden ab. */}
                 <button
-                  type="submit"
+                  type="button"
                   disabled={loading}
-                  onClick={() => setOptionalDetailsChoice('skip')}
+                  onClick={save}
                   className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
                   {loading ? 'Wird gespeichert...' : 'Nein, überspringen'}

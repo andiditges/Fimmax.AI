@@ -287,16 +287,16 @@ export default async function PropertyDetail({ params, searchParams }: { params:
               </div>
             )}
             {currentRentPerSqm != null && (
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Aktuelle Kaltmiete</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${p.id}-coldrent`} amount={currentColdRent} /> ({currentRentPerSqm.toFixed(2)} €/m²)</span>
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-500 dark:text-gray-400 min-w-0">Aktuelle Kaltmiete</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100 text-right whitespace-nowrap shrink-0"><SensitiveEuro seed={`${p.id}-coldrent`} amount={currentColdRent} /> ({currentRentPerSqm.toFixed(2)} €/m²)</span>
               </div>
             )}
             {(p.comparable_rent_min || p.comparable_rent_max) && (
-              <div className="flex justify-between border-t pt-2">
-                <span className="text-gray-500 dark:text-gray-400">Ortsübliche Vergleichsmiete</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">
-                  {euro(p.comparable_rent_min ?? p.comparable_rent_max ?? 0)}–{euro(p.comparable_rent_max ?? p.comparable_rent_min ?? 0)} /m²
+              <div className="flex justify-between gap-4 border-t pt-2">
+                <span className="text-gray-500 dark:text-gray-400 min-w-0">Ortsübliche Vergleichsmiete</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100 text-right whitespace-nowrap shrink-0">
+                  {euro(p.comparable_rent_min ?? p.comparable_rent_max ?? 0)}–{euro(p.comparable_rent_max ?? p.comparable_rent_min ?? 0)}/m²
                 </span>
               </div>
             )}

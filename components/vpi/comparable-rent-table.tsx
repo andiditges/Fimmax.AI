@@ -85,11 +85,11 @@ export function ComparableRentTable({ items }: { items: Item[] }) {
                   </Link>
                 </td>
                 <td className="py-2.5 text-gray-500 dark:text-gray-400 text-xs"><Sensitive kind="address" seed={row.property.id} value={propertyLabel(row.property)} /></td>
-                <td className="py-2.5 text-right text-gray-900 dark:text-gray-100"><SensitiveEuro seed={`${row.tenant.id}-currentrent`} amount={row.currentRent} /></td>
-                <td className="py-2.5 text-right text-gray-500 dark:text-gray-400">
+                <td className="py-2.5 text-right text-gray-900 dark:text-gray-100 whitespace-nowrap"><SensitiveEuro seed={`${row.tenant.id}-currentrent`} amount={row.currentRent} /></td>
+                <td className="py-2.5 text-right text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {row.rentPerSqm != null ? `${row.rentPerSqm.toFixed(2)} €` : '–'}
                 </td>
-                <td className="py-2.5 text-right text-gray-500 dark:text-gray-400">
+                <td className="py-2.5 text-right text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {row.property.comparable_rent_min != null && row.property.comparable_rent_max != null
                     ? `${row.property.comparable_rent_min.toFixed(2)}–${row.property.comparable_rent_max.toFixed(2)} €/m²`
                     : '–'}
