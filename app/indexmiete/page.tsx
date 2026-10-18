@@ -41,9 +41,13 @@ export default async function IndexmietePage() {
       if (!active || !active.is_index_rent) return null
       const property = propertyById[t.property_id]
       if (!property) return null
-      return { tenant: t, property, agreement: active }
+      // Bereits erfasste, aber erst künftig geltende Erhöhung (z.B. heute
+      // eingetragen, gültig ab 01.12.) - ohne diese Info würde die Zeile
+      // weiter "Erhöhung möglich" anbieten und eine Doppel-Erfassung zulassen.
+      const pending = nextAgreementStep(agreements)
+      return { tenant: t, property, agreement: active, pending }
     })
-    .filter((x): x is { tenant: Tenant; property: Property; agreement: RentalAgreement } => x !== null)
+    .filter((x): x is { tenant: Tenant; property: Property; agreement: RentalAgreement; pending: RentalAgreement | null } => x !== null)
 
   const staffelItems = tenantList
     .map(t => {
@@ -77,7 +81,13 @@ export default async function IndexmietePage() {
   // erst kurz vorher erreicht wird, sollen die Schreiben gebündelt Anfang
   // November für den 01.01. des Folgejahres verschickt werden.
   const targetIncreaseDate = '2027-01-01'
-  const indexReminderSuggestions = suggestIndexmieteReminders(indexItems, targetIncreaseDate, '2026-11-01')
+  // Bei bereits erfasster künftiger Erhöhung zählt deren Datum als neue
+  // Index-Basis - die 12-Monats-Frist läuft dann erst ab dort.
+  const indexReminderSuggestions = suggestIndexmieteReminders(
+    indexItems.map(i => ({ ...i, agreement: i.pending ?? i.agreement })),
+    targetIncreaseDate,
+    '2026-11-01'
+  )
   const staffelReminderSuggestions = suggestStaffelReminders(staffelItems, new Date(), 1)
 
   // Portfolio-Gesamtsumme über beide Mechanismen: Indexmiete trägt sowohl
@@ -89,6 +99,7 @@ export default async function IndexmietePage() {
   let totalInclFuture = 0
   if (latest) {
     for (const item of indexItems) {
+      if (item.pending) continue
       const status = calcIndexmieteStatus(item.agreement, latest)
       if (!status) continue
       const delta = status.possible_new_rent - status.current_rent

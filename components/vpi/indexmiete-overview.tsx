@@ -13,6 +13,7 @@ interface Item {
   tenant: Tenant
   property: Property
   agreement: RentalAgreement
+  pending: RentalAgreement | null
 }
 
 export function IndexmieteOverview({ items, latestReading }: { items: Item[]; latestReading: VpiReading | null }) {
@@ -124,10 +125,22 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
           <Link href={`/tenants/${item.tenant.id}`} className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-700 dark:hover:text-blue-400"><Sensitive kind="name" seed={item.tenant.id} value={item.tenant.name} /></Link>
           <p className="text-xs text-gray-400 dark:text-gray-500"><Sensitive kind="address" seed={item.property.id} value={propertyLabel(item.property)} /></p>
         </div>
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${status.eligible ? 'bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}>
-          {status.eligible ? 'Erhöhung möglich' : `Erst ab ${formatDate(status.earliest_next_date)}`}
-        </span>
+        {item.pending ? (
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300">
+            Erhöhung erfasst
+          </span>
+        ) : (
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${status.eligible ? 'bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}>
+            {status.eligible ? 'Erhöhung möglich' : `Erst ab ${formatDate(status.earliest_next_date)}`}
+          </span>
+        )}
       </div>
+
+      {item.pending && (
+        <p className="text-sm text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-lg px-3 py-2 mt-3">
+          Neue Miete <strong><SensitiveEuro seed={`${item.pending.id}-pending`} amount={item.pending.rent_amount} /></strong> ab {formatDate(item.pending.start_date)} erfasst – bis dahin gilt die aktuelle Miete.
+        </p>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3 text-sm">
         <div>
@@ -148,13 +161,13 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
         </div>
         <div>
           <p className="text-gray-400 dark:text-gray-500 text-xs">Erhöhung heute möglich</p>
-          <p className={`font-medium ${status.eligible ? 'text-green-700 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
-            {status.eligible ? <>+<SensitiveEuro seed={`${item.agreement.id}-delta`} amount={status.possible_new_rent - status.current_rent} /></> : '– noch nicht'}
+          <p className={`font-medium ${status.eligible && !item.pending ? 'text-green-700 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
+            {item.pending ? '– bereits erfasst' : status.eligible ? <>+<SensitiveEuro seed={`${item.agreement.id}-delta`} amount={status.possible_new_rent - status.current_rent} /></> : '– noch nicht'}
           </p>
         </div>
         <div>
           <p className="text-gray-400 dark:text-gray-500 text-xs">Erhöhung inkl. zukünftig möglich</p>
-          <p className="font-medium text-blue-700 dark:text-blue-400">+<SensitiveEuro seed={`${item.agreement.id}-delta`} amount={status.possible_new_rent - status.current_rent} /></p>
+          <p className="font-medium text-blue-700 dark:text-blue-400">{item.pending ? '– bereits erfasst' : <>+<SensitiveEuro seed={`${item.agreement.id}-delta`} amount={status.possible_new_rent - status.current_rent} /></>}</p>
         </div>
       </div>
 
@@ -162,7 +175,7 @@ function IndexmieteRow({ item, latestReading }: { item: Item; latestReading: Vpi
         Ohne Gewähr, rein rechnerisch, ersetzt keine Rechtsberatung – die Erhöhung muss dem Mieter aktiv in Textform erklärt werden.
       </p>
 
-      {status.eligible && (
+      {status.eligible && !item.pending && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
           {!applying && (
             <button onClick={() => setApplying(true)} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
